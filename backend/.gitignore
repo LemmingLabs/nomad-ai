@@ -34,7 +34,7 @@ htmlcov/
 
 # Secrets
 .env
-.env.*
+.env
 
 # Misc
 *.sqlite3
