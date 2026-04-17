@@ -11,17 +11,20 @@ class TripMessage(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     trip_id: Mapped[int] = mapped_column(
-        ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("trips.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    role: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # user/assistant/system
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
+        index=True,
         default=lambda: datetime.now(timezone.utc),
     )
 
     # Relationships
-    trip: Mapped["Trip"] = relationship("Trip", back_populates="messages")
+    trip: Mapped["Trip"] = relationship(
+        "Trip", back_populates="trip_messages", foreign_keys="TripMessage.trip_id"
+    )
