@@ -5,11 +5,13 @@ from unittest.mock import Mock, patch
 
 import pytest
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
+from fastapi import HTTPException
 from jose import jwt
 from pydantic import ValidationError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from app.core.dependencies import get_current_user, oauth2_scheme
 from app.core import security
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.user import UserResponse
@@ -255,3 +257,82 @@ def test_auth_service_login_user_returns_bearer_token_for_valid_credentials() ->
         repository.get_user_by_email.assert_called_once_with("traveler@example.com")
         mock_verify_password.assert_called_once_with("secret123", "stored-hash")
         mock_create_access_token.assert_called_once_with({"sub": "7"})
+
+
+def test_oauth2_scheme_uses_login_token_url() -> None:
+    assert oauth2_scheme.model.flows.password.tokenUrl == "/api/v1/auth/login"
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_raises_401_when_token_cannot_be_decoded() -> None:
+    with patch("app.core.dependencies.decode_access_token") as mock_decode_access_token:
+        mock_decode_access_token.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="bad-token", db=Mock())
+
+        assert exc_info.value.status_code == 401
+        mock_decode_access_token.assert_called_once_with("bad-token")
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_raises_401_when_sub_claim_is_missing() -> None:
+    with patch("app.core.dependencies.decode_access_token") as mock_decode_access_token:
+        mock_decode_access_token.return_value = {}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="token-without-sub", db=Mock())
+
+        assert exc_info.value.status_code == 401
+        mock_decode_access_token.assert_called_once_with("token-without-sub")
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_raises_401_when_sub_claim_is_not_an_int() -> None:
+    with patch("app.core.dependencies.decode_access_token") as mock_decode_access_token:
+        mock_decode_access_token.return_value = {"sub": "not-an-int"}
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="token-with-invalid-sub", db=Mock())
+
+        assert exc_info.value.status_code == 401
+        mock_decode_access_token.assert_called_once_with("token-with-invalid-sub")
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_raises_401_when_user_does_not_exist() -> None:
+    with (
+        patch("app.core.dependencies.decode_access_token") as mock_decode_access_token,
+        patch("app.core.dependencies.UserRepository") as repository_class,
+    ):
+        mock_decode_access_token.return_value = {"sub": "7"}
+        repository_class.return_value.get_user_by_id.return_value = None
+        db = Mock()
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="valid-token", db=db)
+
+        assert exc_info.value.status_code == 401
+        mock_decode_access_token.assert_called_once_with("valid-token")
+        repository_class.assert_called_once_with(db)
+        repository_class.return_value.get_user_by_id.assert_called_once_with(7)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_returns_user_for_valid_token() -> None:
+    user = Mock()
+
+    with (
+        patch("app.core.dependencies.decode_access_token") as mock_decode_access_token,
+        patch("app.core.dependencies.UserRepository") as repository_class,
+    ):
+        mock_decode_access_token.return_value = {"sub": "7"}
+        repository_class.return_value.get_user_by_id.return_value = user
+        db = Mock()
+
+        current_user = await get_current_user(token="valid-token", db=db)
+
+        assert current_user is user
+        mock_decode_access_token.assert_called_once_with("valid-token")
+        repository_class.assert_called_once_with(db)
+        repository_class.return_value.get_user_by_id.assert_called_once_with(7)
