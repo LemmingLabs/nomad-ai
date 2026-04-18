@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from app.core import security
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.user import UserResponse
+from app.services.auth_service import AuthService
 
 
 def test_register_request_accepts_valid_email_and_password() -> None:
@@ -154,3 +155,103 @@ def test_decode_access_token_returns_none_for_expired_token(monkeypatch: pytest.
     )
 
     assert security.decode_access_token(expired_token) is None
+
+
+def test_auth_service_register_user_raises_when_email_already_registered() -> None:
+    existing_user = Mock()
+
+    with patch("app.services.auth_service.UserRepository") as repository_class:
+        repository_class.return_value.get_user_by_email.return_value = existing_user
+        service = AuthService(Mock())
+
+        with pytest.raises(ValueError, match="Email already registered"):
+            service.register_user("traveler@example.com", "secret123")
+
+        repository_class.return_value.get_user_by_email.assert_called_once_with(
+            "traveler@example.com"
+        )
+
+
+def test_auth_service_register_user_hashes_password_and_creates_user() -> None:
+    created_user = Mock()
+
+    with (
+        patch("app.services.auth_service.UserRepository") as repository_class,
+        patch("app.services.auth_service.hash_password") as mock_hash_password,
+    ):
+        repository = repository_class.return_value
+        repository.get_user_by_email.return_value = None
+        repository.create_user.return_value = created_user
+        mock_hash_password.return_value = "hashed-password"
+        service = AuthService(Mock())
+
+        user = service.register_user("traveler@example.com", "secret123")
+
+        assert user is created_user
+        repository.get_user_by_email.assert_called_once_with("traveler@example.com")
+        mock_hash_password.assert_called_once_with("secret123")
+        repository.create_user.assert_called_once_with(
+            "traveler@example.com", "hashed-password"
+        )
+
+
+def test_auth_service_login_user_raises_when_user_does_not_exist() -> None:
+    with patch("app.services.auth_service.UserRepository") as repository_class:
+        repository_class.return_value.get_user_by_email.return_value = None
+        service = AuthService(Mock())
+
+        with pytest.raises(ValueError, match="Invalid credentials"):
+            service.login_user("traveler@example.com", "secret123")
+
+        repository_class.return_value.get_user_by_email.assert_called_once_with(
+            "traveler@example.com"
+        )
+
+
+def test_auth_service_login_user_raises_when_password_is_invalid() -> None:
+    user = Mock()
+    user.password_hash = "stored-hash"
+
+    with (
+        patch("app.services.auth_service.UserRepository") as repository_class,
+        patch("app.services.auth_service.verify_password") as mock_verify_password,
+    ):
+        repository = repository_class.return_value
+        repository.get_user_by_email.return_value = user
+        mock_verify_password.return_value = False
+        service = AuthService(Mock())
+
+        with pytest.raises(ValueError, match="Invalid credentials"):
+            service.login_user("traveler@example.com", "wrong-password")
+
+        repository.get_user_by_email.assert_called_once_with("traveler@example.com")
+        mock_verify_password.assert_called_once_with(
+            "wrong-password", "stored-hash"
+        )
+
+
+def test_auth_service_login_user_returns_bearer_token_for_valid_credentials() -> None:
+    user = Mock()
+    user.id = 7
+    user.password_hash = "stored-hash"
+
+    with (
+        patch("app.services.auth_service.UserRepository") as repository_class,
+        patch("app.services.auth_service.verify_password") as mock_verify_password,
+        patch("app.services.auth_service.create_access_token") as mock_create_access_token,
+    ):
+        repository = repository_class.return_value
+        repository.get_user_by_email.return_value = user
+        mock_verify_password.return_value = True
+        mock_create_access_token.return_value = "jwt-token"
+        service = AuthService(Mock())
+
+        token_response = service.login_user("traveler@example.com", "secret123")
+
+        assert token_response == TokenResponse(
+            access_token="jwt-token",
+            token_type="bearer",
+        )
+        repository.get_user_by_email.assert_called_once_with("traveler@example.com")
+        mock_verify_password.assert_called_once_with("secret123", "stored-hash")
+        mock_create_access_token.assert_called_once_with({"sub": "7"})
