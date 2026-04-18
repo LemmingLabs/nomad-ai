@@ -12,10 +12,8 @@ class TripMessageRepository:
     def create_message(self, trip_id: int, role: str, content: str) -> TripMessage:
         message = TripMessage(trip_id=trip_id, role=role, content=content)
         self.db.add(message)
-        self.db.commit()
-        self.db.refresh(message)
+        self.db.flush()
         return message
-
     def get_trip_messages(self, trip_id: int) -> list[TripMessage]:
         return (
             self.db.query(TripMessage)

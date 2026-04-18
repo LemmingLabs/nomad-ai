@@ -272,7 +272,7 @@ def test_groq_client_parses_json_payload(monkeypatch):
             return SimpleNamespace(choices=[SimpleNamespace(message=message)])
 
     monkeypatch.setattr(groq_module, "Groq", FakeGroq)
-    client = GroqClient(api_key="fake-key")
+    client = GroqClient(api_key="fake-key", use_mock=False)
 
     payload = client.get_structured_output([{"role": "user", "content": "hello"}])
 
@@ -370,7 +370,7 @@ def test_trip_message_service_keeps_existing_itinerary_when_ai_returns_none(
     assert trip.itinerary_json == original_itinerary
 
 
-def test_messages_endpoint_returns_404_for_missing_trip(db_session, user):
+def test_continue_trip_messages_function_returns_404_for_missing_trip(db_session, user):
     with pytest.raises(HTTPException) as exc_info:
         continue_trip_messages(
             trip_id=999,
@@ -383,7 +383,7 @@ def test_messages_endpoint_returns_404_for_missing_trip(db_session, user):
     assert exc_info.value.detail == "Trip not found"
 
 
-def test_messages_endpoint_returns_403_for_non_owner(db_session, trip, other_user):
+def test_continue_trip_messages_function_returns_404_for_non_owner(db_session, trip, other_user):
     with pytest.raises(HTTPException) as exc_info:
         continue_trip_messages(
             trip_id=trip.id,
@@ -392,11 +392,11 @@ def test_messages_endpoint_returns_403_for_non_owner(db_session, trip, other_use
             current_user=other_user,
         )
 
-    assert exc_info.value.status_code == 403
-    assert exc_info.value.detail == "Not enough permissions for this trip"
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Trip not found"
 
 
-def test_messages_endpoint_returns_assistant_message_and_updated_itinerary(
+def test_continue_trip_messages_function_returns_assistant_message_and_updated_itinerary(
     db_session, user, trip, monkeypatch
 ):
     def fake_continue_trip(self, trip, user_content):

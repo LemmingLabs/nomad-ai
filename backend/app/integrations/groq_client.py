@@ -14,13 +14,21 @@ class GroqClient:
         self,
         api_key: str | None = None,
         model: str = "llama-3.3-70b-versatile",
+        use_mock: bool | None = None,
     ):
         self.api_key = api_key or settings.GROQ_API_KEY
         self.model = model
+        self.use_mock = settings.DEBUG if use_mock is None else use_mock
 
     def chat_json(self, messages: list[dict[str, str]]) -> dict[str, Any]:
-        if not self.api_key or Groq is None:
+        if self.use_mock:
             return self._mock_response(messages)
+
+        if not self.api_key or Groq is None:
+            raise ValueError(
+                "Groq API Key is missing or groq package not installed. "
+                "Enable DEBUG or use_mock to run without real AI."
+            )
 
         try:
             client = Groq(api_key=self.api_key)
@@ -35,7 +43,8 @@ class GroqClient:
         except json.JSONDecodeError:
             return {"message": content, "updated_itinerary": None}
         except Exception:
-            return self._mock_response(messages)
+            # Re-raise the exception properly in production
+            raise
 
     def get_structured_output(self, messages: list[dict[str, str]]) -> dict[str, Any]:
         return self.chat_json(messages)

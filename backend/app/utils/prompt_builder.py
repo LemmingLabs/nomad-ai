@@ -4,13 +4,17 @@ from typing import Any
 
 
 class PromptBuilder:
+    JSON_CONTRACT = (
+        "Respond ONLY with valid JSON matching this exact structure: "
+        '{"message": "your text reply to the user", "updated_itinerary": <full itinerary JSON or null>}. '
+        "Do not include markdown blocks or any other text outside the JSON."
+    )
+
     def build_system_prompt(self) -> str:
         return (
             "You are NomadAI, a Kyrgyzstan travel planning expert. "
             "Be practical and concise. Always keep traveler constraints in mind. "
-            "When itinerary changes are needed, return valid JSON only with keys "
-            "'message' and 'updated_itinerary'. If no itinerary update is required, "
-            "set 'updated_itinerary' to null."
+            f"{self.JSON_CONTRACT}"
         )
 
     def build_initial_generation_prompt(
@@ -31,7 +35,7 @@ class PromptBuilder:
             f"- Days: {days}\n"
             f"- Interests: {interests_text}\n"
             f"- Accommodation type: {accommodation_type or 'not specified'}\n"
-            "Respond in JSON with 'message' and 'updated_itinerary'."
+            f"{self.JSON_CONTRACT}"
         )
 
     def build_continuation_prompt(
@@ -48,8 +52,7 @@ class PromptBuilder:
             "Continue the travel planning conversation.\n"
             f"User request: {user_message}\n"
             f"Current itinerary JSON:\n{itinerary_text}\n"
-            "Return JSON only with this shape:\n"
-            '{"message": "assistant reply", "updated_itinerary": {...} or null}.'
+            f"{self.JSON_CONTRACT}"
         )
 
     def build_chat_messages(

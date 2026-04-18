@@ -18,25 +18,30 @@ class TripMessageService:
     def continue_trip(
         self, trip: Trip, user_content: str
     ) -> tuple[TripMessage, dict | None]:
-        self.repo.create_message(trip_id=trip.id, role="user", content=user_content)
+        try:
+            self.repo.create_message(trip_id=trip.id, role="user", content=user_content)
 
-        history = self.repo.get_trip_messages(trip_id=trip.id)
-        assistant_text, updated_itinerary = self.ai_service.continue_trip(
-            history_messages=history,
-            user_message=user_content,
-            current_itinerary=trip.itinerary_json,
-        )
+            history = self.repo.get_trip_messages(trip_id=trip.id)
+            assistant_text, updated_itinerary = self.ai_service.continue_trip(
+                history_messages=history,
+                user_message=user_content,
+                current_itinerary=trip.itinerary_json,
+            )
 
-        assistant_message = self.repo.create_message(
-            trip_id=trip.id,
-            role="assistant",
-            content=assistant_text,
-        )
+            assistant_message = self.repo.create_message(
+                trip_id=trip.id,
+                role="assistant",
+                content=assistant_text,
+            )
 
-        if updated_itinerary is not None:
-            trip.itinerary_json = updated_itinerary
-            self.db.add(trip)
+            if updated_itinerary is not None:
+                trip.itinerary_json = updated_itinerary
+                self.db.add(trip)
+
             self.db.commit()
-            self.db.refresh(trip)
+            self.db.refresh(assistant_message)
+            return assistant_message, updated_itinerary
 
-        return assistant_message, updated_itinerary
+        except Exception:
+            self.db.rollback()
+            raise

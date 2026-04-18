@@ -7,6 +7,7 @@ from app.repositories.trip_repository import (
     get_user_trips,
     assign_trip_to_user,
 )
+from app.services.catalog_service import CatalogService
 
 
 def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> dict:
@@ -16,21 +17,54 @@ def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> 
 
     days_plan = []
     for day in range(1, days + 1):
-        if interests:
-            day_interest = interests[(day - 1) % len(interests)]
-            morning_activity = f"Explore {day_interest}"
+        if days <= 2:
+            city = "Bishkek"
+        elif days <= 4:
+            city = "Bishkek" if day <= 2 else "Karakol"
         else:
-            morning_activity = "Explore local area"
+            if day <= 2:
+                city = "Bishkek"
+            elif day <= 4:
+                city = "Karakol"
+            else:
+                city = "Cholpon-Ata"
+
+        if city == "Bishkek":
+            location = "Ala-Too Square" if day == 1 else "Bishkek City Center"
+            title = f"Arrival and Exploration in Bishkek" if day == 1 else f"Exploring Bishkek"
+        elif city == "Karakol":
+            location = "Karakol Town" if day == 3 else "Mountain Area"
+            title = f"Journey to Karakol" if day == 3 else f"Mountain Adventure in Karakol"
+        else:
+            location = "Cholpon-Ata Lakefront" if day == 5 else "Issyk-Kul Shore"
+            title = f"Arrival at Issyk-Kul Lake" if day == 5 else f"Relaxing by the Lake"
+
+        day_interest = interests[(day - 1) % len(interests)] if interests else ""
+
+        if "nature" in day_interest or "mountains" in day_interest:
+            morning_desc = f"Hike and enjoy the nature near {location}"
+            afternoon_desc = f"Outdoor {travel_style} activity in the area"
+            evening_desc = "Relax and enjoy the view"
+        elif "food" in day_interest:
+            morning_desc = "Visit local markets and taste morning treats"
+            afternoon_desc = f"Local culinary {travel_style} experience"
+            evening_desc = "Dinner at top-rated traditional restaurant"
+        else:
+            morning_desc = f"Morning sightseeing around {location}"
+            afternoon_desc = f"Enjoy a {travel_style} experience"
+            evening_desc = "Dinner and rest"
 
         activities = [
-            {"time": "Morning", "description": morning_activity, "type": "sightseeing"},
-            {"time": "Afternoon", "description": f"{travel_style.title()} experience", "type": "activity"},
-            {"time": "Evening", "description": "Dinner and rest", "type": "meal"},
+            {"time": "Morning", "description": morning_desc, "type": "sightseeing"},
+            {"time": "Afternoon", "description": afternoon_desc, "type": "activity"},
+            {"time": "Evening", "description": evening_desc, "type": "meal"},
         ]
 
         days_plan.append({
             "day": day,
-            "title": f"Day {day}: {interests[(day - 1) % len(interests)].title() if interests else 'Local Exploration'}",
+            "title": title,
+            "city": city,
+            "location": location,
             "activities": activities,
         })
 
@@ -63,6 +97,10 @@ def generate_trip(
     normalized_interests = [item.strip() for item in interests if item.strip()]
 
     itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+
+    catalog_service = CatalogService(db)
+    enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
+
     title = f"{days}-day {normalized_travel_style} trip"
 
     trip_data = {
@@ -72,7 +110,7 @@ def generate_trip(
         "days": days,
         "interests": normalized_interests,
         "travel_style": normalized_travel_style,
-        "itinerary_json": itinerary,
+        "itinerary_json": enriched_itinerary,
     }
 
     return create_trip(db, **trip_data)
