@@ -11,6 +11,8 @@ from pydantic import ValidationError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from app.api.v1.auth import get_me, login, register, router as auth_router
+from app.core.database import get_db
 from app.core.dependencies import get_current_user, oauth2_scheme
 from app.core import security
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
@@ -31,10 +33,11 @@ def test_login_request_rejects_invalid_email() -> None:
 
 
 def test_token_response_defaults_token_type_to_bearer() -> None:
-    token = TokenResponse(access_token="jwt-token")
+    token = TokenResponse(access_token="jwt-token", user_id=7)
 
     assert token.access_token == "jwt-token"
     assert token.token_type == "bearer"
+    assert token.user_id == 7
 
 
 def test_user_response_builds_from_attributes_without_exposing_password_hash() -> None:
@@ -253,6 +256,7 @@ def test_auth_service_login_user_returns_bearer_token_for_valid_credentials() ->
         assert token_response == TokenResponse(
             access_token="jwt-token",
             token_type="bearer",
+            user_id=7,
         )
         repository.get_user_by_email.assert_called_once_with("traveler@example.com")
         mock_verify_password.assert_called_once_with("secret123", "stored-hash")
@@ -336,3 +340,110 @@ async def test_get_current_user_returns_user_for_valid_token() -> None:
         mock_decode_access_token.assert_called_once_with("valid-token")
         repository_class.assert_called_once_with(db)
         repository_class.return_value.get_user_by_id.assert_called_once_with(7)
+
+
+def test_auth_register_endpoint_returns_created_user_response() -> None:
+    class UserORM:
+        id = 7
+        email = "traveler@example.com"
+        created_at = datetime(2026, 4, 18, tzinfo=timezone.utc)
+
+    user = UserORM()
+
+    with patch("app.api.v1.auth.AuthService") as auth_service_class:
+        auth_service_class.return_value.register_user.return_value = user
+
+        response = register(
+            RegisterRequest(email="traveler@example.com", password="secret123"),
+            db=Mock(),
+        )
+
+    assert response == UserResponse(
+        id=7,
+        email="traveler@example.com",
+        created_at=datetime(2026, 4, 18, tzinfo=timezone.utc),
+    )
+
+
+def test_auth_register_endpoint_maps_service_value_error_to_400() -> None:
+    with patch("app.api.v1.auth.AuthService") as auth_service_class:
+        auth_service_class.return_value.register_user.side_effect = ValueError(
+            "Email already registered"
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            register(
+                RegisterRequest(email="traveler@example.com", password="secret123"),
+                db=Mock(),
+            )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "Email already registered"
+
+
+def test_auth_login_endpoint_returns_token_response_with_user_id() -> None:
+    with patch("app.api.v1.auth.AuthService") as auth_service_class:
+        auth_service_class.return_value.login_user.return_value = TokenResponse(
+            access_token="jwt-token",
+            token_type="bearer",
+            user_id=7,
+        )
+
+        response = login(
+            LoginRequest(email="traveler@example.com", password="secret123"),
+            db=Mock(),
+        )
+
+    assert response == TokenResponse(
+        access_token="jwt-token",
+        token_type="bearer",
+        user_id=7,
+    )
+
+
+def test_auth_login_endpoint_maps_service_value_error_to_401() -> None:
+    with patch("app.api.v1.auth.AuthService") as auth_service_class:
+        auth_service_class.return_value.login_user.side_effect = ValueError(
+            "Invalid credentials"
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            login(
+                LoginRequest(email="traveler@example.com", password="secret123"),
+                db=Mock(),
+            )
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Invalid credentials"
+
+
+def test_auth_me_endpoint_returns_authenticated_user() -> None:
+    class UserORM:
+        id = 7
+        email = "traveler@example.com"
+        created_at = datetime(2026, 4, 18, tzinfo=timezone.utc)
+
+    user = UserORM()
+    response = get_me(db=Mock(), current_user=user)
+
+    assert response == UserResponse(
+        id=7,
+        email="traveler@example.com",
+        created_at=datetime(2026, 4, 18, tzinfo=timezone.utc),
+    )
+
+
+def test_auth_router_exposes_expected_auth_endpoint_contracts() -> None:
+    routes_by_path = {route.path: route for route in auth_router.routes}
+
+    assert auth_router.prefix == "/auth"
+    assert auth_router.tags == ["auth"]
+    assert routes_by_path["/auth/register"].methods == {"POST"}
+    assert routes_by_path["/auth/register"].response_model is UserResponse
+    assert routes_by_path["/auth/register"].status_code == 201
+    assert routes_by_path["/auth/login"].methods == {"POST"}
+    assert routes_by_path["/auth/login"].response_model is TokenResponse
+    assert routes_by_path["/auth/login"].status_code == 200
+    assert routes_by_path["/auth/me"].methods == {"GET"}
+    assert routes_by_path["/auth/me"].response_model is UserResponse
+    assert routes_by_path["/auth/me"].status_code == 200

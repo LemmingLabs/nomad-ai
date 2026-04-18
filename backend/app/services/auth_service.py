@@ -6,6 +6,7 @@ from app.models.user import User
 
 DUMMY_HASH = hash_password("dummy")  # module-level constant, computed once at startup
 
+
 class AuthService:
     def __init__(self, db: Session):
         self.repo = UserRepository(db)
@@ -31,4 +32,4 @@ class AuthService:
             raise ValueError("Invalid credentials")
 
         token = create_access_token({"sub": str(user.id)})
-        return TokenResponse(access_token=token, token_type="bearer")
+        return TokenResponse(access_token=token, token_type="bearer", user_id=user.id)
