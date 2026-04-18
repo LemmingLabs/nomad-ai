@@ -54,21 +54,24 @@ def generate_trip(
     """Create a new trip with a generated mock itinerary."""
     if days < 1:
         raise ValueError("Days must be at least 1")
-    if not budget.strip():
+    normalized_budget = budget.strip().lower()
+    if not normalized_budget:
         raise ValueError("Budget cannot be empty")
-    if not travel_style.strip():
+    normalized_travel_style = travel_style.strip().lower()
+    if not normalized_travel_style:
         raise ValueError("Travel style cannot be empty")
+    normalized_interests = [item.strip() for item in interests if item.strip()]
 
-    itinerary = build_mock_itinerary(days, interests, travel_style)
-    title = f"{days}-day {travel_style} trip"
+    itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+    title = f"{days}-day {normalized_travel_style} trip"
 
     trip_data = {
         "user_id": user_id,
         "title": title,
-        "budget": budget,
+        "budget": normalized_budget,
         "days": days,
-        "interests": interests,
-        "travel_style": travel_style,
+        "interests": normalized_interests,
+        "travel_style": normalized_travel_style,
         "itinerary_json": itinerary,
     }
 
