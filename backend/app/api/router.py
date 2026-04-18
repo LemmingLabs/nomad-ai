@@ -11,4 +11,4 @@ router.include_router(api_v1_router)
 
 @router.get("/health")
 def health_check():
-    return {"status": "Welcome Gay"}
+    return {"status": "OK"}
