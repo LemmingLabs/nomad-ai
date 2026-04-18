@@ -1,3 +1,5 @@
+from app.models.user import User
 from app.models.trip import Trip
 from app.models.trip_message import TripMessage
-from app.models.user import User
+
+__all__ = ["User", "Trip", "TripMessage"]
