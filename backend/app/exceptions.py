@@ -1,14 +1,14 @@
 class TwoGISAuthError(Exception):
-    """Raised when 2GIS returns HTTP 403 (invalid/revoked API key or quota exceeded)."""
-
+    pass
 
 class TwoGISRateLimitError(Exception):
-    """Raised when 2GIS returns HTTP 429 (rate limit exceeded)."""
-
+    pass
 
 class TwoGISServerError(Exception):
-    """Raised when 2GIS returns an HTTP 5xx server error."""
-
+    pass
 
 class TwoGISTimeoutError(Exception):
-    """Raised when an httpx request to 2GIS times out."""
+    pass
+
+class RoutingServiceError(Exception):
+    pass

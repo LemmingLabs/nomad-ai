@@ -85,6 +85,9 @@ class RoutingService:
         price_max = round(price * 1.1, 2)
 
         return TransportResult(
+            **{"from": str(origin)},
+            to=str(destination),
+            transport_type=transport_type,
             distance_km=distance_km,
             duration_min=duration_min,
             price_min=price_min,
@@ -110,14 +113,6 @@ class RoutingService:
                     transport_type = t_type
 
             result = await self.estimate_transport(origin, destination, transport_type)
-
-            if hasattr(current_plan, 'transport') and current_plan.transport is not None:
-                current_plan.transport.result = result
-            else:
-                class GenericTransport:
-                    pass
-                t = GenericTransport()
-                t.result = result
-                current_plan.transport = t
+            current_plan.transport = result
 
         return day_plans

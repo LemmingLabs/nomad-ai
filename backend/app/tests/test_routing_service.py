@@ -89,25 +89,33 @@ async def test_enrich_itinerary_attaches_result(mock_client):
     mock_client.get_route_info.return_value = {"distance_km": 10.0, "duration_min": 20.0}
     
     plans = [
-        DayPlan((1.0, 1.0), "taxi"),
-        DayPlan((2.0, 2.0), "marshrutka"),
+        DayPlan(day=1, location="(1.0, 1.0)", activities=[], transport=TransportResult(
+            **{"from": "A"}, to="B", distance_km=0, duration_min=0, price_min=0, price_max=0, transport_type="taxi"
+        )),
+        DayPlan(day=2, location="(2.0, 2.0)", activities=[], transport=TransportResult(
+            **{"from": "B"}, to="C", distance_km=0, duration_min=0, price_min=0, price_max=0, transport_type="marshrutka"
+        )),
     ]
     
     svc = RoutingService(mock_client)
     enriched = await svc.enrich_itinerary(plans)
     
-    assert hasattr(enriched[0].transport, "result")
-    assert getattr(enriched[0].transport.result, "distance_km") == 10.0
+    assert enriched[0].transport is not None
+    assert getattr(enriched[0].transport, "distance_km") == 10.0
 
 
 @pytest.mark.asyncio
 async def test_enrich_itinerary_defaults_to_marshrutka(mock_client):
     """enrich_itinerary defaults to "marshrutka" when transport_type is not set."""
+    mock_client.search_place.side_effect = [
+        [{"lon": 1.0, "lat": 1.0}],
+        [{"lon": 2.0, "lat": 2.0}],
+    ]
     mock_client.get_route_info.return_value = {"distance_km": 10.0, "duration_min": 20.0}
     
     plans = [
-        DayPlan((1.0, 1.0)), # No transport set
-        DayPlan((2.0, 2.0)),
+        DayPlan(day=1, location="A", activities=[]), # No transport set
+        DayPlan(day=2, location="B", activities=[]),
     ]
     
     svc = RoutingService(mock_client)
