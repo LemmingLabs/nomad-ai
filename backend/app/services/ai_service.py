@@ -27,21 +27,21 @@ class AIService:
             current_itinerary=current_itinerary,
         )
 
-        raw = self.groq_client.chat_json(messages)
+        raw = self.groq_client.chat_json(messages, mode="continuation")
         return self._normalize_response(raw)
 
     def generate_initial_trip(
         self,
-        budget: int,
         days: int,
         interests: list[str] | str,
-        accommodation_type: str | None = None,
-    ) -> tuple[str, dict[str, Any] | None]:
+        travel_style: str,
+        budget: str,
+    ) -> dict[str, Any]:
         prompt = self.prompt_builder.build_initial_generation_prompt(
-            budget=budget,
             days=days,
             interests=interests,
-            accommodation_type=accommodation_type,
+            travel_style=travel_style,
+            budget=budget,
         )
         raw = self.groq_client.chat_json(
             [
@@ -50,9 +50,31 @@ class AIService:
                     "content": self.prompt_builder.build_system_prompt(),
                 },
                 {"role": "user", "content": prompt},
-            ]
+            ],
+            mode="initial"
         )
-        return self._normalize_response(raw)
+        
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except json.JSONDecodeError:
+                raise ValueError("Initial AI generation failed: not valid JSON")
+                
+        if not isinstance(raw, dict):
+            raise ValueError("Initial AI generation failed: root object must be a dict")
+            
+        title = raw.get("title")
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("Initial AI generation failed: missing or empty 'title'")
+            
+        itinerary = raw.get("itinerary")
+        if not isinstance(itinerary, dict):
+            raise ValueError("Initial AI generation failed: missing or invalid 'itinerary' dictionary")
+            
+        if not isinstance(itinerary.get("days"), list):
+            raise ValueError("Initial AI generation failed: 'itinerary' must contain a 'days' list")
+        
+        return raw
 
     def _normalize_response(
         self, raw: Any

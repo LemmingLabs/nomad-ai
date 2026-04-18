@@ -7,6 +7,7 @@ from app.repositories.trip_repository import (
     get_user_trips,
     assign_trip_to_user,
 )
+from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
 
 
@@ -96,12 +97,33 @@ def generate_trip(
         raise ValueError("Travel style cannot be empty")
     normalized_interests = [item.strip() for item in interests if item.strip()]
 
-    itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+    ai_service = AIService()
+    title = None
+    itinerary = None
+    
+    try:
+        ai_result = ai_service.generate_initial_trip(
+            budget=normalized_budget,
+            days=days,
+            interests=normalized_interests,
+            travel_style=normalized_travel_style,
+        )
+        if isinstance(ai_result, dict):
+            title = ai_result.get("title")
+            candidate_itinerary = ai_result.get("itinerary")
+            if isinstance(candidate_itinerary, dict) and "days" in candidate_itinerary:
+                itinerary = candidate_itinerary
+    except Exception as exc:
+        print(f"AI initial generation failed: {exc}")
+
+    if not itinerary:
+        itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+
+    if not title:
+        title = f"{days}-day {normalized_travel_style} trip"
 
     catalog_service = CatalogService(db)
     enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
-
-    title = f"{days}-day {normalized_travel_style} trip"
 
     trip_data = {
         "user_id": user_id,

@@ -4,9 +4,16 @@ from typing import Any
 
 
 class PromptBuilder:
-    JSON_CONTRACT = (
+    CONTINUATION_CONTRACT = (
         "Respond ONLY with valid JSON matching this exact structure: "
         '{"message": "your text reply to the user", "updated_itinerary": <full itinerary JSON or null>}. '
+        "Do not include markdown blocks or any other text outside the JSON."
+    )
+
+    INITIAL_CONTRACT = (
+        "Respond ONLY with valid JSON matching this exact structure: "
+        '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": [{"day": 1, "title": "Day title", "city": "Bishkek/Karakol/Cholpon-Ata", "location": "Specific Area / Landmark", "activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}]}}. '
+        "The city field MUST be exactly one of: Bishkek, Karakol, Cholpon-Ata. "
         "Do not include markdown blocks or any other text outside the JSON."
     )
 
@@ -14,15 +21,15 @@ class PromptBuilder:
         return (
             "You are NomadAI, a Kyrgyzstan travel planning expert. "
             "Be practical and concise. Always keep traveler constraints in mind. "
-            f"{self.JSON_CONTRACT}"
+            "Always respond in pure JSON. No markdown blocks."
         )
 
     def build_initial_generation_prompt(
         self,
-        budget: int,
         days: int,
         interests: list[str] | str,
-        accommodation_type: str | None = None,
+        travel_style: str,
+        budget: str,
     ) -> str:
         if isinstance(interests, list):
             interests_text = ", ".join(interests)
@@ -31,11 +38,13 @@ class PromptBuilder:
 
         return (
             "Create an initial Kyrgyzstan trip plan with these constraints:\n"
-            f"- Budget: {budget} USD\n"
+            f"- Budget: {budget}\n"
             f"- Days: {days}\n"
             f"- Interests: {interests_text}\n"
-            f"- Accommodation type: {accommodation_type or 'not specified'}\n"
-            f"{self.JSON_CONTRACT}"
+            f"- Travel style: {travel_style or 'not specified'}\n\n"
+            f"IMPORTANT: You MUST generate exactly {days} day objects in the itinerary. "
+            "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
+            f"{self.INITIAL_CONTRACT}"
         )
 
     def build_continuation_prompt(
@@ -52,7 +61,7 @@ class PromptBuilder:
             "Continue the travel planning conversation.\n"
             f"User request: {user_message}\n"
             f"Current itinerary JSON:\n{itinerary_text}\n"
-            f"{self.JSON_CONTRACT}"
+            f"{self.CONTINUATION_CONTRACT}"
         )
 
     def build_chat_messages(
