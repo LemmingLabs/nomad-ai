@@ -27,6 +27,7 @@ services:
       - .env
     environment:
       PYTHONPATH: /app
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/nomadai
 
 volumes:
   postgres_data:

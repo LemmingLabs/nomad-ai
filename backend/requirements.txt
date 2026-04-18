@@ -6,7 +6,7 @@ alembic
 pydantic
 pydantic-settings
 python-jose[cryptography]
-passlib[bcrypt]
+argon2-cffi
 python-multipart
 httpx
 email-validator
