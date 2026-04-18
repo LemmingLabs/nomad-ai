@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import sys
+from unittest.mock import Mock
 
 import pytest
+from argon2.exceptions import InvalidHashError, VerifyMismatchError
 from jose import jwt
 from pydantic import ValidationError
 
@@ -50,47 +52,53 @@ def test_user_response_builds_from_attributes_without_exposing_password_hash() -
     assert "password_hash" not in response.model_dump()
 
 
-def test_hash_password_delegates_to_bcrypt_hashpw(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hash_password_delegates_to_argon2_password_hasher(monkeypatch: pytest.MonkeyPatch) -> None:
     password = "nomad-secure-password"
-    captured: dict[str, bytes] = {}
+    password_hasher = Mock()
+    password_hasher.hash.return_value = "argon2-hash"
 
-    def fake_gensalt() -> bytes:
-        return b"generated-salt"
-
-    def fake_hashpw(value: bytes, salt: bytes) -> bytes:
-        captured["password"] = value
-        captured["salt"] = salt
-        return b"bcrypt-hash"
-
-    monkeypatch.setattr(security.bcrypt, "gensalt", fake_gensalt)
-    monkeypatch.setattr(security.bcrypt, "hashpw", fake_hashpw)
+    monkeypatch.setattr(security, "password_hasher", password_hasher)
 
     hashed_password = security.hash_password(password)
 
-    assert hashed_password == "bcrypt-hash"
-    assert captured == {
-        "password": password.encode("utf-8"),
-        "salt": b"generated-salt",
-    }
+    assert hashed_password == "argon2-hash"
+    password_hasher.hash.assert_called_once_with(password)
 
 
 def test_verify_password_returns_false_for_wrong_password(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured: dict[str, bytes] = {}
+    password_hasher = Mock()
+    password_hasher.verify.side_effect = VerifyMismatchError
 
-    def fake_checkpw(plain_password: bytes, hashed_password: bytes) -> bool:
-        captured["plain_password"] = plain_password
-        captured["hashed_password"] = hashed_password
-        return False
-
-    monkeypatch.setattr(security.bcrypt, "checkpw", fake_checkpw)
+    monkeypatch.setattr(security, "password_hasher", password_hasher)
 
     result = security.verify_password("wrong-password", "stored-hash")
 
     assert result is False
-    assert captured == {
-        "plain_password": b"wrong-password",
-        "hashed_password": b"stored-hash",
-    }
+    password_hasher.verify.assert_called_once_with("stored-hash", "wrong-password")
+
+
+def test_verify_password_returns_false_for_invalid_hash(monkeypatch: pytest.MonkeyPatch) -> None:
+    password_hasher = Mock()
+    password_hasher.verify.side_effect = InvalidHashError
+
+    monkeypatch.setattr(security, "password_hasher", password_hasher)
+
+    assert security.verify_password("password", "not-a-valid-argon2-hash") is False
+    password_hasher.verify.assert_called_once_with(
+        "not-a-valid-argon2-hash", "password"
+    )
+
+
+def test_verify_password_checks_needs_rehash_after_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    password_hasher = Mock()
+    password_hasher.verify.return_value = True
+    password_hasher.check_needs_rehash.return_value = False
+
+    monkeypatch.setattr(security, "password_hasher", password_hasher)
+
+    assert security.verify_password("correct-password", "stored-hash") is True
+    password_hasher.verify.assert_called_once_with("stored-hash", "correct-password")
+    password_hasher.check_needs_rehash.assert_called_once_with("stored-hash")
 
 
 def test_create_access_token_adds_exp_and_does_not_mutate_input(monkeypatch: pytest.MonkeyPatch) -> None:

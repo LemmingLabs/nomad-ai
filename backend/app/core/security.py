@@ -1,26 +1,27 @@
 from datetime import datetime, timedelta, timezone
 
-import bcrypt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError
 
 from app.core.config import settings
 
 
+password_hasher = PasswordHasher()
+
+
 def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    password_bytes = password.encode("utf-8")
-    hashed_password = bcrypt.hashpw(password_bytes, salt)
-    return hashed_password.decode("utf-8")
+    return password_hasher.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    plain_password_bytes = plain_password.encode("utf-8")
-    hashed_password_bytes = hashed_password.encode("utf-8")
-
     try:
-        return bcrypt.checkpw(plain_password_bytes, hashed_password_bytes)
-    except ValueError:
+        is_valid = password_hasher.verify(hashed_password, plain_password)
+        if is_valid:
+            password_hasher.check_needs_rehash(hashed_password)
+        return is_valid
+    except (InvalidHashError, VerificationError, VerifyMismatchError):
         return False
 
 
