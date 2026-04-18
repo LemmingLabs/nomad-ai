@@ -1,3 +1,4 @@
+import json
 from collections.abc import Sequence
 from typing import Any
 
@@ -25,11 +26,11 @@ class PromptBuilder:
             interests_text = interests
 
         return (
-            "Create an initial Kyrgyzstan trip plan with these constraints:\\n"
-            f"- Budget: {budget} USD\\n"
-            f"- Days: {days}\\n"
-            f"- Interests: {interests_text}\\n"
-            f"- Accommodation type: {accommodation_type or 'not specified'}\\n"
+            "Create an initial Kyrgyzstan trip plan with these constraints:\n"
+            f"- Budget: {budget} USD\n"
+            f"- Days: {days}\n"
+            f"- Interests: {interests_text}\n"
+            f"- Accommodation type: {accommodation_type or 'not specified'}\n"
             "Respond in JSON with 'message' and 'updated_itinerary'."
         )
 
@@ -38,12 +39,17 @@ class PromptBuilder:
         user_message: str,
         current_itinerary: dict[str, Any] | None,
     ) -> str:
-        itinerary_text = current_itinerary if current_itinerary is not None else {}
+        itinerary_text = json.dumps(
+            current_itinerary or {},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
         return (
-            "Continue the travel planning conversation.\\n"
-            f"User request: {user_message}\\n"
-            f"Current itinerary JSON: {itinerary_text}\\n"
-            "Return JSON only: {\"message\": string, \"updated_itinerary\": object|null}."
+            "Continue the travel planning conversation.\n"
+            f"User request: {user_message}\n"
+            f"Current itinerary JSON:\n{itinerary_text}\n"
+            "Return JSON only with this shape:\n"
+            '{"message": "assistant reply", "updated_itinerary": {...} or null}.'
         )
 
     def build_chat_messages(
@@ -52,15 +58,28 @@ class PromptBuilder:
         user_message: str,
         current_itinerary: dict[str, Any] | None,
     ) -> list[dict[str, str]]:
-        messages: list[dict[str, str]] = [
-            {"role": "system", "content": self.build_system_prompt()}
-        ]
+        messages: list[dict[str, str]] = [{"role": "system", "content": self.build_system_prompt()}]
+        history_payload: list[dict[str, str]] = []
 
         for item in history_messages:
-            role = getattr(item, "role", None)
-            content = getattr(item, "content", None)
+            if isinstance(item, dict):
+                role = item.get("role")
+                content = item.get("content")
+            else:
+                role = getattr(item, "role", None)
+                content = getattr(item, "content", None)
             if role and content:
-                messages.append({"role": role, "content": content})
+                history_payload.append({"role": role, "content": content})
+
+        normalized_user_message = user_message.strip()
+        if (
+            history_payload
+            and history_payload[-1]["role"] == "user"
+            and history_payload[-1]["content"].strip() == normalized_user_message
+        ):
+            history_payload.pop()
+
+        messages.extend(history_payload)
 
         messages.append(
             {

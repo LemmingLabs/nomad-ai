@@ -10,7 +10,11 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 class GroqClient:
-    def __init__(self, api_key: str | None = None, model: str = "llama-3.3-70b-versatile"):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = "llama-3.3-70b-versatile",
+    ):
         self.api_key = api_key or settings.GROQ_API_KEY
         self.model = model
 
@@ -18,19 +22,23 @@ class GroqClient:
         if not self.api_key or Groq is None:
             return self._mock_response(messages)
 
-        client = Groq(api_key=self.api_key)
-        completion = client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            response_format={"type": "json_object"},
-            temperature=0.2,
-        )
-
-        content = completion.choices[0].message.content or "{}"
         try:
+            client = Groq(api_key=self.api_key)
+            completion = client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=0.2,
+            )
+            content = completion.choices[0].message.content or "{}"
             return json.loads(content)
         except json.JSONDecodeError:
             return {"message": content, "updated_itinerary": None}
+        except Exception:
+            return self._mock_response(messages)
+
+    def get_structured_output(self, messages: list[dict[str, str]]) -> dict[str, Any]:
+        return self.chat_json(messages)
 
     def _mock_response(self, messages: list[dict[str, str]]) -> dict[str, Any]:
         last_user_text = ""

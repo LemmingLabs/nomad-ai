@@ -5,9 +5,14 @@ from app.services.ai_service import AIService
 
 
 class TripMessageService:
-    def __init__(self, db, ai_service: AIService | None = None):
+    def __init__(
+        self,
+        db,
+        ai_service: AIService | None = None,
+        repository: TripMessageRepository | None = None,
+    ):
         self.db = db
-        self.repo = TripMessageRepository(db)
+        self.repo = repository or TripMessageRepository(db)
         self.ai_service = ai_service or AIService()
 
     def continue_trip(

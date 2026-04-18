@@ -1,3 +1,4 @@
+import json
 from collections.abc import Sequence
 from typing import Any
 
@@ -29,9 +30,45 @@ class AIService:
         raw = self.groq_client.chat_json(messages)
         return self._normalize_response(raw)
 
-    def _normalize_response(
-        self, raw: dict[str, Any]
+    def generate_initial_trip(
+        self,
+        budget: int,
+        days: int,
+        interests: list[str] | str,
+        accommodation_type: str | None = None,
     ) -> tuple[str, dict[str, Any] | None]:
+        prompt = self.prompt_builder.build_initial_generation_prompt(
+            budget=budget,
+            days=days,
+            interests=interests,
+            accommodation_type=accommodation_type,
+        )
+        raw = self.groq_client.chat_json(
+            [
+                {
+                    "role": "system",
+                    "content": self.prompt_builder.build_system_prompt(),
+                },
+                {"role": "user", "content": prompt},
+            ]
+        )
+        return self._normalize_response(raw)
+
+    def _normalize_response(
+        self, raw: Any
+    ) -> tuple[str, dict[str, Any] | None]:
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except json.JSONDecodeError:
+                stripped_raw = raw.strip()
+                if stripped_raw:
+                    return stripped_raw, None
+                return "I have updated your trip plan based on your request.", None
+
+        if not isinstance(raw, dict):
+            return "I have updated your trip plan based on your request.", None
+
         message = raw.get("message") or raw.get("assistant_message") or raw.get("content")
         if not isinstance(message, str) or not message.strip():
             message = "I have updated your trip plan based on your request."
