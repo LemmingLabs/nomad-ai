@@ -83,3 +83,15 @@ def sync_guest_trip(
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc
     return trip
+
+
+@router.delete("/{trip_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_trip(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    try:
+        trip_service.delete_user_trip(db=db, user_id=current_user.id, trip_id=trip_id)
+    except ValueError as exc:
+        raise _map_value_error_to_http_exception(exc) from exc

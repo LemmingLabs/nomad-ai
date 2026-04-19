@@ -37,3 +37,8 @@ def assign_trip_to_user(db: Session, trip: Trip, user_id: int) -> Trip:
     db.commit()
     db.refresh(trip)
     return trip
+
+
+def delete_trip(db: Session, trip: Trip) -> None:
+    db.delete(trip)
+    db.commit()

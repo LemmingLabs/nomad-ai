@@ -52,3 +52,6 @@ class TripMessageService:
         except Exception:
             self.db.rollback()
             raise
+
+    def get_trip_messages(self, trip: Trip) -> list[TripMessage]:
+        return self.repo.get_trip_messages(trip.id)

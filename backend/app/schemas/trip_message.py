@@ -39,3 +39,7 @@ class TripContinuationResponse(BaseModel):
     updated_itinerary: dict[str, Any] | None = Field(
         default=None, description="Updated trip itinerary JSON (optional)"
     )
+
+
+class TripMessageListResponse(BaseModel):
+    items: list[TripMessageResponse]

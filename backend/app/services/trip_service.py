@@ -164,3 +164,12 @@ def sync_guest_trip_to_user(db: Session, trip_id: int, user_id: int) -> Trip:
         return assign_trip_to_user(db, trip, user_id)
 
     raise ValueError("Trip not found")
+
+
+def delete_user_trip(db: Session, user_id: int, trip_id: int) -> None:
+    trip = get_trip_by_id(db, trip_id)
+    if trip is None or trip.user_id != user_id:
+        raise ValueError("Trip not found")
+    
+    from app.repositories.trip_repository import delete_trip
+    delete_trip(db, trip)
