@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 BASE_FARE_KGS = 80
 RATE_PER_KM_KGS = 12
 
-FALLBACK_DISTANCE_KM = 0.0
-FALLBACK_DURATION_MINS = 0
-FALLBACK_ESTIMATED_COST = 0.0
+FALLBACK_DISTANCE_KM = None
+FALLBACK_DURATION_MINS = None
+FALLBACK_ESTIMATED_COST = None
 FALLBACK_TRANSPORT_TYPE = "unknown"
 
 DEFAULT_CENTER_LON = 74.5698
@@ -135,8 +135,22 @@ class RoutingService:
 
     async def _resolve_point(self, location: str) -> dict | None:
         try:
+            alias_mapping = {
+                "ala-too square": "Ala-Too Square Bishkek",
+                "osh bazaar": "Osh Bazaar Bishkek",
+                "issyk-kul lake": "Issyk-Kul Lake Cholpon-Ata",
+                "jeti-oguz gorge": "Jeti-Oguz Gorge Karakol",
+                "ala-archa national park": "Ala-Archa National Park Bishkek",
+            }
+            
+            search_query = location
+            # Simple exact-match alias replacement
+            normalized_loc = location.strip().lower()
+            if normalized_loc in alias_mapping:
+                search_query = alias_mapping[normalized_loc]
+
             results = await self.client.search_place(
-                location,
+                search_query,
                 DEFAULT_CENTER_LON,
                 DEFAULT_CENTER_LAT,
             )
@@ -154,13 +168,39 @@ class RoutingService:
                     return -9999
 
                 score = 0
+                item_name = (item.get("name") or "").lower()
+                item_address = (item.get("address_name") or "").lower()
+                query_lower = location.lower()
 
-                if item.get("address_name"):
+                # Boost for exact or partial matches
+                if query_lower == item_name:
+                    score += 10
+                elif query_lower in item_name:
+                    score += 5
+                
+                if query_lower in item_address:
                     score += 3
 
-                if item.get("name"):
-                    score += 1
+                # Penalty for wrong type of place
+                nature_keywords = ["lake", "gorge", "national park", "square", "bazaar", "park", "mountain"]
+                office_keywords = [
+                    "office", "бизнес-центр", "business center", "mall", 
+                    "торговый центр", "представительство", "строящийся",
+                    "hotel", "гостиница", "agency", "агентство недвижимости"
+                ]
 
+                is_nature_query = any(k in query_lower for k in nature_keywords)
+                if is_nature_query:
+                    if any(k in item_name or k in item_address for k in office_keywords):
+                        score -= 20
+                    # Additional boost for matching nature types
+                    if any(k in item_name for k in ["park", "square", "bazaar", "lake", "gorge"]):
+                        score += 5
+                else:
+                    if item.get("name"):
+                        score += 1
+                    if item.get("address_name"):
+                        score += 2
 
                 return score
 
@@ -225,7 +265,7 @@ class RoutingService:
               return 0.0 
 
           if transport_type == "walking":
-              return 0.0
+              return None
 
           if transport_type == "taxi":
               base_fare = 80

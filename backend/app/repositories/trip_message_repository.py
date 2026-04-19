@@ -14,7 +14,10 @@ class TripMessageRepository:
         self.db.add(message)
         self.db.flush()
         return message
-    def get_trip_messages(
+    def get_trip_messages(self, trip_id: int) -> list[TripMessage]:
+        return self.get_all_trip_messages(trip_id)
+
+    def get_trip_messages_paginated(
         self, trip_id: int, limit: int | None = None, offset: int = 0
     ) -> tuple[list[TripMessage], int]:
         query = self.db.query(TripMessage).filter(TripMessage.trip_id == trip_id)

@@ -78,6 +78,78 @@ def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> 
     }
 
 
+def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int, travel_style: str) -> tuple[dict, str]:
+    """Post-process generated itinerary to ensure concrete locations, activities, and metadata."""
+    if not isinstance(itinerary, dict):
+        return itinerary, title or f"{days}-Day Trip"
+
+    valid_types = {"sightseeing", "activity", "meal"}
+    days_list = itinerary.get("days", [])
+    seen_cities = []
+
+    if isinstance(days_list, list):
+        for day in days_list:
+            if isinstance(day, dict):
+                city_val = str(day.get("city", "")).strip()
+                if city_val and city_val not in seen_cities:
+                    seen_cities.append(city_val)
+
+                activities = day.get("activities", [])
+                if isinstance(activities, list):
+                    for act in activities:
+                        if isinstance(act, dict):
+                            act_type = str(act.get("type", "")).lower().strip()
+                            if act_type not in valid_types:
+                                act["type"] = "activity"
+
+                vague_locations = {
+                    "city center", "downtown", "old town", "local area", 
+                    "nature spot", "mountain area", "mountains", "center", 
+                    "city", "town center", "city exploration",
+                    "area", "region", "zone", "district"
+                }
+                loc_val = str(day.get("location", "")).lower().strip()
+
+                is_vague = loc_val in vague_locations
+
+                if is_vague or not loc_val:
+                    mapped_loc = day.get("location", "Unknown Location")
+                    city_lower = city_val.lower()
+                    if city_lower == "bishkek":
+                        mapped_loc = "Ala-Too Square"
+                    elif city_lower == "karakol":
+                        mapped_loc = "Dungan Mosque"
+                    elif city_lower == "cholpon-ata":
+                        mapped_loc = "Rukh Ordo Cultural Center"
+                    elif city_lower == "osh":
+                        mapped_loc = "Osh Bazaar"
+                    
+                    day["location"] = mapped_loc
+
+    generic_titles = [
+        "scenic kyrgyzstan getaway", "discover kyrgyzstan", 
+        "trip to kyrgyzstan", "kyrgyzstan trip", "kyrgyzstan adventure", 
+        "explore kyrgyzstan"
+    ]
+    final_title = title or ""
+    if not final_title or str(final_title).lower().strip() in generic_titles:
+        final_title = f"{days}-Day {travel_style.title()} Trip in Kyrgyzstan"
+
+    generic_summaries = [
+        "discover the beauty of kyrgyzstan", "an unforgettable journey", 
+        "a scenic trip", "explore the best of", "amazing trip", "enjoy a trip",
+        "beautiful trip"
+    ]
+    summary = str(itinerary.get("summary", "")).strip()
+    is_generic_summary = any(g in summary.lower() for g in generic_summaries)
+
+    if not summary or is_generic_summary or len(summary) < 20 or len(str(summary).split()) < 5:
+        cities_str = " and ".join(seen_cities[:2]) if seen_cities else "Kyrgyzstan"
+        itinerary["summary"] = f"A {days}-day {travel_style.lower()} trip through {cities_str} with nature, local food, and cultural highlights."
+
+    return itinerary, final_title
+
+
 def generate_trip(
     db: Session,
     user_id: int | None,
@@ -85,6 +157,7 @@ def generate_trip(
     days: int,
     interests: list[str],
     travel_style: str,
+    prompt: str | None = None,
 ) -> Trip:
     """Create a new trip with a generated mock itinerary."""
     if days < 1:
@@ -96,6 +169,7 @@ def generate_trip(
     if not normalized_travel_style:
         raise ValueError("Travel style cannot be empty")
     normalized_interests = [item.strip() for item in interests if item.strip()]
+    normalized_prompt = prompt.strip() if prompt else None
 
     ai_service = AIService()
     title = None
@@ -107,6 +181,7 @@ def generate_trip(
             days=days,
             interests=normalized_interests,
             travel_style=normalized_travel_style,
+            prompt=normalized_prompt,
         )
         if isinstance(ai_result, dict):
             title = ai_result.get("title")
@@ -122,8 +197,44 @@ def generate_trip(
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
 
+    itinerary, title = normalize_generated_itinerary(itinerary, title, days, normalized_travel_style)
+
+    mapping = {
+        "ala-archa": "Bishkek",
+        "chuy": "Bishkek",
+        "jeti-oguz": "Karakol",
+        "jeti oguz": "Karakol",
+        "altyn arashan": "Karakol",
+        "altyn-arashan": "Karakol",
+        "cholpon-ata": "Cholpon-Ata",
+        "bosteri": "Cholpon-Ata",
+        "suusamyr": "Bishkek",
+        "son-kul": "Kochkor",
+        "tash-rabat": "Naryn"
+    }
+
+    if "days" in itinerary and isinstance(itinerary["days"], list):
+        for day in itinerary["days"]:
+            if isinstance(day, dict):
+                city_raw = day.get("city", "")
+                city_lower = str(city_raw).strip().lower()
+                if city_lower in mapping:
+                    day["city"] = mapping[city_lower]
+                else:
+                    day["city"] = city_raw
+
     catalog_service = CatalogService(db)
     enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
+
+    from app.utils.async_runner import run_async
+    from app.services.routing_service import RoutingService
+    try:
+        enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
+    except Exception as exc:
+        print(f"Routing enrichment failed: {exc}")
+
+    allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
+    cleaned_itinerary = {k: v for k, v in enriched_itinerary.items() if k in allowed_keys}
 
     trip_data = {
         "user_id": user_id,
@@ -132,7 +243,7 @@ def generate_trip(
         "days": days,
         "interests": normalized_interests,
         "travel_style": normalized_travel_style,
-        "itinerary_json": enriched_itinerary,
+        "itinerary_json": cleaned_itinerary,
     }
 
     return create_trip(db, **trip_data)
@@ -147,9 +258,10 @@ def list_user_trips(db: Session, user_id: int) -> list[dict]:
     
     result = []
     for trip in trips:
-        messages, _ = message_repo.get_trip_messages(trip.id)
+        messages = message_repo.get_all_trip_messages(trip.id)
+        
         last_message_preview = None
-        if messages:
+        if messages and len(messages) > 0:
             last_msg = messages[-1].content
             if len(last_msg) > 90:
                 last_message_preview = last_msg[:87] + "..."
