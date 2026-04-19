@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
-from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.trip_message import (
     TripContinuationResponse,
     TripMessageCreateRequest,
+    TripMessageListResponse,
 )
 from app.services.trip_message_service import TripMessageService
+from app.services.trip_service import get_user_trip_by_id
 
 router = APIRouter(prefix="/trips", tags=["messages"])
 
@@ -24,18 +25,13 @@ def continue_trip_messages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> TripContinuationResponse:
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Trip not found",
-        )
-
-    if trip.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions for this trip",
-        )
+    try:
+        trip = get_user_trip_by_id(db=db, user_id=current_user.id, trip_id=trip_id)
+    except ValueError as exc:
+        message = str(exc)
+        if "not found" in message.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
 
     service = TripMessageService(db)
     assistant_message, updated_itinerary = service.continue_trip(
@@ -46,4 +42,33 @@ def continue_trip_messages(
     return TripContinuationResponse(
         message=assistant_message,
         updated_itinerary=updated_itinerary,
+    )
+
+
+@router.get(
+    "/{trip_id}/messages",
+    response_model=TripMessageListResponse,
+)
+def get_trip_messages(
+    trip_id: int,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TripMessageListResponse:
+    try:
+        trip = get_user_trip_by_id(db=db, user_id=current_user.id, trip_id=trip_id)
+    except ValueError as exc:
+        message = str(exc)
+        if "not found" in message.lower():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
+
+    service = TripMessageService(db)
+    messages, total = service.get_trip_messages(trip=trip, limit=limit, offset=offset)
+    return TripMessageListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        items=messages
     )

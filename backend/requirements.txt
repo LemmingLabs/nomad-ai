@@ -10,5 +10,6 @@ argon2-cffi
 python-multipart
 httpx
 email-validator
+groq
 pytest
 pytest-asyncio

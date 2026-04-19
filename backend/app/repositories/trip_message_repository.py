@@ -12,11 +12,19 @@ class TripMessageRepository:
     def create_message(self, trip_id: int, role: str, content: str) -> TripMessage:
         message = TripMessage(trip_id=trip_id, role=role, content=content)
         self.db.add(message)
-        self.db.commit()
-        self.db.refresh(message)
+        self.db.flush()
         return message
+    def get_trip_messages(
+        self, trip_id: int, limit: int | None = None, offset: int = 0
+    ) -> tuple[list[TripMessage], int]:
+        query = self.db.query(TripMessage).filter(TripMessage.trip_id == trip_id)
+        total = query.count()
+        query = query.order_by(TripMessage.created_at.asc()).offset(offset)
+        if limit is not None:
+            query = query.limit(limit)
+        return query.all(), total
 
-    def get_trip_messages(self, trip_id: int) -> list[TripMessage]:
+    def get_all_trip_messages(self, trip_id: int) -> list[TripMessage]:
         return (
             self.db.query(TripMessage)
             .filter(TripMessage.trip_id == trip_id)

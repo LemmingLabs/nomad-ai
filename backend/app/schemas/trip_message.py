@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class TripMessageCreateRequest(BaseModel):
     """Payload for a user continuation message."""
 
-    content: str = Field(..., min_length=1, description="User message text")
+    content: str = Field(..., min_length=1, max_length=2000, description="User message text")
 
     @field_validator("content")
     @classmethod
@@ -39,3 +39,10 @@ class TripContinuationResponse(BaseModel):
     updated_itinerary: dict[str, Any] | None = Field(
         default=None, description="Updated trip itinerary JSON (optional)"
     )
+
+
+class TripMessageListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[TripMessageResponse]
