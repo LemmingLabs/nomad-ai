@@ -1,5 +1,15 @@
 from typing import Literal
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class RouteSegment(BaseModel):
+    origin: str
+    destination: str
+    distance_km: float
+    duration_mins: int
+    estimated_cost: float
+    transport_type: str
 
 
 class RouteResponse(BaseModel):

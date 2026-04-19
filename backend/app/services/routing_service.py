@@ -1,118 +1,167 @@
-from typing import Union, Tuple, List, Dict
-
 from app.integrations.twogis_client import TwoGISClient
-from app.exceptions import (
-    TwoGISAuthError,
-    TwoGISRateLimitError,
-    TwoGISTimeoutError,
-)
-
-# Mock definitions for schematics so the module can load if they don't exist
-try:
-    from app.schemas.trip_schema import TransportResult, DayPlan
-except ImportError:
-    class TransportResult:
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-    class DayPlan:
-        pass
+from app.schemas.routing import RouteSegment
 
 
-class RoutingServiceError(Exception):
-    """Custom exception for routing service errors, wrapping 2GIS exceptions."""
-    pass
-
+BASE_FARE_KGS = 80
+RATE_PER_KM_KGS = 12
+FALLBACK_DISTANCE_KM = 0.0
+FALLBACK_DURATION_MINS = 0
+FALLBACK_ESTIMATED_COST = 0.0
+FALLBACK_TRANSPORT_TYPE = "unknown"
+DEFAULT_CENTER_LON = 74.5698
+DEFAULT_CENTER_LAT = 42.8746
 
 class RoutingService:
-    """Service for estimating transport costs and enriching itineraries."""
+    def __init__(self, client: TwoGISClient | None = None):
+        self.client = client or TwoGISClient()
 
-    def __init__(self, twogis_client: TwoGISClient):
-        self.client = twogis_client
-        self.tariffs = {
-            "taxi": {"base": 80.0, "rate_km": 12.0, "rate_min": 2.0},
-            "marshrutka": {"base": 30.0, "rate_km": 3.0, "rate_min": 0.5},
-            "transfer": {"base": 500.0, "rate_km": 20.0, "rate_min": 3.0},
-        }
-
-    async def _resolve_location(self, loc: Union[str, Tuple[float, float]]) -> Tuple[float, float]:
-        if isinstance(loc, tuple):
-            return loc
-        
-        try:
-            # Provide a fallback center location if origin is a string
-            results = await self.client.search_place(loc, (0.0, 0.0))
-            if not results:
-                raise RoutingServiceError(f"Location not found for query: {loc}")
-            first_result = results[0]
-            return (float(first_result["lon"]), float(first_result["lat"]))
-        except (TwoGISAuthError, TwoGISRateLimitError, TwoGISTimeoutError) as e:
-            raise RoutingServiceError(f"2GIS API Error: {str(e)}") from e
-
-    async def estimate_transport(
+    async def enrich_itinerary(
         self,
-        origin: Union[str, Tuple[float, float]],
-        destination: Union[str, Tuple[float, float]],
-        transport_type: str,
-    ) -> TransportResult:
-        """
-        Estimate the distance, duration, and price for a transport mode between two coordinates.
-        Uses 2GIS Routing API, and if strings are provided, resolves them via Places API.
-        """
-        if transport_type not in self.tariffs:
-            # Default or fallback? Prompt just specified these 3.
-            pass
-            
-        origin_coords = await self._resolve_location(origin)
-        dest_coords = await self._resolve_location(destination)
-
+        locations: list[str],
+        default_transport: str = "taxi",
+    ) -> list[RouteSegment]:
+        # enrich_itinerary ONLY accepts list[str] — no type switching
         try:
-            route_info = await self.client.get_route_info(origin_coords, dest_coords, transport_type)
-        except (TwoGISAuthError, TwoGISRateLimitError, TwoGISTimeoutError) as e:
-            raise RoutingServiceError(f"2GIS API Error: {str(e)}") from e
+            pairs = list(zip(locations, locations[1:]))
+            if not pairs:
+                return []
 
-        if not route_info:
-            raise RoutingServiceError("Could not retrieve route info from 2GIS Client.")
+            resolved_points: list[dict | None] = []
+            for location in locations:
+                resolved_points.append(await self._resolve_point(location))
 
-        distance_km = route_info.get("distance_km", 0.0)
-        duration_min = route_info.get("duration_min", 0.0)
+            matrix = None
+            if all(p is not None for p in resolved_points):
+                try:
+                    matrix = await self.client.get_dist_matrix(
+                        sources=[p for p in resolved_points[:-1] if p is not None],
+                        targets=[p for p in resolved_points[1:] if p is not None],
+                        transport=default_transport,
+                    )
+                except Exception:
+                    matrix = None
 
-        tariff = self.tariffs.get(transport_type, self.tariffs["marshrutka"])
-        
-        price = tariff["base"] + (distance_km * tariff["rate_km"]) + (duration_min * tariff["rate_min"])
-        
-        price_min = round(price * 0.9, 2)
-        price_max = round(price * 1.1, 2)
+            segments: list[RouteSegment] = []
+            for index, (origin, destination) in enumerate(pairs):
+                origin_point = resolved_points[index]
+                dest_point = resolved_points[index + 1]
 
-        return TransportResult(
-            **{"from": str(origin)},
-            to=str(destination),
-            transport_type=transport_type,
-            distance_km=distance_km,
-            duration_min=duration_min,
-            price_min=price_min,
-            price_max=price_max,
-            currency="KGS"
+                if origin_point is None or dest_point is None:
+                    segments.append(self._fallback(origin, destination))
+                    continue
+
+                route_data = self._diagonal(matrix, index)
+                if route_data is None:
+                    route_data = await self._route_fallback(
+                        origin_point, dest_point, default_transport
+                    )
+
+                if route_data is None:
+                    segments.append(self._fallback(origin, destination))
+                    continue
+
+                segments.append(self._build(
+                    origin, destination,
+                    route_data.get("distance_m"),
+                    route_data.get("duration_s"),
+                    default_transport,
+                ))
+
+            return segments
+        except Exception:
+            return [self._fallback(o, d) for o, d in zip(locations, locations[1:])]
+
+    async def enrich_from_itinerary_json(
+        self,
+        itinerary_json: dict,
+        transport: str = "taxi",
+    ) -> dict:
+        try:
+            days = itinerary_json.get("days", [])
+            locations = [day["location"] for day in days]
+
+            if len(locations) < 2:
+                itinerary_json["days"][0]["route_from_previous"] = None
+                return itinerary_json
+
+            segments = await self.enrich_itinerary(locations, transport)
+
+            for i, day in enumerate(days):
+                if i == 0:
+                    day["route_from_previous"] = None
+                else:
+                    seg = segments[i - 1] if i - 1 < len(segments) else None
+                    day["route_from_previous"] = seg.model_dump() if seg else None
+
+            return itinerary_json
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "enrich_from_itinerary_json failed silently", exc_info=True
+            )
+            return itinerary_json
+
+    async def _resolve_point(self, location: str) -> dict | None:
+        # search_place is ALWAYS called with (query, lon, lat) as positional args
+        # Never use tuple args — the TwoGISClient signature is fixed
+        try:
+            results = await self.client.search_place(
+                location,
+                DEFAULT_CENTER_LON,
+                DEFAULT_CENTER_LAT,
+            )
+            if not results:
+                return None
+            return {"lon": results[0].get("lon"), "lat": results[0].get("lat")}
+        except Exception:
+            return None
+
+    async def _route_fallback(
+        self, origin: dict, dest: dict, transport: str
+    ) -> dict | None:
+        # get_route_info is ALWAYS called with keyword args
+        # Never use positional tuple args
+        try:
+            return await self.client.get_route_info(
+                origin_lon=origin["lon"],
+                origin_lat=origin["lat"],
+                dest_lon=dest["lon"],
+                dest_lat=dest["lat"],
+                transport=transport,
+            )
+        except Exception:
+            return None
+
+    def _diagonal(self, matrix: list[list[dict]] | None, index: int) -> dict | None:
+        if matrix is None or index >= len(matrix):
+            return None
+        row = matrix[index]
+        if index >= len(row):
+            return None
+        return row[index]
+
+    def _build(
+        self, origin: str, destination: str,
+        distance_m: int | float | None,
+        duration_s: int | float | None,
+        transport_type: str,
+    ) -> RouteSegment:
+        distance_km = round((distance_m or 0) / 1000, 2)
+        duration_mins = int((duration_s or 0) // 60)
+        cost = 0.0 if transport_type == "walking" else float(
+            round(BASE_FARE_KGS + (distance_km * RATE_PER_KM_KGS))
+        )
+        return RouteSegment(
+            origin=origin, destination=destination,
+            distance_km=distance_km, duration_mins=duration_mins,
+            estimated_cost=cost, transport_type=transport_type,
         )
 
-    async def enrich_itinerary(self, day_plans: List[DayPlan]) -> List[DayPlan]:
-        """
-        Enrich a list of consecutive DayPlans with transport estimation between them.
-        """
-        for i in range(len(day_plans) - 1):
-            current_plan = day_plans[i]
-            next_plan = day_plans[i + 1]
-            
-            origin = current_plan.location
-            destination = next_plan.location
-            
-            transport_type = "marshrutka"
-            if hasattr(current_plan, 'transport') and current_plan.transport is not None:
-                t_type = getattr(current_plan.transport, 'transport_type', None)
-                if t_type:
-                    transport_type = t_type
-
-            result = await self.estimate_transport(origin, destination, transport_type)
-            current_plan.transport = result
-
-        return day_plans
+    def _fallback(self, origin: str, destination: str) -> RouteSegment:
+        return RouteSegment(
+            origin=origin, destination=destination,
+            distance_km=FALLBACK_DISTANCE_KM,
+            duration_mins=FALLBACK_DURATION_MINS,
+            estimated_cost=FALLBACK_ESTIMATED_COST,
+            transport_type=FALLBACK_TRANSPORT_TYPE,
+        )
