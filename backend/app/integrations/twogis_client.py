@@ -1,9 +1,6 @@
 import logging
-
 import httpx
-
 from app.core.config import settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +24,12 @@ class TwoGISClient:
                     "https://catalog.api.2gis.com/3.0/items",
                     params=params,
                 )
+
             response.raise_for_status()
-            items = response.json().get("result", {}).get("items", [])
+            data = response.json()
+
+            items = data.get("result", {}).get("items", [])
+
             return [
                 {
                     "id": item.get("id"),
@@ -39,8 +40,9 @@ class TwoGISClient:
                 }
                 for item in items
             ]
+
         except httpx.TimeoutException:
-            logger.warning("2GIS request timed out")
+            logger.warning("2GIS search_place timeout")
             return []
         except httpx.HTTPStatusError as exc:
             self._log_http_error(exc.response.status_code)
@@ -57,8 +59,18 @@ class TwoGISClient:
         dest_lat: float,
         transport: str = "taxi",
     ) -> dict | None:
-        if transport not in {"taxi", "driving", "walking"}:
-            logger.warning("Unsupported 2GIS transport: %s", transport)
+
+        transport_map = {
+            "taxi": "taxi",
+            "driving": "car",
+            "car": "car",
+            "walking": "walking",
+        }
+
+        transport = transport_map.get(transport)
+
+        if not transport:
+            logger.warning("Unsupported transport type")
             return None
 
         payload = {
@@ -77,17 +89,52 @@ class TwoGISClient:
                     f"https://routing.api.2gis.com/routing/7.0.0/global?key={self.api_key}",
                     json=payload,
                 )
+
+            logger.info("2GIS routing response: %s", response.text)
+
             response.raise_for_status()
-            results = response.json().get("result", [])
-            if not results:
+            data = response.json()
+
+            logger.info("2GIS ROUTING RAW: %s", data)
+
+            if data.get("error"):
+                logger.warning("2GIS routing error: %s", data["error"])
                 return None
-            summary = results[0]
+
+
+            summary = None
+
+            if isinstance(data.get("result"), list) and data["result"]:
+                summary = data["result"][0]
+
+            elif isinstance(data.get("routes"), list) and data["routes"]:
+                summary = data["routes"][0].get("summary")
+
+            elif "duration" in data and "length" in data:
+                return {
+                    "distance_m": data["length"],
+                    "duration_s": data["duration"],
+                }
+
+            if not summary:
+                logger.warning("Unknown routing format: %s", data)
+                return None
+
+
+            distance = summary.get("total_distance") or summary.get("length")
+            duration = summary.get("total_duration") or summary.get("duration")
+
+            if distance is None or duration is None:
+                logger.warning("Invalid routing summary: %s", summary)
+                return None
+
             return {
-                "distance_m": summary.get("total_distance"),
-                "duration_s": summary.get("total_duration"),
+                "distance_m": distance,
+                "duration_s": duration,
             }
+
         except httpx.TimeoutException:
-            logger.warning("2GIS request timed out")
+            logger.warning("2GIS routing timeout")
             return None
         except httpx.HTTPStatusError as exc:
             self._log_http_error(exc.response.status_code)
@@ -101,40 +148,43 @@ class TwoGISClient:
         sources: list[dict],
         targets: list[dict],
         transport: str = "taxi",
-    ) -> list[list[dict]] | None:
-        if transport not in {"taxi", "driving", "walking"}:
-            logger.warning("Unsupported 2GIS transport: %s", transport)
-            return None
+    ):
+        transport_map = {
+            "taxi": "taxi",
+            "driving": "car",
+            "car": "car",
+            "walking": "walking",
+        }
+
+        transport = transport_map.get(transport)
+
         if len(sources) > 25 or len(targets) > 25:
-            logger.warning("2GIS distance matrix limit exceeded")
+            logger.warning("Too many points for matrix request")
             return None
 
+        points = sources + targets
+
         payload = {
-            "sources": sources,
-            "targets": targets,
+            "points": points,
+            "sources": list(range(len(sources))),
+            "targets": list(range(len(sources), len(points))),
             "transport": transport,
         }
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
-                    f"https://routing.api.2gis.com/distance-matrix/2.0?key={self.api_key}",
+                    f"https://routing.api.2gis.com/get_dist_matrix?key={self.api_key}&version=2.0",
                     json=payload,
                 )
+
+            logger.info("2GIS matrix response: %s", response.text)
+
             response.raise_for_status()
-            rows = response.json().get("rows", [])
-            return [
-                [
-                    {
-                        "distance_m": element.get("distance"),
-                        "duration_s": element.get("duration"),
-                    }
-                    for element in row.get("elements", [])
-                ]
-                for row in rows
-            ]
+            return response.json()
+
         except httpx.TimeoutException:
-            logger.warning("2GIS request timed out")
+            logger.warning("2GIS matrix timeout")
             return None
         except httpx.HTTPStatusError as exc:
             self._log_http_error(exc.response.status_code)
@@ -151,4 +201,4 @@ class TwoGISClient:
         elif status_code >= 500:
             logger.warning("2GIS server error %s", status_code)
         else:
-            logger.exception("2GIS request failed with status %s", status_code)
+            logger.exception("2GIS HTTP error: %s", status_code)
