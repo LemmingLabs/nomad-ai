@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from app.schemas.trip_message import TripMessageListResponse
 
 
@@ -9,6 +9,7 @@ class TripGenerateRequest(BaseModel):
     days: int
     interests: list[str]
     travel_style: str
+    prompt: str | None = Field(default=None, max_length=1000)
 
 
 class TripResponse(BaseModel):

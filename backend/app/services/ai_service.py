@@ -51,12 +51,14 @@ class AIService:
         interests: list[str] | str,
         travel_style: str,
         budget: str,
+        prompt: str | None = None,
     ) -> dict[str, Any]:
-        prompt = self.prompt_builder.build_initial_generation_prompt(
+        prompt_text = self.prompt_builder.build_initial_generation_prompt(
             days=days,
             interests=interests,
             travel_style=travel_style,
             budget=budget,
+            user_prompt=prompt,
         )
         raw = self.groq_client.chat_json(
             [
@@ -64,7 +66,7 @@ class AIService:
                     "role": "system",
                     "content": self.prompt_builder.build_system_prompt(),
                 },
-                {"role": "user", "content": prompt},
+                {"role": "user", "content": prompt_text},
             ],
             mode="initial"
         )

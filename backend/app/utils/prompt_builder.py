@@ -44,7 +44,7 @@ class PromptBuilder:
             "You are NomadAI, a Kyrgyzstan travel planning expert. "
             "Be practical and concise. Always keep traveler constraints in mind. "
             "Always respond in pure JSON. No markdown blocks. "
-            "Includes 'updated_itinerary' in response."
+            "Ensure the response strictly follows the JSON contract, including 'updated_itinerary' if required."
         )
 
     def build_initial_generation_prompt(
@@ -54,6 +54,7 @@ class PromptBuilder:
         travel_style: str | None = None,
         budget: str | None = None,
         accommodation_type: str | None = None,
+        user_prompt: str | None = None,
     ) -> str:
         if isinstance(interests, list):
             interests_text = ", ".join(interests)
@@ -67,15 +68,25 @@ class PromptBuilder:
         style_str = travel_style or "not specified"
         accomm_str = accommodation_type or "not specified"
 
+        extra = ""
+        if user_prompt:
+            extra = f"\nAdditional user request:\n{user_prompt}\n"
+
         return (
             "Create an initial Kyrgyzstan trip plan with these constraints:\n"
             f"- Budget: {budget_str}\n"
             f"- Days: {days}\n"
             f"- Interests: {interests_text}\n"
             f"- Travel style: {style_str}\n"
-            f"- Accommodation: {accomm_str}\n\n"
+            f"- Accommodation: {accomm_str}\n"
+            f"{extra}\n"
             f"IMPORTANT: You MUST generate exactly {days} day objects in the itinerary. "
             "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
+            "Rules for Generation:\n"
+            "1. Location: MUST be a specific landmark, museum, park, bazaar, square, gorge, lakefront, mosque, cultural center, or known attraction. Do NOT use vague placeholders like 'City Center', 'Downtown', 'Old Town', 'Local Area', 'Nature Spot', 'Mountain Area'.\n"
+            "2. Activity Type: MUST be exactly one of: 'sightseeing', 'activity', 'meal'. Do NOT use 'departure', 'transport', 'shopping', 'culture', 'hotel'.\n"
+            "3. Title: MUST be concrete and trip-specific. Avoid overly generic titles like 'Scenic Kyrgyzstan Getaway' or 'Discover Kyrgyzstan'.\n"
+            "4. Summary: MUST mention the route or major destinations. Be practical and concise, avoid generic marketing fluff.\n"
             f"{self._build_initial_contract()}"
         )
 

@@ -37,6 +37,7 @@ def generate_trip(
             days=payload.days,
             interests=payload.interests,
             travel_style=payload.travel_style,
+            prompt=payload.prompt,
         )
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc
