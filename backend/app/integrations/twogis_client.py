@@ -62,8 +62,8 @@ class TwoGISClient:
 
         transport_map = {
             "taxi": "taxi",
-            "driving": "car",
-            "car": "car",
+            "driving": "driving",
+            "car": "driving",
             "walking": "walking",
         }
 
