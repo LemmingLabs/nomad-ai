@@ -1,3 +1,6 @@
+import logging
+from copy import deepcopy
+
 from app.integrations.twogis_client import TwoGISClient
 from app.schemas.routing import RouteSegment
 
@@ -10,6 +13,7 @@ FALLBACK_ESTIMATED_COST = 0.0
 FALLBACK_TRANSPORT_TYPE = "unknown"
 DEFAULT_CENTER_LON = 74.5698
 DEFAULT_CENTER_LAT = 42.8746
+logger = logging.getLogger(__name__)
 
 class RoutingService:
     def __init__(self, client: TwoGISClient | None = None):
@@ -77,29 +81,28 @@ class RoutingService:
         transport: str = "taxi",
     ) -> dict:
         try:
+            original_itinerary = deepcopy(itinerary_json)
             days = itinerary_json.get("days", [])
             locations = [day["location"] for day in days]
 
             if len(locations) < 2:
-                itinerary_json["days"][0]["route_from_previous"] = None
                 return itinerary_json
 
             segments = await self.enrich_itinerary(locations, transport)
 
-            for i, day in enumerate(days):
-                if i == 0:
-                    day["route_from_previous"] = None
-                else:
-                    seg = segments[i - 1] if i - 1 < len(segments) else None
-                    day["route_from_previous"] = seg.model_dump() if seg else None
+            days[0]["route_from_previous"] = None
+            for index, day in enumerate(days[1:], start=1):
+                segment = segments[index - 1] if index - 1 < len(segments) else None
+                day["route_from_previous"] = (
+                    segment.model_dump() if segment is not None else None
+                )
 
             return itinerary_json
         except Exception:
-            import logging
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 "enrich_from_itinerary_json failed silently", exc_info=True
             )
-            return itinerary_json
+            return original_itinerary if "original_itinerary" in locals() else itinerary_json
 
     async def _resolve_point(self, location: str) -> dict | None:
         # search_place is ALWAYS called with (query, lon, lat) as positional args
