@@ -4,18 +4,40 @@ from typing import Any
 
 
 class PromptBuilder:
+    # All supported cities. Extend this list to add new destinations.
+    SUPPORTED_CITIES = [
+        "Bishkek",
+        "Karakol",
+        "Cholpon-Ata",
+        "Osh",
+        "Bokonbaevo",
+        "Jeti-Oguz",
+        "Ala-Archa",
+        "Kochkor",
+        "Naryn",
+        "Tamga",
+        "Barskoon",
+    ]
+
     CONTINUATION_CONTRACT = (
         "Respond ONLY with valid JSON matching this exact structure: "
         '{"message": "your text reply to the user", "updated_itinerary": <full itinerary JSON or null>}. '
         "Do not include markdown blocks or any other text outside the JSON."
     )
 
-    INITIAL_CONTRACT = (
-        "Respond ONLY with valid JSON matching this exact structure: "
-        '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": [{"day": 1, "title": "Day title", "city": "Bishkek/Karakol/Cholpon-Ata", "location": "Specific Area / Landmark", "activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}]}}. '
-        "The city field MUST be exactly one of: Bishkek, Karakol, Cholpon-Ata. "
-        "Do not include markdown blocks or any other text outside the JSON."
-    )
+    def _city_list_str(self) -> str:
+        return ", ".join(self.SUPPORTED_CITIES)
+
+    def _build_initial_contract(self) -> str:
+        return (
+            "Respond ONLY with valid JSON matching this exact structure: "
+            '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": ['
+            '{"day": 1, "title": "Day title", "city": "Bishkek", "location": "Specific Area / Landmark", '
+            '"activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}'
+            ']}}. '
+            f'The city field MUST be exactly one of: {self._city_list_str()}. '
+            "Do not include markdown blocks or any other text outside the JSON."
+        )
 
     def build_system_prompt(self) -> str:
         return (
@@ -44,7 +66,7 @@ class PromptBuilder:
             f"- Travel style: {travel_style or 'not specified'}\n\n"
             f"IMPORTANT: You MUST generate exactly {days} day objects in the itinerary. "
             "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
-            f"{self.INITIAL_CONTRACT}"
+            f"{self._build_initial_contract()}"
         )
 
     def build_continuation_prompt(
@@ -57,8 +79,26 @@ class PromptBuilder:
             ensure_ascii=False,
             sort_keys=True,
         )
+
+        editing_rules = (
+            "Editing Rules:\n"
+            "1. You are editing an existing trip, not generating a brand new one from scratch.\n"
+            "2. Preserve the current itinerary structure unless the user explicitly asks to change it.\n"
+            "3. Make minimal necessary changes based on the user request.\n"
+            "4. Keep unchanged days exactly as they are.\n"
+            "5. If the user asks for one local change, do not rewrite unrelated days.\n"
+            "6. If any trip change is made, you MUST return the full updated itinerary.\n"
+            "7. If NO itinerary change is needed, return 'updated_itinerary': null.\n"
+            "8. Do not add hotels or recommended_places manually — the backend will enrich the itinerary automatically.\n"
+            f"9. The city field MUST be exactly one of: {self._city_list_str()}. "
+            "If a user requests a place that is not in this list (e.g. a specific gorge or village), "
+            "map it to the nearest supported city and describe the actual destination in the location field.\n"
+            "10. Preserve valid JSON structure exactly.\n\n"
+        )
+
         return (
             "Continue the travel planning conversation.\n"
+            f"{editing_rules}"
             f"User request: {user_message}\n"
             f"Current itinerary JSON:\n{itinerary_text}\n"
             f"{self.CONTINUATION_CONTRACT}"
