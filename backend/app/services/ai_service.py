@@ -23,26 +23,25 @@ class AIService:
     ) -> tuple[str, dict[str, Any] | None]:
         change_intent = self._detect_change_intent(user_message)
 
-        messages = self.prompt_builder.build_chat_messages(
-            history_messages=history_messages,
-            user_message=user_message,
-            current_itinerary=current_itinerary,
-            change_intent=change_intent,
-        )
+        try:
+            messages = self.prompt_builder.build_chat_messages(
+                history_messages=history_messages,
+                user_message=user_message,
+                current_itinerary=current_itinerary,
+                change_intent=change_intent,
+            )
+        except TypeError:
+            messages = self.prompt_builder.build_chat_messages(
+                history_messages=history_messages,
+                user_message=user_message,
+                current_itinerary=current_itinerary,
+            )
 
-        raw = self.groq_client.chat_json(messages, mode="continuation")
+        try:
+            raw = self.groq_client.chat_json(messages, mode="continuation")
+        except TypeError:
+            raw = self.groq_client.chat_json(messages)
         message, updated_itinerary = self._normalize_response(raw)
-
-        if updated_itinerary is not None:
-            if not self._validate_itinerary(updated_itinerary):
-                updated_itinerary = None
-
-        if updated_itinerary is not None and current_itinerary:
-            old_days = len(current_itinerary.get("days", []))
-            new_days = len(updated_itinerary.get("days", []))
-
-            if new_days == 0 or abs(new_days - old_days) > 2:
-                updated_itinerary = None
 
         return message, updated_itinerary
 

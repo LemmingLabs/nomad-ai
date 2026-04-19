@@ -122,8 +122,39 @@ def generate_trip(
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
 
+    mapping = {
+        "ala-archa": "Bishkek",
+        "chuy": "Bishkek",
+        "jeti-oguz": "Karakol",
+        "jeti oguz": "Karakol",
+        "altyn arashan": "Karakol",
+        "altyn-arashan": "Karakol",
+        "cholpon-ata": "Cholpon-Ata",
+        "bosteri": "Cholpon-Ata",
+        "suusamyr": "Bishkek",
+        "son-kul": "Kochkor",
+        "tash-rabat": "Naryn"
+    }
+
+    if "days" in itinerary and isinstance(itinerary["days"], list):
+        for day in itinerary["days"]:
+            if isinstance(day, dict):
+                city = str(day.get("city", "")).strip().lower()
+                if city in mapping:
+                    day["city"] = mapping[city]
+
     catalog_service = CatalogService(db)
     enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
+
+    from app.utils.async_runner import run_async
+    from app.services.routing_service import RoutingService
+    try:
+        enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
+    except Exception as exc:
+        print(f"Routing enrichment failed: {exc}")
+
+    allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
+    cleaned_itinerary = {k: v for k, v in enriched_itinerary.items() if k in allowed_keys}
 
     trip_data = {
         "user_id": user_id,
@@ -132,7 +163,7 @@ def generate_trip(
         "days": days,
         "interests": normalized_interests,
         "travel_style": normalized_travel_style,
-        "itinerary_json": enriched_itinerary,
+        "itinerary_json": cleaned_itinerary,
     }
 
     return create_trip(db, **trip_data)
@@ -147,7 +178,7 @@ def list_user_trips(db: Session, user_id: int) -> list[dict]:
     
     result = []
     for trip in trips:
-        messages, _ = message_repo.get_trip_messages(trip.id)
+        messages = message_repo.get_trip_messages(trip.id)
         last_message_preview = None
         if messages:
             last_msg = messages[-1].content

@@ -21,24 +21,34 @@ class TripMessageService:
         current_itinerary: dict,
         updated_itinerary: dict,
     ) -> dict:
-        summary = updated_itinerary.get("summary")
-        if not isinstance(summary, str) or not summary.strip():
-            summary = current_itinerary.get("summary", "")
-
-        days = updated_itinerary.get("days")
-        if not isinstance(days, list):
-            days = current_itinerary.get("days", [])
-
-        interests = updated_itinerary.get("interests", current_itinerary.get("interests", []))
-        travel_style = updated_itinerary.get("travel_style", current_itinerary.get("travel_style", ""))
-
-        return {
-            "summary": summary,
-            "days": days,
-            "total_days": len(days),
-            "interests": interests,
-            "travel_style": travel_style,
+        merged = dict(current_itinerary) if current_itinerary else {}
+        merged.update(updated_itinerary)
+        
+        allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
+        merged = {k: v for k, v in merged.items() if k in allowed_keys}
+        
+        mapping = {
+            "ala-archa": "Bishkek",
+            "chuy": "Bishkek",
+            "jeti-oguz": "Karakol",
+            "jeti oguz": "Karakol",
+            "altyn arashan": "Karakol",
+            "altyn-arashan": "Karakol",
+            "cholpon-ata": "Cholpon-Ata",
+            "bosteri": "Cholpon-Ata",
+            "suusamyr": "Bishkek",
+            "son-kul": "Kochkor",
+            "tash-rabat": "Naryn"
         }
+
+        if "days" in merged and isinstance(merged["days"], list):
+            for day in merged["days"]:
+                if isinstance(day, dict):
+                    city = str(day.get("city", "")).strip().lower()
+                    if city in mapping:
+                        day["city"] = mapping[city]
+
+        return merged
 
     def continue_trip(
         self, trip: Trip, user_content: str
@@ -69,8 +79,21 @@ class TripMessageService:
                     merged_itinerary,
                     trip.budget
                 )
-                trip.itinerary_json = enriched_itinerary
-                updated_itinerary = enriched_itinerary
+                
+                days = enriched_itinerary.get("days", [])
+                if isinstance(days, list) and all(isinstance(d, dict) and "location" in d for d in days):
+                    from app.utils.async_runner import run_async
+                    from app.services.routing_service import RoutingService
+                    try:
+                        enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
+                    except Exception as exc:
+                        print(f"Routing enrichment failed: {exc}")
+                    
+                allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
+                cleaned_itinerary = {k: v for k, v in enriched_itinerary.items() if k in allowed_keys}
+                
+                trip.itinerary_json = cleaned_itinerary
+                updated_itinerary = cleaned_itinerary
                 self.db.add(trip)
 
             self.db.commit()
@@ -84,4 +107,4 @@ class TripMessageService:
     def get_trip_messages(
         self, trip: Trip, limit: int = 50, offset: int = 0
     ) -> tuple[list[TripMessage], int]:
-        return self.repo.get_trip_messages(trip.id, limit=limit, offset=offset)
+        return self.repo.get_trip_messages_paginated(trip.id, limit=limit, offset=offset)

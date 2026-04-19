@@ -43,27 +43,37 @@ class PromptBuilder:
         return (
             "You are NomadAI, a Kyrgyzstan travel planning expert. "
             "Be practical and concise. Always keep traveler constraints in mind. "
-            "Always respond in pure JSON. No markdown blocks."
+            "Always respond in pure JSON. No markdown blocks. "
+            "Includes 'updated_itinerary' in response."
         )
 
     def build_initial_generation_prompt(
         self,
         days: int,
         interests: list[str] | str,
-        travel_style: str,
-        budget: str,
+        travel_style: str | None = None,
+        budget: str | None = None,
+        accommodation_type: str | None = None,
     ) -> str:
         if isinstance(interests, list):
             interests_text = ", ".join(interests)
         else:
             interests_text = interests
 
+        budget_str = str(budget)
+        if budget_str.isdigit():
+            budget_str = f"{budget_str} USD"
+
+        style_str = travel_style or "not specified"
+        accomm_str = accommodation_type or "not specified"
+
         return (
             "Create an initial Kyrgyzstan trip plan with these constraints:\n"
-            f"- Budget: {budget}\n"
+            f"- Budget: {budget_str}\n"
             f"- Days: {days}\n"
             f"- Interests: {interests_text}\n"
-            f"- Travel style: {travel_style or 'not specified'}\n\n"
+            f"- Travel style: {style_str}\n"
+            f"- Accommodation: {accomm_str}\n\n"
             f"IMPORTANT: You MUST generate exactly {days} day objects in the itinerary. "
             "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
             f"{self._build_initial_contract()}"
@@ -73,7 +83,7 @@ class PromptBuilder:
         self,
         user_message: str,
         current_itinerary: dict[str, Any] | None,
-        change_intent: str,
+        change_intent: str = "generic_update",
     ) -> str:
         itinerary_text = json.dumps(
             current_itinerary or {},

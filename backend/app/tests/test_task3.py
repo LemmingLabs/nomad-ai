@@ -44,9 +44,9 @@ async def test_enrich_itinerary_uses_fallback_when_search_place_returns_empty_li
         {
             "origin": "A",
             "destination": "B",
-            "distance_km": 0.0,
-            "duration_mins": 0,
-            "estimated_cost": 0.0,
+            "distance_km": None,
+            "duration_mins": None,
+            "estimated_cost": None,
             "transport_type": "unknown",
         }
     ]
