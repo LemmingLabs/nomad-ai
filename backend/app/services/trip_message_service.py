@@ -2,6 +2,7 @@ from app.models.trip import Trip
 from app.models.trip_message import TripMessage
 from app.repositories.trip_message_repository import TripMessageRepository
 from app.services.ai_service import AIService
+from app.services.catalog_service import CatalogService
 
 
 class TripMessageService:
@@ -35,7 +36,13 @@ class TripMessageService:
             )
 
             if updated_itinerary is not None:
-                trip.itinerary_json = updated_itinerary
+                catalog_service = CatalogService(self.db)
+                enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(
+                    updated_itinerary,
+                    trip.budget
+                )
+                trip.itinerary_json = enriched_itinerary
+                updated_itinerary = enriched_itinerary
                 self.db.add(trip)
 
             self.db.commit()
