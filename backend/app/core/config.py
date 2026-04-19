@@ -19,6 +19,9 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: str | None = None
     TWOGIS_API_KEY: str | None = None
+    TWOGIS_PLACES_BASE_URL: str = "https://catalog.api.2gis.com/3.0/items"
+    TWOGIS_ROUTING_BASE_URL: str = "https://routing.api.2gis.com/routing/7.0.0/global"
+    TWOGIS_MATRIX_BASE_URL: str = "https://routing.api.2gis.com/get_dist_matrix"
 
     model_config = SettingsConfigDict(
         env_file=".env",
