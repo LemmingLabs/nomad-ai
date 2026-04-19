@@ -42,4 +42,7 @@ class TripContinuationResponse(BaseModel):
 
 
 class TripMessageListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
     items: list[TripMessageResponse]

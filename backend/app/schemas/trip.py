@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
+from app.schemas.trip_message import TripMessageListResponse
 
 
 class TripGenerateRequest(BaseModel):
@@ -29,6 +30,8 @@ class TripListItemResponse(BaseModel):
     title: str
     days: int
     created_at: datetime
+    updated_at: datetime
+    last_message_preview: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,3 +42,7 @@ class TripListResponse(BaseModel):
 
 class SyncGuestTripRequest(BaseModel):
     trip_id: int
+
+class TripDetailResponse(BaseModel):
+    trip: TripResponse
+    messages: TripMessageListResponse

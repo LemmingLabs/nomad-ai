@@ -73,12 +73,46 @@ class PromptBuilder:
         self,
         user_message: str,
         current_itinerary: dict[str, Any] | None,
+        change_intent: str,
     ) -> str:
         itinerary_text = json.dumps(
             current_itinerary or {},
             ensure_ascii=False,
             sort_keys=True,
         )
+
+        intent_rules = ""
+        if change_intent == "local_edit":
+            intent_rules = (
+                "- modify only the relevant day(s) or section(s)\n"
+                "- preserve all unrelated days exactly\n"
+            )
+        elif change_intent == "budget_change":
+            intent_rules = (
+                "- keep route mostly stable\n"
+                "- adjust trip style and activities to match the new budget\n"
+            )
+        elif change_intent == "duration_change":
+            intent_rules = (
+                "- adjust number of days carefully\n"
+                "- preserve existing structure where possible\n"
+            )
+        elif change_intent == "group_size_change":
+            intent_rules = (
+                "- adapt activities and pacing for group size\n"
+                "- keep general route unless user requested otherwise\n"
+            )
+        elif change_intent == "full_replan":
+            intent_rules = (
+                "- broader trip changes are allowed\n"
+                "- but still return valid full itinerary\n"
+            )
+
+        intent_section = f"Detected change intent: {change_intent}\n"
+        if intent_rules:
+            intent_section += f"Intent-Specific Rules:\n{intent_rules}\n"
+        else:
+            intent_section += "\n"
 
         editing_rules = (
             "Editing Rules:\n"
@@ -99,6 +133,7 @@ class PromptBuilder:
         return (
             "Continue the travel planning conversation.\n"
             f"{editing_rules}"
+            f"{intent_section}"
             f"User request: {user_message}\n"
             f"Current itinerary JSON:\n{itinerary_text}\n"
             f"{self.CONTINUATION_CONTRACT}"
@@ -109,6 +144,7 @@ class PromptBuilder:
         history_messages: Sequence[Any],
         user_message: str,
         current_itinerary: dict[str, Any] | None,
+        change_intent: str = "generic_update",
     ) -> list[dict[str, str]]:
         messages: list[dict[str, str]] = [{"role": "system", "content": self.build_system_prompt()}]
         history_payload: list[dict[str, str]] = []
@@ -139,6 +175,7 @@ class PromptBuilder:
                 "content": self.build_continuation_prompt(
                     user_message=user_message,
                     current_itinerary=current_itinerary,
+                    change_intent=change_intent,
                 ),
             }
         )

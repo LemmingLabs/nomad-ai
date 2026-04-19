@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -51,6 +51,8 @@ def continue_trip_messages(
 )
 def get_trip_messages(
     trip_id: int,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> TripMessageListResponse:
@@ -63,5 +65,10 @@ def get_trip_messages(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
 
     service = TripMessageService(db)
-    messages = service.get_trip_messages(trip=trip)
-    return TripMessageListResponse(items=messages)
+    messages, total = service.get_trip_messages(trip=trip, limit=limit, offset=offset)
+    return TripMessageListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        items=messages
+    )

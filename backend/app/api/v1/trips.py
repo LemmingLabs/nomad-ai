@@ -7,6 +7,7 @@ from app.schemas.trip import (
     TripGenerateRequest,
     TripListResponse,
     TripResponse,
+    TripDetailResponse,
     SyncGuestTripRequest,
 )
 from app.services import trip_service
@@ -51,21 +52,21 @@ def list_trips(
     return TripListResponse(items=trips)
 
 
-@router.get("/{trip_id}", response_model=TripResponse)
+@router.get("/{trip_id}", response_model=TripDetailResponse)
 def get_trip(
     trip_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
-) -> TripResponse:
+) -> TripDetailResponse:
     try:
-        trip = trip_service.get_user_trip_by_id(
+        detailed_trip = trip_service.get_trip_detail(
             db=db,
             user_id=current_user.id,
             trip_id=trip_id,
         )
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc
-    return trip
+    return detailed_trip
 
 
 @router.post("/sync-guest", response_model=TripResponse)

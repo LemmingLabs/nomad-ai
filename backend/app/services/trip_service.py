@@ -138,9 +138,33 @@ def generate_trip(
     return create_trip(db, **trip_data)
 
 
-def list_user_trips(db: Session, user_id: int) -> list[Trip]:
-    """Get all trips for a specific user."""
-    return get_user_trips(db, user_id)
+def list_user_trips(db: Session, user_id: int) -> list[dict]:
+    """Get all trips for a specific user with previews."""
+    trips = get_user_trips(db, user_id)
+    
+    from app.repositories.trip_message_repository import TripMessageRepository
+    message_repo = TripMessageRepository(db)
+    
+    result = []
+    for trip in trips:
+        messages, _ = message_repo.get_trip_messages(trip.id)
+        last_message_preview = None
+        if messages:
+            last_msg = messages[-1].content
+            if len(last_msg) > 90:
+                last_message_preview = last_msg[:87] + "..."
+            else:
+                last_message_preview = last_msg
+                
+        result.append({
+            "id": trip.id,
+            "title": trip.title,
+            "days": trip.days,
+            "created_at": trip.created_at,
+            "updated_at": trip.updated_at,
+            "last_message_preview": last_message_preview,
+        })
+    return result
 
 
 def get_user_trip_by_id(db: Session, user_id: int, trip_id: int) -> Trip:
@@ -149,6 +173,25 @@ def get_user_trip_by_id(db: Session, user_id: int, trip_id: int) -> Trip:
     if trip is None or trip.user_id != user_id:
         raise ValueError("Trip not found")
     return trip
+
+
+def get_trip_detail(db: Session, user_id: int, trip_id: int) -> dict:
+    """Get trip details including the first page of messages."""
+    trip = get_user_trip_by_id(db, user_id, trip_id)
+    
+    from app.services.trip_message_service import TripMessageService
+    message_service = TripMessageService(db)
+    messages, total = message_service.get_trip_messages(trip=trip, limit=50, offset=0)
+    
+    return {
+        "trip": trip,
+        "messages": {
+            "total": total,
+            "limit": 50,
+            "offset": 0,
+            "items": messages,
+        }
+    }
 
 
 def sync_guest_trip_to_user(db: Session, trip_id: int, user_id: int) -> Trip:
