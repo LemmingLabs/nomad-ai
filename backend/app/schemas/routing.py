@@ -9,7 +9,9 @@ class RouteSegment(BaseModel):
     distance_km: float
     duration_mins: int
     estimated_cost: float
-    transport_type: str
+    transport_type: Literal["taxi", "driving", "walking", "unknown"]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RouteResponse(BaseModel):
