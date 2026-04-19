@@ -27,7 +27,7 @@ class RoutingService:
         mapping = {
             "taxi": "taxi",
             "driving": "driving",
-            "car": "car",
+            "car": "driving",
             "walking": "walking",
         }
         if transport is None:
