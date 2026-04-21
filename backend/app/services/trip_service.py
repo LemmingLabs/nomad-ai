@@ -102,15 +102,15 @@ def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int,
                             if act_type not in valid_types:
                                 act["type"] = "activity"
 
-                vague_locations = {
+                vague_locations = [
                     "city center", "downtown", "old town", "local area", 
                     "nature spot", "mountain area", "mountains", "center", 
                     "city", "town center", "city exploration",
                     "area", "region", "zone", "district"
-                }
+                ]
                 loc_val = str(day.get("location", "")).lower().strip()
 
-                is_vague = loc_val in vague_locations
+                is_vague = any(v in loc_val for v in vague_locations)
 
                 if is_vague or not loc_val:
                     mapped_loc = day.get("location", "Unknown Location")
@@ -125,6 +125,12 @@ def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int,
                         mapped_loc = "Osh Bazaar"
                     
                     day["location"] = mapped_loc
+
+                if not day.get("routing_location"):
+                    mapped = day.get("location", "")
+                    if city_val.lower() not in mapped.lower():
+                        mapped = f"{mapped} {city_val}"
+                    day["routing_location"] = mapped
 
     generic_titles = [
         "scenic kyrgyzstan getaway", "discover kyrgyzstan", 
@@ -233,8 +239,13 @@ def generate_trip(
     except Exception as exc:
         print(f"Routing enrichment failed: {exc}")
 
-    allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
-    cleaned_itinerary = {k: v for k, v in enriched_itinerary.items() if k in allowed_keys}
+    from app.services.image_enrichment_service import ImageEnrichmentService
+    try:
+        enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(enriched_itinerary)
+    except Exception as exc:
+        print(f"Image enrichment failed: {exc}")
+
+    cleaned_itinerary = enriched_itinerary
 
     trip_data = {
         "user_id": user_id,
@@ -258,11 +269,11 @@ def list_user_trips(db: Session, user_id: int) -> list[dict]:
     
     result = []
     for trip in trips:
-        messages = message_repo.get_all_trip_messages(trip.id)
+        last_message = message_repo.get_last_trip_message(trip.id)
         
         last_message_preview = None
-        if messages and len(messages) > 0:
-            last_msg = messages[-1].content
+        if last_message:
+            last_msg = getattr(last_message, "content", "")
             if len(last_msg) > 90:
                 last_message_preview = last_msg[:87] + "..."
             else:

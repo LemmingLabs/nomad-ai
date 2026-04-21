@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from copy import deepcopy
 
@@ -21,6 +22,7 @@ DEFAULT_CENTER_LAT = 42.8746
 class RoutingService:
     def __init__(self, client: TwoGISClient | None = None):
         self.client = client or TwoGISClient()
+        self.cache = {}
 
 
     def _normalize_transport(self, transport: str) -> str:
@@ -30,15 +32,16 @@ class RoutingService:
             "car": "driving",
             "walking": "walking",
         }
-        if transport is None:
-          raise ValueError(f"Unsupported transport: {transport}")
-        return mapping.get(transport.strip().lower())
+        if not transport:
+            return "taxi"
+        return mapping.get(transport.strip().lower(), "taxi")
 
 
     async def enrich_itinerary(
         self,
         locations: list[str],
         default_transport: str = "taxi",
+        routing_locations: list[str] | None = None,
     ) -> list[RouteSegment]:
 
         if len(locations) < 2:
@@ -50,8 +53,9 @@ class RoutingService:
 
         resolved_points: list[dict | None] = []
 
+        q_locations = routing_locations if routing_locations else locations
 
-        for location in locations:
+        for location in q_locations:
             point = await self._resolve_point(location)
             resolved_points.append(point)
 
@@ -110,13 +114,17 @@ class RoutingService:
 
         try:
             days = itinerary_json.get("days", [])
+            if not isinstance(days, list) or not all(isinstance(day, dict) and "location" in day for day in days):
+                return itinerary_json
+                
             locations = [day["location"] for day in days]
+            routing_locs = [day.get("routing_location") or day["location"] for day in days]
 
             if len(locations) < 2:
                 return itinerary_json
             
 
-            segments = await self.enrich_itinerary(locations, transport)
+            segments = await self.enrich_itinerary(locations, transport, routing_locations=routing_locs)
 
             days[0]["route_from_previous"] = None
 
@@ -144,18 +152,34 @@ class RoutingService:
             }
             
             search_query = location
-            # Simple exact-match alias replacement
             normalized_loc = location.strip().lower()
-            if normalized_loc in alias_mapping:
-                search_query = alias_mapping[normalized_loc]
+            for key, value in alias_mapping.items():
+                if key in normalized_loc:
+                    search_query = value
+                    break
+            
+            cache_key = search_query.lower()
+            if cache_key in self.cache:
+                results = self.cache[cache_key]
+            else:
+                results = None
+                for attempt in range(3):
+                    try:
+                        results = await self.client.search_place(
+                            search_query,
+                            DEFAULT_CENTER_LON,
+                            DEFAULT_CENTER_LAT,
+                        )
+                        break
+                    except Exception as e:
+                        if attempt == 2:
+                            raise e
+                        await asyncio.sleep(0.2)
+                
+                if results is not None:
+                    self.cache[cache_key] = results
 
-            results = await self.client.search_place(
-                search_query,
-                DEFAULT_CENTER_LON,
-                DEFAULT_CENTER_LAT,
-            )
-
-            logger.warning("LOCATION RESOLUTION: %s -> %s", location, results)
+            logger.debug("LOCATION RESOLUTION: %s -> %s", location, results)
 
             if not results:
                 logger.warning("No geocode result for: %s", location)
@@ -170,11 +194,13 @@ class RoutingService:
                 score = 0
                 item_name = (item.get("name") or "").lower()
                 item_address = (item.get("address_name") or "").lower()
-                query_lower = location.lower()
+                query_lower = search_query.lower()
 
                 # Boost for exact or partial matches
                 if query_lower == item_name:
                     score += 10
+                elif any(word == query_lower for word in item_name.split()):
+                    score += 8
                 elif query_lower in item_name:
                     score += 5
                 
@@ -214,9 +240,7 @@ class RoutingService:
                 return None
 
             best = max(valid_results, key=_score)
-
-            if not valid_results:
-                return None
+            logger.debug("BEST MATCH: %s -> %s", location, best)
             
             return {
                 "lon": best["lon"],

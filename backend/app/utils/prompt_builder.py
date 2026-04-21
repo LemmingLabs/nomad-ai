@@ -33,6 +33,7 @@ class PromptBuilder:
             "Respond ONLY with valid JSON matching this exact structure: "
             '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": ['
             '{"day": 1, "title": "Day title", "city": "Bishkek", "location": "Specific Area / Landmark", '
+            '"routing_location": "Russian-friendly search query for 2GIS", '
             '"activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}'
             ']}}. '
             f'The city field MUST be exactly one of: {self._city_list_str()}. '
@@ -83,10 +84,11 @@ class PromptBuilder:
             f"IMPORTANT: You MUST generate exactly {days} day objects in the itinerary. "
             "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
             "Rules for Generation:\n"
-            "1. Location: MUST be a specific landmark, museum, park, bazaar, square, gorge, lakefront, mosque, cultural center, or known attraction. Do NOT use vague placeholders like 'City Center', 'Downtown', 'Old Town', 'Local Area', 'Nature Spot', 'Mountain Area'.\n"
+            "1. Location: MUST be a specific landmark, museum, park, bazaar, square, gorge, lakefront, mosque, cultural center, or known attraction. Do NOT use vague placeholders like 'City Center', 'Downtown'. location field MUST be in English for the UI.\n"
             "2. Activity Type: MUST be exactly one of: 'sightseeing', 'activity', 'meal'. Do NOT use 'departure', 'transport', 'shopping', 'culture', 'hotel'.\n"
-            "3. Title: MUST be concrete and trip-specific. Avoid overly generic titles like 'Scenic Kyrgyzstan Getaway' or 'Discover Kyrgyzstan'.\n"
-            "4. Summary: MUST mention the route or major destinations. Be practical and concise, avoid generic marketing fluff.\n"
+            "3. Title: MUST be concrete and trip-specific.\n"
+            "4. Summary: MUST mention the route or major destinations. Be practical and concise.\n"
+            "5. Routing Location: routing_location MUST be optimized for 2GIS search in Kyrgyzstan and may be in Russian (e.g., 'Площадь Ала-Тоо', 'Ошский рынок Бишкек').\n"
             f"{self._build_initial_contract()}"
         )
 
