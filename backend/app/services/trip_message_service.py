@@ -56,7 +56,7 @@ class TripMessageService:
         try:
             self.repo.create_message(trip_id=trip.id, role="user", content=user_content)
 
-            history = self.repo.get_all_trip_messages(trip_id=trip.id)
+            history, _ = self.repo.get_trip_messages(trip_id=trip.id)
             assistant_text, updated_itinerary = self.ai_service.continue_trip(
                 history_messages=history,
                 user_message=user_content,
@@ -80,17 +80,20 @@ class TripMessageService:
                     trip.budget
                 )
                 
-                days = enriched_itinerary.get("days", [])
-                if isinstance(days, list) and all(isinstance(d, dict) and "location" in d for d in days):
-                    from app.utils.async_runner import run_async
-                    from app.services.routing_service import RoutingService
-                    try:
-                        enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
-                    except Exception as exc:
-                        print(f"Routing enrichment failed: {exc}")
+                from app.utils.async_runner import run_async
+                from app.services.routing_service import RoutingService
+                try:
+                    enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
+                except Exception as exc:
+                    print(f"Routing enrichment failed on update: {exc}")
                     
-                allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
-                cleaned_itinerary = {k: v for k, v in enriched_itinerary.items() if k in allowed_keys}
+                from app.services.image_enrichment_service import ImageEnrichmentService
+                try:
+                    enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(enriched_itinerary)
+                except Exception as exc:
+                    print(f"Image enrichment failed on update: {exc}")
+                    
+                cleaned_itinerary = enriched_itinerary
                 
                 trip.itinerary_json = cleaned_itinerary
                 updated_itinerary = cleaned_itinerary
@@ -107,4 +110,4 @@ class TripMessageService:
     def get_trip_messages(
         self, trip: Trip, limit: int = 50, offset: int = 0
     ) -> tuple[list[TripMessage], int]:
-        return self.repo.get_trip_messages_paginated(trip.id, limit=limit, offset=offset)
+        return self.repo.get_trip_messages(trip.id, limit=limit, offset=offset)

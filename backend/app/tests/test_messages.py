@@ -158,7 +158,7 @@ def test_repository_get_trip_messages_returns_ascending_order(db_session, trip):
     db_session.add_all([second, first])
     db_session.commit()
 
-    messages = repository.get_trip_messages(trip_id=trip.id)
+    messages, _ = repository.get_trip_messages(trip_id=trip.id)
 
     assert [message.content for message in messages] == ["first", "second"]
 
