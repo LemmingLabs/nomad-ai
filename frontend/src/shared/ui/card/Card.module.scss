@@ -1,0 +1,23 @@
+@use '../../../app/styles/variables' as *;
+
+.card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
+
+  &--p-none { padding: 0; }
+  &--p-sm   { padding: $space-3; }
+  &--p-md   { padding: $space-5; }
+  &--p-lg   { padding: $space-8; }
+
+  &--hoverable {
+    cursor: pointer;
+    transition: box-shadow 250ms ease, transform 250ms ease;
+
+    &:hover {
+      box-shadow: $shadow-md;
+      transform: translateY(-2px);
+    }
+  }
+}

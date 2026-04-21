@@ -1,0 +1,96 @@
+@use 'variables' as *;
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@mixin sm { @media (min-width: #{$bp-sm}) { @content; } }
+@mixin md { @media (min-width: #{$bp-md}) { @content; } }
+@mixin lg { @media (min-width: #{$bp-lg}) { @content; } }
+@mixin xl { @media (min-width: #{$bp-xl}) { @content; } }
+
+@mixin max-sm { @media (max-width: #{$bp-sm - 1}) { @content; } }
+@mixin max-md { @media (max-width: #{$bp-md - 1}) { @content; } }
+@mixin max-lg { @media (max-width: #{$bp-lg - 1}) { @content; } }
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Typography ──────────────────────────────────────────────────────────────
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ─── Surfaces ────────────────────────────────────────────────────────────────
+@mixin card {
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
+}
+
+@mixin glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+// ─── Focus ───────────────────────────────────────────────────────────────────
+@mixin focus-ring {
+  outline: 2px solid $color-accent;
+  outline-offset: 2px;
+}
+
+// ─── Button base ─────────────────────────────────────────────────────────────
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  font-family: $font-primary;
+  font-weight: $weight-semibold;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all $transition-fast;
+  border-radius: $radius-lg;
+  user-select: none;
+
+  &:focus-visible { @include focus-ring; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+}
+
+// ─── Scroll ──────────────────────────────────────────────────────────────────
+@mixin scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: $color-border transparent;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb {
+    background: $color-border;
+    border-radius: $radius-full;
+  }
+  &::-webkit-scrollbar-track { background: transparent; }
+}

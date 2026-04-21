@@ -1,0 +1,50 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $space-3;
+}
+
+.item {
+  @include card;
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+  padding: $space-4;
+  border-radius: $radius-lg;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 243, 0.92));
+  box-shadow: none;
+}
+
+.iconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: rgba(20, 184, 166, 0.1);
+  color: $color-accent;
+  flex-shrink: 0;
+}
+
+.copy {
+  @include flex-col;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  font-size: $text-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.value {
+  font-size: $text-sm;
+  color: $color-text;
+  font-weight: $weight-semibold;
+  line-height: 1.3;
+}

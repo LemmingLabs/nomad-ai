@@ -1,0 +1,129 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.header {
+  position: relative;
+}
+
+.hero {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  transform: scale(1.02);
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.22) 35%, rgba(15, 23, 42, 0.82) 100%),
+    linear-gradient(135deg, rgba(20, 184, 166, 0.24) 0%, rgba(20, 184, 166, 0) 48%);
+  backdrop-filter: blur(1px);
+}
+
+.heroContent,
+.content {
+  @include flex-col;
+  gap: $space-4;
+  padding: $space-6;
+}
+
+.heroContent {
+  position: absolute;
+  inset: 0;
+  justify-content: flex-end;
+}
+
+.content {
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), #fff);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.dayBadge,
+.cityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-3;
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dayBadge {
+  background: $color-accent;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(20, 184, 166, 0.24);
+}
+
+.cityBadge {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.content .cityBadge {
+  background: rgba(20, 184, 166, 0.08);
+  border-color: rgba(20, 184, 166, 0.14);
+  color: $color-accent;
+}
+
+.copy {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.55rem, 2vw, 2rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #fff;
+  max-width: 18ch;
+}
+
+.content .title {
+  color: $color-text;
+}
+
+.location {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: $text-sm;
+  font-weight: $weight-medium;
+}
+
+.content .location {
+  color: $color-text-muted;
+}
+
+@include max-md {
+  .hero,
+  .heroImage {
+    min-height: 240px;
+  }
+
+  .heroContent,
+  .content {
+    padding: $space-5;
+  }
+}

@@ -1,0 +1,29 @@
+@use '../../../app/styles/variables' as *;
+@use '../../../app/styles/mixins' as *;
+
+.page {
+  min-height: 100vh;
+  @include flex-center;
+  background: $color-bg;
+  padding: $space-8;
+}
+
+.card {
+  @include flex-col;
+  gap: $space-8;
+  width: 100%;
+  max-width: 440px;
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-2xl;
+  padding: $space-10;
+  box-shadow: $shadow-lg;
+}
+
+.brand {
+  text-align: center;
+  font-size: $text-2xl;
+  font-weight: $weight-extrabold;
+  color: $color-accent;
+  letter-spacing: -0.5px;
+}

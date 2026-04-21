@@ -1,0 +1,163 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92));
+  border-right: 1px solid $color-border;
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width $transition-normal, transform $transition-normal, box-shadow $transition-normal;
+
+  &--closed {
+    width: 0;
+    overflow: hidden;
+  }
+
+  &--collapsed {
+    width: 92px;
+
+    .header {
+      flex-direction: column;
+      align-items: center;
+      gap: $space-3;
+      padding-inline: $space-3;
+    }
+
+    .headerActions {
+      flex-direction: column;
+    }
+
+    .tripList {
+      padding-inline: $space-2;
+    }
+
+    .footer {
+      padding-inline: $space-3;
+    }
+
+    .profile {
+      justify-content: center;
+    }
+  }
+}
+
+.header {
+  @include flex-between;
+  padding: $space-5 $space-5 $space-4;
+  border-bottom: 1px solid $color-border;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-3;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.brandMark {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: $radius-xl;
+  @include flex-center;
+  background: linear-gradient(180deg, $color-accent, $color-accent-hover);
+  color: #fff;
+  font-weight: $weight-extrabold;
+  box-shadow: 0 16px 28px rgba(20, 184, 166, 0.18);
+}
+
+.logo {
+  font-size: $text-lg;
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  letter-spacing: -0.5px;
+}
+
+.headerActions {
+  display: flex;
+  gap: $space-2;
+  flex-shrink: 0;
+}
+
+.iconButton {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.92);
+  color: $color-text-muted;
+  @include flex-center;
+  cursor: pointer;
+  transition: color $transition-fast, border-color $transition-fast, background $transition-fast;
+
+  &:hover {
+    color: $color-accent;
+    border-color: rgba(20, 184, 166, 0.16);
+    background: rgba(20, 184, 166, 0.08);
+  }
+}
+
+.tripList {
+  @include flex-col;
+  gap: $space-1;
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-4 $space-3 $space-5;
+  @include scrollbar-thin;
+}
+
+.emptyState {
+  text-align: center;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  padding: $space-8 $space-3;
+  margin: 0;
+}
+
+.footer {
+  padding: $space-4 $space-5;
+  border-top: 1px solid $color-border;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.profileGhost {
+  width: 2rem;
+  height: 2rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: rgba(20, 184, 166, 0.08);
+  color: $color-accent;
+}
+
+.profileCopy {
+  min-width: 0;
+}
+
+.profileName,
+.profileEmail {
+  @include text-truncate;
+  margin: 0;
+}
+
+.profileName {
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  color: $color-text;
+}
+
+.profileEmail {
+  font-size: $text-xs;
+  color: $color-text-muted;
+}

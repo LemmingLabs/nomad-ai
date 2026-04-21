@@ -1,0 +1,17 @@
+@use '../../../app/styles/variables' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-1 $space-3;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  border-radius: $radius-full;
+  line-height: 1;
+
+  &--accent  { background: $color-accent-light; color: $color-accent; }
+  &--success { background: rgba(16,185,129,.1); color: $color-success; }
+  &--error   { background: rgba(239,68,68,.1);  color: $color-error; }
+  &--warning { background: rgba(245,158,11,.1); color: $color-warning; }
+  &--neutral { background: rgba(107,114,128,.1); color: $color-text-muted; }
+}

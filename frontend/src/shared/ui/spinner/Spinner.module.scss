@@ -1,0 +1,21 @@
+@use '../../../app/styles/variables' as *;
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-flex;
+
+  &--sm .inner { width: 14px; height: 14px; }
+  &--md .inner { width: 20px; height: 20px; }
+  &--lg .inner { width: 32px; height: 32px; }
+}
+
+.inner {
+  display: block;
+  border-radius: 50%;
+  border: 2px solid $color-border;
+  border-top-color: $color-accent;
+  animation: spin 0.7s linear infinite;
+}

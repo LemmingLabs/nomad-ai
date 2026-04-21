@@ -1,0 +1,44 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.form {
+  @include flex-col;
+  gap: $space-6;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.header { @include flex-col; gap: $space-2; text-align: center; }
+
+.title {
+  font-size: $text-3xl;
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: $text-sm;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.fields { @include flex-col; gap: $space-4; }
+
+.switch {
+  text-align: center;
+  font-size: $text-sm;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.link {
+  color: $color-accent;
+  font-weight: $weight-semibold;
+  text-decoration: none;
+  transition: opacity $transition-fast;
+
+  &:hover { opacity: 0.8; }
+}

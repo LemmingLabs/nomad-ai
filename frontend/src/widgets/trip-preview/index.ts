@@ -1,0 +1,1 @@
+export { TripPreview } from './TripPreview';

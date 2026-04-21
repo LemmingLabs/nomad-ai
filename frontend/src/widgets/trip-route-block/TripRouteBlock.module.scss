@@ -1,0 +1,80 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.block {
+  @include flex-col;
+  gap: $space-4;
+  background:
+    linear-gradient(180deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.02)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
+  border: 1px solid rgba(20, 184, 166, 0.16);
+  border-radius: $radius-xl;
+  padding: $space-4;
+  box-shadow: 0 14px 36px rgba(20, 184, 166, 0.08);
+}
+
+.header {
+  display: flex;
+  gap: $space-3;
+  align-items: flex-start;
+}
+
+.iconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: rgba(20, 184, 166, 0.12);
+  color: $color-accent;
+  flex-shrink: 0;
+}
+
+.headerCopy {
+  @include flex-col;
+  gap: $space-1;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: $text-xs;
+  color: $color-accent;
+  font-weight: $weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  font-size: $text-lg;
+  font-weight: $weight-bold;
+  color: $color-text;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(20, 184, 166, 0.08);
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  color: $color-text;
+  font-weight: $weight-medium;
+}
+
+.fallback {
+  font-size: $text-sm;
+  color: $color-text-muted;
+  margin: 0;
+}

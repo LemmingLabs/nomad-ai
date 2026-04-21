@@ -1,0 +1,65 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.layout {
+  --preview-width: 680px;
+
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 14px minmax(460px, var(--preview-width));
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  &--dragging .handleGrip,
+  .handle:hover .handleGrip {
+    background: rgba(20, 184, 166, 0.26);
+  }
+
+  &--expanded {
+    grid-template-columns: 0 0 minmax(0, 1fr);
+
+    .left,
+    .handle {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+}
+
+.left,
+.right {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.handle {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: col-resize;
+  @include flex-center;
+}
+
+.handleGrip {
+  width: 4px;
+  height: 5.5rem;
+  border-radius: $radius-full;
+  background: rgba(31, 41, 55, 0.08);
+  transition: background $transition-fast;
+}
+
+@include max-md {
+  .layout {
+    display: flex;
+  }
+
+  .handle,
+  .right {
+    display: none;
+  }
+
+  .left {
+    flex: 1;
+  }
+}

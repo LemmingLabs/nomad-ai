@@ -1,0 +1,22 @@
+@use '../../../app/styles/variables' as *;
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  color: $color-text-muted;
+  font-size: $text-xs;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: $color-border;
+  }
+}
+
+.label {
+  white-space: nowrap;
+  font-weight: $weight-medium;
+}

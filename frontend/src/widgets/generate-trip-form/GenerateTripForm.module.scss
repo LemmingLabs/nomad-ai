@@ -1,0 +1,228 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.form {
+  @include flex-col;
+  gap: $space-6;
+  padding: $space-8;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.header {
+  @include flex-col;
+  gap: $space-3;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-3;
+  width: fit-content;
+  border-radius: $radius-full;
+  background: rgba(20, 184, 166, 0.1);
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  margin: 0;
+  letter-spacing: -0.05em;
+}
+
+.subtitle {
+  font-size: $text-base;
+  color: $color-text-muted;
+  margin: 0;
+  max-width: 58ch;
+  line-height: 1.7;
+}
+
+.fields {
+  @include flex-col;
+  gap: $space-5;
+}
+
+.section {
+  gap: $space-5;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92));
+}
+
+.sectionHeader {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: $text-xl;
+  color: $color-text;
+}
+
+.sectionHint {
+  margin: 0;
+  font-size: $text-sm;
+  color: $color-text-muted;
+  line-height: 1.6;
+}
+
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-3;
+}
+
+.optionCard {
+  @include flex-col;
+  gap: $space-2;
+  align-items: flex-start;
+  padding: $space-4;
+  border-radius: $radius-xl;
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: border-color $transition-fast, transform $transition-fast, box-shadow $transition-fast;
+
+  &[data-active='true'] {
+    border-color: rgba(20, 184, 166, 0.42);
+    box-shadow: 0 12px 30px rgba(20, 184, 166, 0.12);
+    transform: translateY(-1px);
+  }
+}
+
+.optionLabel {
+  font-size: $text-base;
+  font-weight: $weight-bold;
+  color: $color-text;
+}
+
+.optionHint {
+  font-size: $text-sm;
+  color: $color-text-muted;
+}
+
+.daysStepper {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-4;
+  width: fit-content;
+  padding: $space-3;
+  border-radius: $radius-2xl;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid $color-border;
+}
+
+.stepperButton {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: #fff;
+  color: $color-text;
+  @include flex-center;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.daysValue {
+  @include flex-col;
+  align-items: center;
+  min-width: 5rem;
+}
+
+.daysNumber {
+  font-size: $text-3xl;
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  line-height: 1;
+}
+
+.daysLabel {
+  font-size: $text-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.chipGroup,
+.selectedChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.chip,
+.selectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-full;
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.86);
+  color: $color-text;
+  font-size: $text-sm;
+  cursor: pointer;
+}
+
+.chip[data-active='true'],
+.selectedChip {
+  border-color: rgba(20, 184, 166, 0.36);
+  background: rgba(20, 184, 166, 0.09);
+  color: $color-accent;
+}
+
+.selectedChip {
+  cursor: default;
+}
+
+.selectedChips {
+  margin-top: $space-2;
+}
+
+.selectedChipRemove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.customInterest {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: $space-3;
+  align-items: end;
+}
+
+.error {
+  margin: 0;
+  font-size: $text-xs;
+  color: $color-error;
+}
+
+@include max-md {
+  .form {
+    padding: $space-5;
+  }
+
+  .optionGrid,
+  .customInterest {
+    grid-template-columns: 1fr;
+  }
+}

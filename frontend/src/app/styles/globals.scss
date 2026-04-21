@@ -1,0 +1,85 @@
+@use 'reset';
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ─── Google Font Import ───────────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+// ─── Root Variables (CSS Custom Properties) ────────────────────────────────
+:root {
+  // Colors
+  --color-bg:           #{$color-bg};
+  --color-surface:      #{$color-surface};
+  --color-border:       #{$color-border};
+  --color-text:         #{$color-text};
+  --color-text-muted:   #{$color-text-muted};
+  --color-accent:       #{$color-accent};
+  --color-accent-hover: #{$color-accent-hover};
+  --color-accent-light: #{$color-accent-light};
+  --color-error:        #{$color-error};
+  --color-success:      #{$color-success};
+  --color-warning:      #{$color-warning};
+
+  // Shadows
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  // Transitions
+  --transition-fast:   #{$transition-fast};
+  --transition-normal: #{$transition-normal};
+  --transition-slow:   #{$transition-slow};
+
+  // Layout
+  --sidebar-width:  #{$sidebar-width};
+  --chat-width:     #{$chat-width};
+  --header-height:  #{$header-height};
+}
+
+// ─── Base ─────────────────────────────────────────────────────────────────────
+html,
+body {
+  background-color: $color-bg;
+  color: $color-text;
+  font-family: $font-primary;
+  font-size: $text-base;
+  line-height: 1.6;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// ─── Typography defaults ─────────────────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-primary;
+  font-weight: $weight-bold;
+  color: $color-text;
+  line-height: 1.25;
+}
+
+h1 { font-size: $text-4xl; }
+h2 { font-size: $text-3xl; }
+h3 { font-size: $text-2xl; }
+h4 { font-size: $text-xl; }
+h5 { font-size: $text-lg; }
+h6 { font-size: $text-base; }
+
+p {
+  color: $color-text-muted;
+  line-height: 1.7;
+}
+
+// ─── Toastify overrides ───────────────────────────────────────────────────────
+.Toastify__toast {
+  font-family: $font-primary !important;
+  font-size: $text-sm !important;
+  border-radius: $radius-lg !important;
+  border: 1px solid $color-border !important;
+  box-shadow: $shadow-md !important;
+}
+
+.Toastify__toast--success { border-left: 3px solid $color-success !important; }
+.Toastify__toast--error   { border-left: 3px solid $color-error !important; }

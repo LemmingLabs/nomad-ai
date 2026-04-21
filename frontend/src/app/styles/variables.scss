@@ -1,0 +1,80 @@
+// ─── NomadAI Design Tokens ───────────────────────────────────────────────────
+
+// Colors — Light Theme
+$color-bg:         #F7F7F3;
+$color-surface:    #FFFFFF;
+$color-border:     #E7E5E4;
+$color-text:       #1F2937;
+$color-text-muted: #6B7280;
+$color-accent:     #14B8A6;
+$color-accent-hover: #0F9A8A;
+$color-accent-light: rgba(20, 184, 166, 0.1);
+$color-error:      #EF4444;
+$color-warning:    #F59E0B;
+$color-success:    #10B981;
+
+// Shadows
+$shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+$shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+$shadow-lg:  0 10px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+
+// Typography
+$font-primary:   'Manrope', 'Inter', system-ui, sans-serif;
+$font-mono:       ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+$text-xs:   0.75rem;   // 12px
+$text-sm:   0.875rem;  // 14px
+$text-base: 1rem;      // 16px
+$text-lg:   1.125rem;  // 18px
+$text-xl:   1.25rem;   // 20px
+$text-2xl:  1.5rem;    // 24px
+$text-3xl:  1.875rem;  // 30px
+$text-4xl:  2.25rem;   // 36px
+
+$weight-normal:   400;
+$weight-medium:   500;
+$weight-semibold: 600;
+$weight-bold:     700;
+$weight-extrabold: 800;
+
+// Spacing
+$space-1:  0.25rem;   // 4px
+$space-2:  0.5rem;    // 8px
+$space-3:  0.75rem;   // 12px
+$space-4:  1rem;      // 16px
+$space-5:  1.25rem;   // 20px
+$space-6:  1.5rem;    // 24px
+$space-8:  2rem;      // 32px
+$space-10: 2.5rem;    // 40px
+$space-12: 3rem;      // 48px
+$space-16: 4rem;      // 64px
+
+// Border Radius
+$radius-sm:   4px;
+$radius-md:   8px;
+$radius-lg:   12px;
+$radius-xl:   16px;
+$radius-2xl:  20px;
+$radius-full: 9999px;
+
+// Layout
+$sidebar-width:  270px;
+$chat-width:     430px;
+$header-height:  60px;
+
+// Breakpoints
+$bp-sm:  640px;
+$bp-md:  768px;
+$bp-lg:  1024px;
+$bp-xl:  1280px;
+
+// Transitions
+$transition-fast:   150ms ease;
+$transition-normal: 250ms ease;
+$transition-slow:   400ms ease;
+
+// Z-index
+$z-dropdown: 100;
+$z-sticky:   200;
+$z-modal:    300;
+$z-toast:    400;

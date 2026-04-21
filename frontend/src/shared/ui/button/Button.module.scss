@@ -1,0 +1,78 @@
+@use '../../../app/styles/variables' as *;
+@use '../../../app/styles/mixins' as *;
+
+.button {
+  @include btn-base;
+  padding: $space-3 $space-6;
+  font-size: $text-sm;
+  line-height: 1;
+  gap: $space-2;
+
+  // Sizes
+  &--sm {
+    padding: $space-2 $space-4;
+    font-size: $text-xs;
+    border-radius: $radius-md;
+  }
+
+  &--md {
+    padding: $space-3 $space-6;
+    font-size: $text-sm;
+  }
+
+  &--lg {
+    padding: $space-4 $space-8;
+    font-size: $text-base;
+    border-radius: $radius-xl;
+  }
+
+  &--full {
+    width: 100%;
+  }
+
+  // Variants
+  &--primary {
+    background: $color-accent;
+    color: #fff;
+
+    &:hover:not(:disabled) { background: $color-accent-hover; }
+    &:active { transform: scale(0.98); }
+  }
+
+  &--secondary {
+    background: $color-surface;
+    color: $color-text;
+    border: 1px solid $color-border;
+    box-shadow: $shadow-sm;
+
+    &:hover:not(:disabled) { border-color: $color-accent; color: $color-accent; }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $color-text-muted;
+
+    &:hover:not(:disabled) { background: $color-accent-light; color: $color-accent; }
+  }
+
+  &--danger {
+    background: $color-error;
+    color: #fff;
+
+    &:hover:not(:disabled) { background: darken(#EF4444, 8%); }
+  }
+
+  // Loading
+  &--loading {
+    position: relative;
+    pointer-events: none;
+
+    > :not(.button__spinner) { opacity: 0; }
+
+    .button__spinner {
+      position: absolute;
+      inset: 0;
+      @include flex-center;
+    }
+  }
+}

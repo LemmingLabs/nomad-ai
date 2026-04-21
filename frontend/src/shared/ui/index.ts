@@ -1,0 +1,10 @@
+// ─── shared/ui public API ─────────────────────────────────────────────────────
+export { Button } from './button/Button';
+export { Input } from './input/Input';
+export { Textarea } from './textarea/Textarea';
+export { Card } from './card/Card';
+export { Badge } from './badge/Badge';
+export { Spinner } from './spinner/Spinner';
+export { Skeleton } from './skeleton/Skeleton';
+export { Avatar } from './avatar/Avatar';
+export { Divider } from './divider/Divider';

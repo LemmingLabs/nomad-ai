@@ -1,0 +1,104 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.section,
+.sectionHeader {
+  @include flex-col;
+}
+
+.section {
+  gap: $space-4;
+}
+
+.sectionHeader {
+  gap: $space-1;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: $text-xs;
+  color: $color-accent;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: $weight-bold;
+}
+
+.title {
+  margin: 0;
+  font-size: $text-lg;
+  color: $color-text;
+}
+
+.card {
+  @include card;
+  overflow: hidden;
+  display: grid;
+  gap: 0;
+  box-shadow: none;
+}
+
+.media {
+  position: relative;
+  min-height: 188px;
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(31, 41, 55, 0.08));
+}
+
+.image,
+.placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+.image {
+  object-fit: cover;
+  display: block;
+}
+
+.placeholder {
+  min-height: 188px;
+  @include flex-center;
+  color: rgba(31, 41, 55, 0.42);
+}
+
+.rating {
+  position: absolute;
+  top: $space-4;
+  right: $space-4;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: 0.45rem 0.7rem;
+  border-radius: $radius-full;
+  background: rgba(255, 255, 255, 0.92);
+  color: $color-text;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+}
+
+.content {
+  @include flex-col;
+  gap: $space-3;
+  padding: $space-4;
+}
+
+.name {
+  margin: 0;
+  font-size: $text-lg;
+  color: $color-text;
+  line-height: 1.3;
+}
+
+.meta {
+  @include flex-col;
+  gap: $space-2;
+}
+
+.metaItem {
+  display: flex;
+  gap: $space-2;
+  align-items: flex-start;
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.5;
+}

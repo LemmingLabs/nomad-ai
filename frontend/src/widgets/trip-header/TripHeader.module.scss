@@ -1,0 +1,104 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.header {
+  @include flex-col;
+  gap: $space-5;
+  padding: $space-8 $space-8 $space-6;
+  border-bottom: 1px solid $color-border;
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.88));
+}
+
+.eyebrow,
+.meta {
+  display: flex;
+  gap: $space-2;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.topRow {
+  @include flex-between;
+  gap: $space-3;
+  align-items: flex-start;
+}
+
+.content,
+.copy {
+  @include flex-col;
+}
+
+.content {
+  gap: $space-4;
+}
+
+.copy {
+  gap: $space-3;
+}
+
+.badge,
+.kicker,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+  padding: $space-2 $space-3;
+  letter-spacing: 0.06em;
+}
+
+.badge {
+  background: $color-accent-light;
+  color: $color-accent;
+  text-transform: uppercase;
+}
+
+.kicker {
+  background: rgba(31, 41, 55, 0.04);
+  color: $color-text-muted;
+  text-transform: uppercase;
+}
+
+.chip {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  color: $color-text;
+  text-transform: capitalize;
+}
+
+.actions {
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  margin: 0;
+  line-height: 1.05;
+  letter-spacing: -0.06em;
+  max-width: 14ch;
+}
+
+.summary {
+  font-size: $text-base;
+  color: $color-text-muted;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 56ch;
+}
+
+@include max-md {
+  .header {
+    padding: $space-6 $space-4 $space-5;
+  }
+
+  .topRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

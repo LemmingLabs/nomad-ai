@@ -1,0 +1,76 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: $color-bg;
+}
+
+.chatPane,
+.previewPane {
+  @include flex-col;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chatPane {
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 247, 243, 1));
+  border-right: 1px solid $color-border;
+}
+
+.previewPane {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatHeader {
+  @include flex-between;
+  gap: $space-4;
+  padding: $space-5 $space-5 $space-4;
+  border-bottom: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.chatEyebrow {
+  margin: 0 0 $space-1;
+  font-size: $text-xs;
+  color: $color-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: $weight-bold;
+}
+
+.chatTitle {
+  margin: 0;
+  font-size: $text-xl;
+  color: $color-text;
+}
+
+.chatBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-3;
+  border-radius: $radius-full;
+  background: rgba(20, 184, 166, 0.08);
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+}
+
+.authPrompt {
+  padding: 0 $space-5 $space-4;
+  margin: 0;
+  font-size: $text-sm;
+  color: $color-text-muted;
+}
+
+@include max-md {
+  .chatHeader {
+    padding: $space-4;
+  }
+}

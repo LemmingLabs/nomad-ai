@@ -1,0 +1,42 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.page {
+  @include flex-col;
+  @include flex-center;
+  min-height: 100vh;
+  gap: $space-4;
+  text-align: center;
+  background: $color-bg;
+}
+
+.emoji { font-size: 4rem; }
+
+.code {
+  font-size: 6rem;
+  font-weight: $weight-extrabold;
+  color: $color-text;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -4px;
+}
+
+.message {
+  font-size: $text-base;
+  color: $color-text-muted;
+  margin: 0;
+}
+
+.link {
+  color: $color-accent;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  text-decoration: none;
+  padding: $space-3 $space-6;
+  border: 1.5px solid $color-accent;
+  border-radius: $radius-lg;
+  transition: all $transition-fast;
+  margin-top: $space-4;
+
+  &:hover { background: $color-accent; color: #fff; }
+}

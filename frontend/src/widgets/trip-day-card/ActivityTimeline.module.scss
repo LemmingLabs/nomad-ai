@@ -1,0 +1,92 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.timelineSection {
+  @include flex-col;
+  gap: $space-4;
+}
+
+.sectionHeader {
+  @include flex-col;
+  gap: $space-1;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: $text-xs;
+  color: $color-accent;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: $weight-bold;
+}
+
+.title {
+  margin: 0;
+  font-size: $text-lg;
+  color: $color-text;
+}
+
+.timeline {
+  @include flex-col;
+  gap: $space-3;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $space-3;
+
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 2.75rem;
+    bottom: -0.95rem;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(20, 184, 166, 0.22), rgba(20, 184, 166, 0));
+  }
+}
+
+.marker {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: #fff;
+  border: 1px solid rgba(20, 184, 166, 0.22);
+  color: $color-accent;
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.1);
+  z-index: 1;
+}
+
+.card {
+  @include card;
+  padding: $space-4;
+  border-radius: $radius-lg;
+  box-shadow: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 247, 243, 0.92));
+}
+
+.time {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: $radius-full;
+  background: rgba(20, 184, 166, 0.08);
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.description {
+  margin: $space-3 0 0;
+  font-size: $text-sm;
+  color: $color-text;
+  line-height: 1.65;
+}

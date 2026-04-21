@@ -1,0 +1,67 @@
+@use '../../../app/styles/variables' as *;
+@use '../../../app/styles/mixins' as *;
+
+.wrapper {
+  @include flex-col;
+  gap: $space-2;
+  width: 100%;
+}
+
+.label {
+  font-size: $text-sm;
+  font-weight: $weight-medium;
+  color: $color-text;
+}
+
+.input {
+  width: 100%;
+  padding: $space-3 $space-4;
+  font-size: $text-sm;
+  font-family: $font-primary;
+  color: $color-text;
+  background: $color-surface;
+  border: 1.5px solid $color-border;
+  border-radius: $radius-lg;
+  outline: none;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
+  &:focus {
+    border-color: $color-accent;
+    box-shadow: 0 0 0 3px $color-accent-light;
+  }
+
+  &--error {
+    border-color: $color-error;
+    &:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
+  }
+
+  &--with-icon-left { padding-left: $space-10; }
+  &--with-icon-right { padding-right: $space-10; }
+}
+
+.iconLeft,
+.iconRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $color-text-muted;
+  display: flex;
+  pointer-events: none;
+}
+
+.iconLeft  { left: $space-3; }
+.iconRight { right: $space-3; }
+
+.inputWrap {
+  position: relative;
+}
+
+.error {
+  font-size: $text-xs;
+  color: $color-error;
+  margin-top: $space-1;
+}
