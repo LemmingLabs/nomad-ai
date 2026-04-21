@@ -4,7 +4,7 @@
 .page {
   min-height: 100vh;
   @include flex-center;
-  background: $color-bg;
+  background: transparent;
   padding: $space-8;
 }
 

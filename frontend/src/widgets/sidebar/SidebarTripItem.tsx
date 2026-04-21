@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
 import cn from 'classnames';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import type { TripListItem } from '../../entities/trip';
 import styles from './SidebarTripItem.module.scss';
 
@@ -31,7 +31,7 @@ export function SidebarTripItem({
       })}
     >
       <button
-        type="button"
+        type='button'
         className={styles.main}
         onClick={() => onSelect(trip.id)}
         title={trip.title}
@@ -47,7 +47,7 @@ export function SidebarTripItem({
 
       {!isCollapsed && !isConfirmingDelete && (
         <button
-          type="button"
+          type='button'
           className={styles.action}
           onClick={() => setIsConfirmingDelete(true)}
           aria-label={`Delete ${trip.title}`}
@@ -61,15 +61,18 @@ export function SidebarTripItem({
           <p className={styles.confirmText}>Delete this trip?</p>
           <div className={styles.confirmActions}>
             <button
-              type="button"
+              type='button'
               className={styles.confirmButton}
               onClick={() => setIsConfirmingDelete(false)}
             >
               Cancel
             </button>
             <button
-              type="button"
-              className={cn(styles.confirmButton, styles['confirmButton--danger'])}
+              type='button'
+              className={cn(
+                styles.confirmButton,
+                styles['confirmButton--danger'],
+              )}
               onClick={() => {
                 onDelete(trip.id);
                 setIsConfirmingDelete(false);

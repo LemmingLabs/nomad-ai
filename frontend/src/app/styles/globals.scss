@@ -5,42 +5,38 @@
 // ─── Google Font Import ───────────────────────────────────────────────────────
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
-// ─── Root Variables (CSS Custom Properties) ────────────────────────────────
+// ─── Root Variables ──────────────────────────────────────────────────────────
 :root {
-  // Colors
-  --color-bg:           #{$color-bg};
-  --color-surface:      #{$color-surface};
-  --color-border:       #{$color-border};
-  --color-text:         #{$color-text};
-  --color-text-muted:   #{$color-text-muted};
-  --color-accent:       #{$color-accent};
+  --color-bg: #{$color-bg};
+  --color-surface: #{$color-surface};
+  --color-border: #{$color-border};
+  --color-text: #{$color-text};
+  --color-text-muted: #{$color-text-muted};
+  --color-accent: #{$color-accent};
   --color-accent-hover: #{$color-accent-hover};
   --color-accent-light: #{$color-accent-light};
-  --color-error:        #{$color-error};
-  --color-success:      #{$color-success};
-  --color-warning:      #{$color-warning};
+  --color-error: #{$color-error};
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
 
-  // Shadows
   --shadow-sm: #{$shadow-sm};
   --shadow-md: #{$shadow-md};
   --shadow-lg: #{$shadow-lg};
 
-  // Transitions
-  --transition-fast:   #{$transition-fast};
+  --transition-fast: #{$transition-fast};
   --transition-normal: #{$transition-normal};
-  --transition-slow:   #{$transition-slow};
+  --transition-slow: #{$transition-slow};
 
-  // Layout
-  --sidebar-width:  #{$sidebar-width};
-  --chat-width:     #{$chat-width};
-  --header-height:  #{$header-height};
+  --sidebar-width: #{$sidebar-width};
+  --chat-width: #{$chat-width};
+  --header-height: #{$header-height};
 }
 
 // ─── Base ─────────────────────────────────────────────────────────────────────
 html,
 body {
-  background-color: $color-bg;
-  color: $color-text;
+  background-color: #fff;
+  color: #1f2937; // Соответствует text-gray-800
   font-family: $font-primary;
   font-size: $text-base;
   line-height: 1.6;
@@ -48,31 +44,85 @@ body {
 
 #root {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  background-color: #fff; // bg-white
 }
 
-// ─── Typography defaults ─────────────────────────────────────────────────────
-h1, h2, h3, h4, h5, h6 {
+// Перенос паттерна "Concentric Squares" в псевдоэлемент
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  // Копируем логику из твоего inline-style (переведено в CSS синтаксис)
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5px,
+      rgba(75, 85, 99, 0.06) 5px,
+      rgba(75, 85, 99, 0.06) 6px,
+      transparent 6px,
+      transparent 15px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 5px,
+      rgba(75, 85, 99, 0.06) 5px,
+      rgba(75, 85, 99, 0.06) 6px,
+      transparent 6px,
+      transparent 15px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 10px,
+      rgba(107, 114, 128, 0.04) 10px,
+      rgba(107, 114, 128, 0.04) 11px,
+      transparent 11px,
+      transparent 30px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 10px,
+      rgba(107, 114, 128, 0.04) 10px,
+      rgba(107, 114, 128, 0.04) 11px,
+      transparent 11px,
+      transparent 30px
+    );
+}
+
+#root > * {
+  position: relative;
+  z-index: 1;
+}
+
+// ─── Typography & Overrides ──────────────────────────────────────────────────
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: $font-primary;
   font-weight: $weight-bold;
-  color: $color-text;
+  color: #1f2937;
   line-height: 1.25;
 }
-
-h1 { font-size: $text-4xl; }
-h2 { font-size: $text-3xl; }
-h3 { font-size: $text-2xl; }
-h4 { font-size: $text-xl; }
-h5 { font-size: $text-lg; }
-h6 { font-size: $text-base; }
 
 p {
   color: $color-text-muted;
   line-height: 1.7;
 }
 
-// ─── Toastify overrides ───────────────────────────────────────────────────────
 .Toastify__toast {
   font-family: $font-primary !important;
   font-size: $text-sm !important;
@@ -80,6 +130,3 @@ p {
   border: 1px solid $color-border !important;
   box-shadow: $shadow-md !important;
 }
-
-.Toastify__toast--success { border-left: 3px solid $color-success !important; }
-.Toastify__toast--error   { border-left: 3px solid $color-error !important; }
