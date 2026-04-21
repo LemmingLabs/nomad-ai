@@ -5,7 +5,9 @@
   @include flex-col;
   height: 100%;
   overflow: hidden;
-  background: transparent;
+  background: #fff;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.35) 1px, transparent 0);
+  background-size: 20px 20px;
 }
 
 .messages {

@@ -39,7 +39,7 @@
 // ─── Base ─────────────────────────────────────────────────────────────────────
 html,
 body {
-  background-color: $color-bg;
+  background-color: #fff;
   color: $color-text;
   font-family: $font-primary;
   font-size: $text-base;
@@ -50,6 +50,25 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  isolation: isolate;
+  background: #fff;
+}
+
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #fff;
+  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.35) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+#root > * {
+  position: relative;
+  z-index: 1;
 }
 
 // ─── Typography defaults ─────────────────────────────────────────────────────
