@@ -4,7 +4,9 @@
 .item {
   position: relative;
   border-radius: $radius-xl;
-  transition: background $transition-fast, box-shadow $transition-fast;
+  transition:
+    background $transition-fast,
+    box-shadow $transition-fast;
 
   &:hover {
     background: rgba(20, 184, 166, 0.04);
@@ -87,7 +89,10 @@
   @include flex-center;
   opacity: 0;
   cursor: pointer;
-  transition: opacity $transition-fast, color $transition-fast, border-color $transition-fast;
+  transition:
+    opacity $transition-fast,
+    color $transition-fast,
+    border-color $transition-fast;
 
   .item:hover &,
   .item--active & {

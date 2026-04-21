@@ -5,11 +5,48 @@
   @include flex-col;
   height: 100%;
   overflow: hidden;
-  background: #fff;
-  background-image: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.35) 1px, transparent 0);
-  background-size: 20px 20px;
-}
+  background-color: #fff;
 
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5px,
+      rgba(75, 85, 99, 0.06) 5px,
+      rgba(75, 85, 99, 0.06) 6px,
+      transparent 6px,
+      transparent 15px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 5px,
+      rgba(75, 85, 99, 0.06) 5px,
+      rgba(75, 85, 99, 0.06) 6px,
+      transparent 6px,
+      transparent 15px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 10px,
+      rgba(107, 114, 128, 0.04) 10px,
+      rgba(107, 114, 128, 0.04) 11px,
+      transparent 11px,
+      transparent 30px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 10px,
+      rgba(107, 114, 128, 0.04) 10px,
+      rgba(107, 114, 128, 0.04) 11px,
+      transparent 11px,
+      transparent 30px
+    );
+
+  background-size: auto;
+}
 .messages {
   flex: 1;
   overflow-y: auto;
@@ -28,11 +65,49 @@
   padding: $space-8;
 }
 
+.typewriter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4.25rem;
+  max-width: min(34rem, 100%);
+  margin: 0;
+  color: $color-text;
+  font-size: clamp($text-base, 2vw, $text-xl);
+  font-weight: $weight-semibold;
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 0.12em;
+  color: $color-accent;
+  font-weight: $weight-bold;
+  animation: cursorBlink 0.8s steps(1) infinite;
+}
+
+@keyframes cursorBlink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
 .message {
   display: flex;
 
-  &--user  { justify-content: flex-end; }
-  &--assistant { justify-content: flex-start; }
+  &--user {
+    justify-content: flex-end;
+  }
+  &--assistant {
+    justify-content: flex-start;
+  }
 }
 
 .bubble {
@@ -46,7 +121,10 @@
     background: $color-accent;
     color: #fff;
     border-bottom-right-radius: $radius-sm;
-    p { color: inherit; margin: 0; }
+    p {
+      color: inherit;
+      margin: 0;
+    }
   }
 
   .message--assistant & {
@@ -56,8 +134,18 @@
     border-bottom-left-radius: $radius-sm;
     box-shadow: $shadow-sm;
 
-    p, ul, ol, blockquote { color: $color-text; }
-    p { margin: 0 0 $space-2; &:last-child { margin: 0; } }
+    p,
+    ul,
+    ol,
+    blockquote {
+      color: $color-text;
+    }
+    p {
+      margin: 0 0 $space-2;
+      &:last-child {
+        margin: 0;
+      }
+    }
     code {
       background: $color-bg;
       border-radius: $radius-sm;
@@ -81,14 +169,24 @@
     background: $color-text-muted;
     animation: bounce 1.2s ease-in-out infinite;
 
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 }
 
 @keyframes bounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-6px); }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
 }
 
 // Form
@@ -117,8 +215,12 @@
   @include scrollbar-thin;
   transition: border-color $transition-fast;
 
-  &:focus { border-color: $color-accent; }
-  &::placeholder { color: $color-text-muted; }
+  &:focus {
+    border-color: $color-accent;
+  }
+  &::placeholder {
+    color: $color-text-muted;
+  }
 }
 
 .sendBtn {
@@ -131,8 +233,16 @@
   color: #fff;
   border: none;
   cursor: pointer;
-  transition: background $transition-fast, transform $transition-fast;
+  transition:
+    background $transition-fast,
+    transform $transition-fast;
 
-  &:hover:not(:disabled) { background: $color-accent-hover; transform: scale(1.05); }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: $color-accent-hover;
+    transform: scale(1.05);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
