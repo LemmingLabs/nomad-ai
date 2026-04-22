@@ -1,0 +1,134 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.card {
+  @include flex-col;
+  gap: $space-4;
+  padding: $space-5;
+  border-radius: $radius-2xl;
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(246, 250, 249, 0.96)
+  );
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.header {
+  @include flex-between;
+  align-items: flex-start;
+  gap: $space-3;
+}
+
+.title {
+  margin: 0;
+  font-size: $text-xl;
+  line-height: 1.1;
+  color: $color-text;
+  letter-spacing: -0.03em;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: $radius-full;
+  background: rgba(31, 41, 55, 0.06);
+  color: $color-text-muted;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.match,
+.fallback,
+.infoRow {
+  margin: 0;
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: $color-text-muted;
+}
+
+.match strong {
+  color: $color-text;
+  font-weight: $weight-semibold;
+}
+
+.infoRow,
+.linkRow {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.ratingRow,
+.meta,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.metric,
+.metricMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: $radius-full;
+  background: rgba(20, 184, 166, 0.08);
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+}
+
+.metricMuted {
+  background: rgba(31, 41, 55, 0.04);
+  color: $color-text-muted;
+}
+
+.linkRow,
+.primaryAction,
+.secondaryAction {
+  text-decoration: none;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: $color-accent;
+  }
+}
+
+.linkRow {
+  padding: 0.4rem 0;
+  color: $color-text;
+  font-size: $text-sm;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: $radius-xl;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+}
+
+.primaryAction {
+  background: $color-accent;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.24);
+}
+
+.secondaryAction {
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: $color-text;
+}

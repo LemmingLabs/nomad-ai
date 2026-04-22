@@ -1,1 +1,1 @@
-export { TripRouteBlock } from './TripRouteBlock';
+export { RouteTransition } from './RouteTransition';

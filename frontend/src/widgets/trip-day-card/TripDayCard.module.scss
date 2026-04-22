@@ -2,11 +2,13 @@
 @use '../../app/styles/mixins' as *;
 
 .card {
-  @include card;
+  @include flex-col;
   overflow: hidden;
   position: relative;
+  border-radius: 1.75rem;
+  border: 1px solid rgba(20, 184, 166, 0.12);
   background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.98));
-  box-shadow: $shadow-md;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.08);
 }
 
 .body {
@@ -15,30 +17,36 @@
   gap: $space-6;
 }
 
-.routeEntry {
-  padding: $space-4 $space-4 0;
-}
-
-.storyGrid {
+.contentGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-  gap: $space-5;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: $space-6;
   align-items: start;
 }
 
-.section {
+.sidebar {
   @include flex-col;
   gap: $space-4;
 }
 
-.sectionHeader {
-  @include flex-between;
+.panel {
+  @include flex-col;
   gap: $space-4;
-  align-items: flex-end;
+  padding: $space-5;
+  border-radius: $radius-2xl;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 247, 243, 0.94));
+  border: 1px solid rgba(20, 184, 166, 0.08);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
 }
 
-.sectionEyebrow {
-  margin: 0 0 $space-1;
+.panelHeader {
+  @include flex-col;
+  gap: $space-1;
+}
+
+.panelEyebrow {
+  margin: 0;
   font-size: $text-xs;
   color: $color-accent;
   letter-spacing: 0.08em;
@@ -46,29 +54,75 @@
   font-weight: $weight-bold;
 }
 
-.sectionTitle {
+.panelTitle {
   margin: 0;
-  font-size: $text-xl;
+  font-size: $text-lg;
   font-weight: $weight-bold;
   color: $color-text;
   letter-spacing: -0.03em;
 }
 
-.placesCarousel {
-  display: flex;
-  gap: $space-4;
-  overflow-x: auto;
-  padding-bottom: $space-2;
-  scroll-snap-type: x proximity;
-  @include scrollbar-thin;
+.panelCopy,
+.routeHeadline {
+  margin: 0;
+  color: $color-text;
+  line-height: 1.6;
 }
 
-.placesCarousel > * {
-  scroll-snap-align: start;
+.routeHeadline {
+  font-size: $text-base;
+  font-weight: $weight-semibold;
+}
+
+.routeMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.routeChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: $radius-full;
+  background: rgba(20, 184, 166, 0.08);
+  border: 1px solid rgba(20, 184, 166, 0.1);
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+}
+
+.infoList {
+  @include flex-col;
+  gap: $space-3;
+  margin: 0;
+}
+
+.infoItem {
+  display: grid;
+  grid-template-columns: minmax(0, 110px) minmax(0, 1fr);
+  gap: $space-3;
+
+  dt,
+  dd {
+    margin: 0;
+    font-size: $text-sm;
+    line-height: 1.5;
+  }
+
+  dt {
+    color: $color-text-muted;
+  }
+
+  dd {
+    color: $color-text;
+    font-weight: $weight-semibold;
+  }
 }
 
 @include max-lg {
-  .storyGrid {
+  .contentGrid {
     grid-template-columns: 1fr;
   }
 }
@@ -77,10 +131,5 @@
   .body {
     padding: $space-5;
     gap: $space-5;
-  }
-
-  .placesCarousel {
-    margin-inline: -$space-1;
-    padding-inline: $space-1;
   }
 }
