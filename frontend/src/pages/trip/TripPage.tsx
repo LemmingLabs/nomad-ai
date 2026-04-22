@@ -174,6 +174,7 @@ export function TripPage() {
             <TripPreview
               itinerary={itinerary}
               tripTitle={tripTitle}
+              budget={currentTrip?.budget}
               actions={previewActions}
             />
           </div>

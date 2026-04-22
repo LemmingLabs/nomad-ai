@@ -1,0 +1,135 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.block {
+  position: relative;
+  @include flex-col;
+  gap: $space-4;
+  padding: $space-5 $space-6;
+  border-radius: $radius-2xl;
+  background:
+    linear-gradient(180deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.02)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  box-shadow: 0 20px 44px rgba(20, 184, 166, 0.08);
+}
+
+.block--fallback {
+  background:
+    linear-gradient(180deg, rgba(31, 41, 55, 0.04), rgba(31, 41, 55, 0.02)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92));
+}
+
+.rail {
+  position: absolute;
+  left: 2rem;
+  top: -1.5rem;
+  bottom: -1.5rem;
+  width: 2px;
+  border-radius: $radius-full;
+  background: linear-gradient(180deg, rgba(20, 184, 166, 0.26), rgba(20, 184, 166, 0));
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: $space-3;
+  align-items: start;
+}
+
+.iconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: rgba(20, 184, 166, 0.12);
+  color: $color-accent;
+}
+
+.headerCopy {
+  @include flex-col;
+  gap: $space-1;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: $text-xs;
+  color: $color-accent;
+  font-weight: $weight-bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  font-size: $text-lg;
+  color: $color-text;
+  letter-spacing: -0.03em;
+}
+
+.transport,
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  min-height: 2rem;
+  padding: 0.4rem 0.78rem;
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+}
+
+.transport {
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(20, 184, 166, 0.12);
+  color: $color-text;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  padding-left: 3.2rem;
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 184, 166, 0.1);
+  color: $color-text;
+}
+
+.fallback {
+  margin: 0;
+  padding-left: 3.2rem;
+  font-size: $text-sm;
+  color: $color-text-muted;
+  line-height: 1.6;
+}
+
+@include max-md {
+  .block {
+    padding: $space-4;
+  }
+
+  .rail {
+    left: 1.4rem;
+  }
+
+  .header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .transport {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .stats,
+  .fallback {
+    padding-left: 0;
+  }
+}

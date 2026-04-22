@@ -5,6 +5,7 @@ export type {
   TripItinerary,
   TripDay,
   TripActivity,
+  TripPlaceCandidate,
   TripHotel,
   TripPlace,
   TripRoute,

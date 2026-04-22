@@ -2,7 +2,9 @@ import asyncio
 import logging
 from copy import deepcopy
 
-from app.integrations.twogis_client import TwoGISClient
+
+from app.integrations.google_maps_client import GoogleMapsClient
+
 from app.schemas.routing import RouteSegment
 
 logger = logging.getLogger(__name__)
@@ -20,8 +22,8 @@ DEFAULT_CENTER_LAT = 42.8746
 
 
 class RoutingService:
-    def __init__(self, client: TwoGISClient | None = None):
-        self.client = client or TwoGISClient()
+    def __init__(self, client: GoogleMapsClient  | None = None):
+        self.client = client or GoogleMapsClient()
         self.cache = {}
 
 

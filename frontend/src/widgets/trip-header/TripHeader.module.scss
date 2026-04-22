@@ -3,16 +3,15 @@
 
 .header {
   @include flex-col;
-  gap: $space-5;
-  padding: $space-8 $space-8 $space-6;
-  border-bottom: 1px solid $color-border;
+  gap: $space-6;
+  padding: $space-8 $space-8 $space-4;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.88));
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.16), transparent 26%),
+    radial-gradient(circle at bottom left, rgba(15, 23, 42, 0.03), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9));
 }
 
-.eyebrow,
-.meta {
+.eyebrow {
   display: flex;
   gap: $space-2;
   align-items: center;
@@ -31,7 +30,7 @@
 }
 
 .content {
-  gap: $space-4;
+  gap: $space-5;
 }
 
 .copy {
@@ -39,8 +38,7 @@
 }
 
 .badge,
-.kicker,
-.chip {
+.kicker {
   display: inline-flex;
   align-items: center;
   gap: $space-1;
@@ -63,13 +61,6 @@
   text-transform: uppercase;
 }
 
-.chip {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(20, 184, 166, 0.12);
-  color: $color-text;
-  text-transform: capitalize;
-}
-
 .actions {
   flex-shrink: 0;
 }
@@ -81,7 +72,7 @@
   margin: 0;
   line-height: 1.05;
   letter-spacing: -0.06em;
-  max-width: 14ch;
+  max-width: 16ch;
 }
 
 .summary {
@@ -92,9 +83,57 @@
   max-width: 56ch;
 }
 
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: $space-3;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-4;
+  border-radius: $radius-2xl;
+  border: 1px solid rgba(20, 184, 166, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 247, 243, 0.9));
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.statIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: $radius-full;
+  @include flex-center;
+  background: rgba(20, 184, 166, 0.1);
+  color: $color-accent;
+  flex-shrink: 0;
+}
+
+.statLabel {
+  display: block;
+  margin-bottom: $space-1;
+  font-size: $text-xs;
+  color: $color-text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: $weight-bold;
+}
+
+.statValue {
+  font-size: $text-base;
+  color: $color-text;
+  line-height: 1.3;
+}
+
+.tags {
+  margin-top: -$space-1;
+}
+
 @include max-md {
   .header {
-    padding: $space-6 $space-4 $space-5;
+    padding: $space-6 $space-4 $space-3;
   }
 
   .topRow {

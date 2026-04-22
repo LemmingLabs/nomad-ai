@@ -1,0 +1,41 @@
+@use '../../../app/styles/variables' as *;
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.list--neutral .item {
+  background: rgba(31, 41, 55, 0.05);
+  border: 1px solid rgba(31, 41, 55, 0.08);
+  color: $color-text;
+}
+
+.list--accent .item {
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.14);
+  color: $color-accent;
+}
+
+.list--surface .item {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  color: $color-text;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}

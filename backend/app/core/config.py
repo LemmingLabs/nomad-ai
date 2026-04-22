@@ -18,11 +18,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     GROQ_API_KEY: str | None = None
-    TWOGIS_API_KEY: str | None = None
-    TWOGIS_PLACES_BASE_URL: str = "https://catalog.api.2gis.com/3.0/items"
-    TWOGIS_ROUTING_BASE_URL: str = "https://routing.api.2gis.com/routing/7.0.0/global"
-    TWOGIS_MATRIX_BASE_URL: str = "https://routing.api.2gis.com/get_dist_matrix"
     PEXELS_API_KEY: str | None = None
+    GOOGLE_MAPS_API_KEY: str | None
 
     model_config = SettingsConfigDict(
         env_file=".env",

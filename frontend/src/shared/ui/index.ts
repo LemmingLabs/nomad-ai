@@ -8,3 +8,4 @@ export { Spinner } from './spinner/Spinner';
 export { Skeleton } from './skeleton/Skeleton';
 export { Avatar } from './avatar/Avatar';
 export { Divider } from './divider/Divider';
+export { TagList } from './tag-list/TagList';

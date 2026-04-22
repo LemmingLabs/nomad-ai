@@ -1,3 +1,6 @@
+import logging
+from collections import Counter
+
 from sqlalchemy.orm import Session
 
 from app.models.trip import Trip
@@ -9,6 +12,10 @@ from app.repositories.trip_repository import (
 )
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
+from app.services.place_candidate_service import get_place_candidate_service
+
+
+logger = logging.getLogger(__name__)
 
 
 def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> dict:
@@ -156,6 +163,189 @@ def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int,
     return itinerary, final_title
 
 
+def _normalize_city_name(city_raw: str) -> str:
+    """Map nearby destinations to the closest supported city for downstream services."""
+    mapping = {
+        "ala-archa": "Bishkek",
+        "chuy": "Bishkek",
+        "jeti-oguz": "Karakol",
+        "jeti oguz": "Karakol",
+        "altyn arashan": "Karakol",
+        "altyn-arashan": "Karakol",
+        "cholpon-ata": "Cholpon-Ata",
+        "bosteri": "Cholpon-Ata",
+        "suusamyr": "Bishkek",
+        "son-kul": "Kochkor",
+        "tash-rabat": "Naryn",
+    }
+    city_lower = str(city_raw or "").strip().lower()
+    return mapping.get(city_lower, city_raw)
+
+
+def _day_interest(day: dict, day_index: int, interests: list[str]) -> str:
+    text_parts = [
+        str(day.get("title", "")),
+        str(day.get("location", "")),
+    ]
+    activities = day.get("activities", [])
+    if isinstance(activities, list):
+        text_parts.extend(
+            str(activity.get("description", ""))
+            for activity in activities
+            if isinstance(activity, dict)
+        )
+    text = " ".join(text_parts).lower()
+
+    keyword_mapping = {
+        "mountains": ["mountain", "hike", "hiking", "gorge", "alpine", "viewpoint"],
+        "nature": ["nature", "park", "lake", "outdoor", "scenic", "valley"],
+        "food": ["food", "restaurant", "cafe", "market", "cuisine", "dinner"],
+        "culture": ["culture", "museum", "heritage", "historic", "mosque", "church"],
+    }
+    for interest, keywords in keyword_mapping.items():
+        if any(keyword in text for keyword in keywords):
+            return interest
+
+    if interests:
+        return interests[day_index % len(interests)]
+    return "culture"
+
+
+def _build_routing_location(day: dict, selected: dict, city: str) -> str:
+    place_name = str(selected.get("name") or "").strip()
+    formatted_address = str(selected.get("formatted_address") or "").strip()
+    city_name = str(city or "").strip()
+
+    parts = []
+    if place_name:
+        parts.append(place_name)
+    if formatted_address and formatted_address.lower() != place_name.lower():
+        parts.append(formatted_address)
+    elif city_name and city_name.lower() not in place_name.lower():
+        parts.append(city_name)
+
+    if parts:
+        return ", ".join(dict.fromkeys(parts))
+
+    fallback_location = str(day.get("location") or "").strip()
+    if fallback_location and city_name and city_name.lower() not in fallback_location.lower():
+        return f"{fallback_location}, {city_name}"
+    return fallback_location or city_name
+
+
+def _ensure_day_routing_location(day: dict) -> None:
+    if day.get("routing_location"):
+        return
+
+    city = str(day.get("city") or "").strip()
+    location = str(day.get("location") or "").strip()
+    if location and city and city.lower() not in location.lower():
+        day["routing_location"] = f"{location}, {city}"
+    else:
+        day["routing_location"] = location or city
+
+
+def enrich_itinerary_with_place_candidates(
+    itinerary: dict,
+    interests: list[str],
+    travel_style: str,
+    prompt: str | None = None,
+) -> dict:
+    """Replace AI-invented day locations with real Google Places candidates."""
+    if not isinstance(itinerary, dict) or not isinstance(itinerary.get("days"), list):
+        return itinerary
+
+    place_candidate_service = get_place_candidate_service()
+    used_place_ids: set[str] = set()
+    used_place_names: set[str] = set()
+    selected_type_counts: Counter = Counter()
+    selected_interest_counts: Counter = Counter()
+    previous_interest: str | None = None
+    previous_location: dict | None = None
+
+    for index, day in enumerate(itinerary["days"]):
+        if not isinstance(day, dict):
+            continue
+
+        city = str(day.get("city") or "").strip()
+        if not city:
+            city = "Bishkek"
+            day["city"] = city
+
+        interest = _day_interest(day, index, interests)
+        candidates = place_candidate_service.get_candidates_for_day(
+            city=city,
+            interests=[interest],
+            travel_style=travel_style,
+            user_prompt=prompt,
+            limit=8,
+            exclude_place_ids=used_place_ids,
+            exclude_names=used_place_names,
+            selected_type_counts=selected_type_counts,
+            selected_interest_counts=selected_interest_counts,
+            previous_interest=previous_interest,
+            previous_location=previous_location,
+        )
+        if not candidates:
+            logger.info(
+                "No Google Places candidates for day=%s city=%s interest=%s",
+                day.get("day") or index + 1,
+                city,
+                interest,
+            )
+            _ensure_day_routing_location(day)
+            previous_interest = interest
+            continue
+
+        selected = candidates[0]
+        if len(candidates) > 3:
+            selected = (
+                place_candidate_service.select_best_candidate_with_ai(
+                    candidates=candidates,
+                    city=city,
+                    interests=[interest],
+                    travel_style=travel_style,
+                    user_prompt=prompt,
+                )
+                or candidates[0]
+            )
+
+        place_id = selected.get("place_id")
+        if place_id:
+            used_place_ids.add(place_id)
+        place_name = selected.get("name")
+        if place_name:
+            used_place_names.add(" ".join(str(place_name).strip().lower().split()))
+
+        primary_type = next(
+            (
+                place_type
+                for place_type in selected.get("types", [])
+                if place_type not in {"establishment", "point_of_interest"}
+            ),
+            None,
+        )
+        if primary_type:
+            selected_type_counts[primary_type] += 1
+        selected_interest_counts[interest] += 1
+
+        if place_name:
+            day["location"] = place_name
+            day["routing_location"] = _build_routing_location(day, selected, city)
+            day["place_candidate"] = selected
+        else:
+            _ensure_day_routing_location(day)
+
+        if selected.get("lat") is not None and selected.get("lng") is not None:
+            previous_location = {
+                "lat": selected.get("lat"),
+                "lng": selected.get("lng"),
+            }
+        previous_interest = interest
+
+    return itinerary
+
+
 def generate_trip(
     db: Session,
     user_id: int | None,
@@ -205,29 +395,20 @@ def generate_trip(
 
     itinerary, title = normalize_generated_itinerary(itinerary, title, days, normalized_travel_style)
 
-    mapping = {
-        "ala-archa": "Bishkek",
-        "chuy": "Bishkek",
-        "jeti-oguz": "Karakol",
-        "jeti oguz": "Karakol",
-        "altyn arashan": "Karakol",
-        "altyn-arashan": "Karakol",
-        "cholpon-ata": "Cholpon-Ata",
-        "bosteri": "Cholpon-Ata",
-        "suusamyr": "Bishkek",
-        "son-kul": "Kochkor",
-        "tash-rabat": "Naryn"
-    }
-
     if "days" in itinerary and isinstance(itinerary["days"], list):
         for day in itinerary["days"]:
             if isinstance(day, dict):
-                city_raw = day.get("city", "")
-                city_lower = str(city_raw).strip().lower()
-                if city_lower in mapping:
-                    day["city"] = mapping[city_lower]
-                else:
-                    day["city"] = city_raw
+                day["city"] = _normalize_city_name(day.get("city", ""))
+
+    try:
+        itinerary = enrich_itinerary_with_place_candidates(
+            itinerary,
+            normalized_interests,
+            normalized_travel_style,
+            normalized_prompt,
+        )
+    except Exception as exc:
+        print(f"Place candidate enrichment failed: {exc}")
 
     catalog_service = CatalogService(db)
     enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
