@@ -1,9 +1,8 @@
 import gsap from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
-import { type FormEvent, type ReactNode, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { Message } from '../../entities/message';
+import { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
 import styles from './ChatPanel.module.scss';
 
 gsap.registerPlugin(TextPlugin);
@@ -42,9 +41,45 @@ export function ChatPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const emptyRef = useRef<HTMLDivElement>(null);
   const typewriterTextRef = useRef<HTMLSpanElement>(null);
+  const hasHydratedAssistantHistoryRef = useRef(false);
+  const seenAssistantIdsRef = useRef<Set<number>>(new Set());
+  const [animatingAssistantIds, setAnimatingAssistantIds] = useState<number[]>([]);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    bottomRef.current?.scrollIntoView({ behavior });
+  };
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom(messages.length > 0 ? 'smooth' : 'auto');
+  }, [messages]);
+
+  useEffect(() => {
+    const assistantMessages = messages.filter((message) => message.role === 'assistant');
+
+    if (!hasHydratedAssistantHistoryRef.current) {
+      if (messages.length === 0) {
+        return;
+      }
+
+      assistantMessages.forEach((message) => {
+        seenAssistantIdsRef.current.add(message.id);
+      });
+      hasHydratedAssistantHistoryRef.current = true;
+      return;
+    }
+
+    const newAssistantIds = assistantMessages
+      .filter((message) => !seenAssistantIdsRef.current.has(message.id))
+      .map((message) => message.id);
+
+    if (newAssistantIds.length === 0) {
+      return;
+    }
+
+    newAssistantIds.forEach((messageId) => {
+      seenAssistantIdsRef.current.add(messageId);
+    });
+    setAnimatingAssistantIds((currentIds) => [...currentIds, ...newAssistantIds]);
   }, [messages]);
 
   useEffect(() => {
@@ -113,9 +148,16 @@ export function ChatPanel({
           >
             <div className={styles.bubble}>
               {msg.role === 'assistant' ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {msg.content}
-                </ReactMarkdown>
+                <AnimatedAssistantMessage
+                  message={msg}
+                  shouldAnimate={animatingAssistantIds.includes(msg.id)}
+                  onRevealProgress={() => scrollToBottom('auto')}
+                  onAnimationComplete={(messageId) => {
+                    setAnimatingAssistantIds((currentIds) =>
+                      currentIds.filter((id) => id !== messageId),
+                    );
+                  }}
+                />
               ) : (
                 <p>{msg.content}</p>
               )}

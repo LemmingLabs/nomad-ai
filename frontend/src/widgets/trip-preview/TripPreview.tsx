@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import cn from 'classnames';
+import type { ReactNode } from 'react';
 import type { TripItinerary } from '../../entities/trip';
 import { TripDayCard } from '../trip-day-card';
 import { TripHeader } from '../trip-header';
@@ -11,7 +11,11 @@ interface TripPreviewProps {
   actions?: ReactNode;
 }
 
-export function TripPreview({ itinerary, tripTitle, actions }: TripPreviewProps) {
+export function TripPreview({
+  itinerary,
+  tripTitle,
+  actions,
+}: TripPreviewProps) {
   if (!itinerary) {
     return (
       <div className={styles.empty}>
@@ -26,7 +30,7 @@ export function TripPreview({ itinerary, tripTitle, actions }: TripPreviewProps)
     <div className={styles.preview}>
       <TripHeader
         title={tripTitle ?? itinerary.summary}
-        totalDays={itinerary.total_days}
+        totalDays={itinerary.days.length}
         summary={itinerary.summary}
         travelStyle={itinerary.travel_style}
         interests={itinerary.interests}
@@ -40,9 +44,11 @@ export function TripPreview({ itinerary, tripTitle, actions }: TripPreviewProps)
               [styles['dayTrack--last']]: index === itinerary.days.length - 1,
             })}
           >
-            <div className={styles.dayRail} aria-hidden="true">
+            <div className={styles.dayRail} aria-hidden='true'>
               <span className={styles.dayMarker}>{day.day}</span>
-              {index < itinerary.days.length - 1 && <span className={styles.dayConnector} />}
+              {index < itinerary.days.length - 1 && (
+                <span className={styles.dayConnector} />
+              )}
             </div>
             <TripDayCard day={day} />
           </div>
