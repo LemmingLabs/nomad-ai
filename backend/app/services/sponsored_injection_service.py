@@ -1,8 +1,9 @@
 import logging
 import math
+import re
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.business import Business
@@ -12,6 +13,46 @@ from app.models.sponsored_place import SponsoredPlace
 
 
 logger = logging.getLogger(__name__)
+
+_CITY_STOPWORDS = {
+    "city",
+    "center",
+    "centre",
+    "downtown",
+    "kyrgyzstan",
+    "kyrgyz",
+    "republic",
+    "mall",
+}
+_FOOD_KEYWORDS = {
+    "breakfast",
+    "brunch",
+    "cafe",
+    "cafeteria",
+    "canteen",
+    "coffee",
+    "cuisine",
+    "dining",
+    "dinner",
+    "food",
+    "food court",
+    "lunch",
+    "market",
+    "meal",
+    "restaurant",
+    "self service",
+    "self-service",
+}
+_ATTRACTION_KEYWORDS = {
+    "attraction",
+    "gallery",
+    "historic",
+    "landmark",
+    "museum",
+    "park",
+    "sightseeing",
+    "tour",
+}
 
 
 @dataclass(frozen=True)
@@ -35,6 +76,15 @@ class SponsoredInjectionService:
             if not isinstance(day, dict):
                 continue
 
+            logger.info(
+                "[SPONSORED DEBUG] day=%s city=%s location=%s routing_location=%s activity_types=%s",
+                day.get("day"),
+                day.get("city"),
+                day.get("location"),
+                day.get("routing_location"),
+                [a.get("type") for a in day.get("activities", []) if isinstance(a, dict)],
+            )
+
             if day.get("sponsored"):
                 continue
 
@@ -47,6 +97,7 @@ class SponsoredInjectionService:
 
             city = str(day.get("city") or "").strip()
             if not city:
+                logger.info("[SPONSORED DEBUG] skipping day=%s because city is empty", day.get("day"))
                 continue
 
             desired_categories = self._infer_desired_categories(day)
@@ -63,6 +114,11 @@ class SponsoredInjectionService:
 
             used_place_ids.add(candidate.id)
             day["sponsored"] = self._build_day_payload(candidate)
+            logger.info(
+                "[SPONSORED DEBUG] final sponsored for day=%s -> %s",
+                day.get("day"),
+                day.get("sponsored"),
+            )
             self.db.add(
                 SponsoredImpression(
                     trip_id=trip_id,
@@ -78,20 +134,46 @@ class SponsoredInjectionService:
 
     def _infer_desired_categories(self, day: dict) -> set[str] | None:
         activities = day.get("activities")
-        if not isinstance(activities, list):
-            return None
+        desired: set[str] = set()
+        text_chunks = [
+            str(day.get("title") or ""),
+            str(day.get("location") or ""),
+            str(day.get("routing_location") or ""),
+        ]
 
-        types = {
-            str(activity.get("type") or "").strip().lower()
-            for activity in activities
-            if isinstance(activity, dict)
-        }
+        types: set[str] = set()
+        if isinstance(activities, list):
+            for activity in activities:
+                if not isinstance(activity, dict):
+                    continue
+                activity_type = str(activity.get("type") or "").strip().lower()
+                if activity_type:
+                    types.add(activity_type)
+                text_chunks.extend(
+                    [
+                        str(activity.get("title") or ""),
+                        str(activity.get("name") or ""),
+                        str(activity.get("description") or ""),
+                    ]
+                )
 
         if "meal" in types:
-            return {"restaurant"}
+            desired.add("restaurant")
         if "sightseeing" in types:
-            return {"attraction"}
-        return None
+            desired.add("attraction")
+
+        text_blob = self._normalize_text(" ".join(chunk for chunk in text_chunks if chunk))
+        if any(keyword in text_blob for keyword in _FOOD_KEYWORDS):
+            desired.add("restaurant")
+        if any(keyword in text_blob for keyword in _ATTRACTION_KEYWORDS):
+            desired.add("attraction")
+
+        logger.info(
+            "[SPONSORED DEBUG] inferred desired categories for day=%s -> %s",
+            day.get("day"),
+            sorted(desired),
+        )
+        return desired or None
 
     def _extract_day_coords(self, day: dict) -> _Coords | None:
         candidate = day.get("place_candidate")
@@ -115,20 +197,29 @@ class SponsoredInjectionService:
         coords: _Coords | None,
         used_place_ids: set[int],
     ) -> SponsoredPlace | None:
-        city_norm = " ".join(city.strip().lower().split())
+        city_norm = self._normalize_city(city)
+        logger.info("[SPONSORED DEBUG] city raw=%s normalized=%s", city, city_norm)
+        if not city_norm:
+            return None
 
         statement = (
             select(SponsoredPlace)
             .where(SponsoredPlace.is_active.is_(True))
             .where(SponsoredPlace.is_approved.is_(True))
-            .where(func.lower(func.trim(SponsoredPlace.city)) == city_norm)
             .options(
                 selectinload(SponsoredPlace.business).selectinload(Business.media),
             )
-            .limit(100)
+            .limit(250)
         )
 
-        candidates = list(self.db.execute(statement).scalars().all())
+        all_candidates = list(self.db.execute(statement).scalars().all())
+        candidates = [place for place in all_candidates if self._city_matches(city_norm, place.city)]
+        logger.info(
+            "[SPONSORED DEBUG] city=%s matched %s/%s approved active candidates",
+            city_norm,
+            len(candidates),
+            len(all_candidates),
+        )
         if not candidates:
             return None
 
@@ -150,6 +241,19 @@ class SponsoredInjectionService:
             # - then closer distance
             # - then newer places (by id)
             return (category_score, -distance_km, place.id)
+
+        for place in filtered:
+            category_score, distance_score, recency_score = score(place)
+            logger.info(
+                "[SPONSORED DEBUG] candidate id=%s title=%s city=%s category=%s score=%s distance_score=%s recency=%s",
+                place.id,
+                place.title,
+                place.city,
+                place.category,
+                category_score,
+                distance_score,
+                recency_score,
+            )
 
         return max(filtered, key=score)
 
@@ -188,10 +292,11 @@ class SponsoredInjectionService:
         place_norm = self._normalize_category(place_category or "")
         if not place_norm:
             return 0
+        place_parts = self._split_category_parts(place_category or "")
 
         desired_norm = {self._normalize_category(item) for item in desired if self._normalize_category(item)}
 
-        if place_norm in desired_norm:
+        if place_norm in desired_norm or any(part in desired_norm for part in place_parts):
             return 3
 
         aliases: dict[str, set[str]] = {
@@ -200,13 +305,23 @@ class SponsoredInjectionService:
                 "restaurants",
                 "cafe",
                 "cafes",
+                "canteen",
+                "cafeteria",
                 "coffee",
                 "coffee shop",
                 "coffeehouse",
                 "bar",
                 "bakery",
                 "food",
+                "food court",
                 "dining",
+                "dining hall",
+                "self service",
+                "self service cafe",
+                "self service restaurant",
+                "self-service",
+                "self-service cafe",
+                "self-service restaurant",
             },
             "attraction": {
                 "attraction",
@@ -232,10 +347,50 @@ class SponsoredInjectionService:
             token_norm = self._normalize_category(token)
             if not token_norm:
                 continue
-            if token_norm in place_norm:
+            if token_norm in place_norm or token_norm in place_parts:
                 return 2
 
+        if "restaurant" in desired_norm and any(token in place_norm for token in aliases["restaurant"]):
+            return 1
+
         return 0
+
+    def _normalize_text(self, raw: str) -> str:
+        return " ".join(re.sub(r"[^a-z0-9]+", " ", str(raw or "").lower()).split())
+
+    def _split_category_parts(self, raw: str) -> set[str]:
+        normalized_full = self._normalize_category(raw)
+        parts = {normalized_full} if normalized_full else set()
+        for part in re.split(r"[/&,;|]+", str(raw or "")):
+            normalized = self._normalize_category(part)
+            if normalized:
+                parts.add(normalized)
+        return parts
+
+    def _normalize_city(self, raw: str) -> str:
+        cleaned = self._normalize_text(raw)
+        if not cleaned:
+            return ""
+
+        tokens = [token for token in cleaned.split() if token not in _CITY_STOPWORDS]
+        return " ".join(tokens) or cleaned
+
+    def _city_matches(self, day_city_norm: str, place_city: str | None) -> bool:
+        place_city_norm = self._normalize_city(place_city or "")
+        if not place_city_norm:
+            return False
+
+        logger.info(
+            "[SPONSORED DEBUG] comparing city day_normalized=%s place_raw=%s place_normalized=%s",
+            day_city_norm,
+            place_city,
+            place_city_norm,
+        )
+        return (
+            day_city_norm == place_city_norm
+            or day_city_norm.startswith(f"{place_city_norm} ")
+            or place_city_norm.startswith(f"{day_city_norm} ")
+        )
 
     def _haversine_km(self, lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         r = 6371.0
