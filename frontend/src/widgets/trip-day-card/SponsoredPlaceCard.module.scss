@@ -1,0 +1,197 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.card {
+  @include flex-col;
+  gap: $space-5;
+  padding: $space-5;
+  border-radius: $radius-2xl;
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(238, 248, 245, 0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.header,
+.headerCopy,
+.details,
+.titleBlock {
+  @include flex-col;
+}
+
+.headerCopy,
+.details,
+.titleBlock {
+  gap: $space-2;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+}
+
+.badge {
+  background: rgba(20, 184, 166, 0.14);
+}
+
+.kicker {
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: $color-text-muted;
+}
+
+.heading {
+  margin: 0;
+  font-size: $text-xl;
+  line-height: 1.15;
+  color: $color-text;
+  letter-spacing: -0.03em;
+}
+
+.subheading {
+  margin: 0;
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: $color-text-muted;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+  gap: $space-5;
+  align-items: stretch;
+}
+
+.media {
+  min-height: 180px;
+}
+
+.image,
+.placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  border-radius: 1.25rem;
+}
+
+.image {
+  display: block;
+  object-fit: cover;
+  border: 1px solid rgba(20, 184, 166, 0.08);
+}
+
+.placeholder {
+  @include flex-col;
+  @include flex-center;
+  gap: $space-2;
+  border: 1px dashed rgba(20, 184, 166, 0.2);
+  background:
+    radial-gradient(circle at top, rgba(20, 184, 166, 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 248, 247, 0.96));
+  color: $color-accent;
+  text-align: center;
+
+  span {
+    font-size: $text-sm;
+    font-weight: $weight-semibold;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: $text-xl;
+  line-height: 1.15;
+  color: $color-text;
+  letter-spacing: -0.03em;
+}
+
+.metaRow {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: $space-2;
+  margin: 0;
+  font-size: $text-sm;
+  line-height: 1.6;
+  color: $color-text-muted;
+
+  svg {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    color: $color-accent;
+  }
+}
+
+.description {
+  margin: 0;
+  font-size: $text-sm;
+  line-height: 1.65;
+  color: $color-text;
+  @include text-clamp(3);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin-top: auto;
+}
+
+.primaryAction,
+.secondaryAction {
+  @include btn-base;
+  min-height: 2.75rem;
+  font-size: $text-sm;
+}
+
+.primaryAction {
+  padding: 0.75rem 1rem;
+  background: $color-accent;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.22);
+
+  &:hover:not(:disabled) {
+    background: $color-accent-hover;
+  }
+}
+
+.secondaryAction {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(20, 184, 166, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  color: $color-text;
+
+  &:hover:not(:disabled) {
+    border-color: rgba(20, 184, 166, 0.28);
+    color: $color-accent;
+  }
+}
+
+@include max-md {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .media {
+    min-height: 200px;
+  }
+
+  .image,
+  .placeholder {
+    min-height: 200px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+}

@@ -8,6 +8,8 @@ export type {
   TripPlaceCandidate,
   TripHotel,
   TripPlace,
+  SponsoredPlace,
+  SponsoredPlacePayload,
   TripRoute,
   TripImage,
   TripImages,
