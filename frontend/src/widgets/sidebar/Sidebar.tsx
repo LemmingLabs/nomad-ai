@@ -16,6 +16,7 @@ import { useSidebarStore } from '../../features/ui/open-sidebar';
 import { config } from '../../shared/config';
 import { Avatar } from '../../shared/ui';
 import { SidebarTripItem } from './SidebarTripItem';
+import { UsageWidget } from '../usage-widget';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -119,30 +120,39 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
         ))}
       </div>
 
+      <UsageWidget isCollapsed={isCollapsed} />
+
       <div className={styles.footer}>
-        {user ? (
-          <div className={styles.profile}>
-            <Avatar name={user.full_name ?? user.email} size="sm" />
-            {!isCollapsed && (
-              <div className={styles.profileCopy}>
-                <p className={styles.profileName}>{user.full_name ?? 'Traveler'}</p>
-                <p className={styles.profileEmail}>{user.email}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className={styles.profile}>
-            <span className={styles.profileGhost}>
-              <UserRound size={16} />
-            </span>
-            {!isCollapsed && (
-              <div className={styles.profileCopy}>
-                <p className={styles.profileName}>Guest mode</p>
-                <p className={styles.profileEmail}>Sign in to sync your trips</p>
-              </div>
-            )}
-          </div>
-        )}
+        <button
+          type="button"
+          className={styles.profileButton}
+          onClick={() => void navigate(user ? '/profile' : '/auth/login')}
+          aria-label={user ? 'Open profile' : 'Sign in'}
+        >
+          {user ? (
+            <div className={styles.profile}>
+              <Avatar name={user.full_name ?? user.email} size="sm" />
+              {!isCollapsed && (
+                <div className={styles.profileCopy}>
+                  <p className={styles.profileName}>{user.full_name ?? 'Traveler'}</p>
+                  <p className={styles.profileEmail}>{user.email}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={styles.profile}>
+              <span className={styles.profileGhost}>
+                <UserRound size={16} />
+              </span>
+              {!isCollapsed && (
+                <div className={styles.profileCopy}>
+                  <p className={styles.profileName}>Guest mode</p>
+                  <p className={styles.profileEmail}>Sign in to sync your trips</p>
+                </div>
+              )}
+            </div>
+          )}
+        </button>
       </div>
     </aside>
   );

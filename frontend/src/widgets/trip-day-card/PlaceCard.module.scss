@@ -47,6 +47,21 @@
   font-weight: $weight-semibold;
 }
 
+.sponsored {
+  position: absolute;
+  top: $space-3;
+  right: $space-3;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: $radius-full;
+  background: rgba(255, 255, 255, 0.92);
+  color: $color-text-muted;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  border: 1px solid rgba(231, 229, 228, 0.9);
+}
+
 .content {
   @include flex-col;
   gap: $space-2;

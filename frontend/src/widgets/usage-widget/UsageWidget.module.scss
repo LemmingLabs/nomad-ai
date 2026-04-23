@@ -1,0 +1,50 @@
+@use '../../app/styles/variables' as *;
+
+.wrap {
+  padding: $space-4 $space-5 $space-5;
+  border-top: 1px solid $color-border;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.title {
+  font-size: $text-sm;
+  font-weight: $weight-extrabold;
+  color: $color-text;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.hint {
+  font-size: $text-xs;
+  color: $color-text-muted;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  gap: $space-3;
+}
+
+.collapsed {
+  padding: $space-4 $space-3 $space-5;
+
+  .title,
+  .hint,
+  .actions {
+    display: none;
+  }
+}
+

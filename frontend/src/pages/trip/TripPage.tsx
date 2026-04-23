@@ -1,8 +1,10 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Maximize2, Minimize2, PanelRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { messageApi, type Message } from '../../entities/message';
+import { useMyLimitsQuery, limitQueryKeys } from '../../entities/limit';
 import {
   tripApi,
   useTripStore,
@@ -10,6 +12,7 @@ import {
   type TripItinerary,
 } from '../../entities/trip';
 import { useUserStore } from '../../entities/user';
+import { ChatEditLimitNotice, fallbackFreeLimits, getRemaining, getUsageTone, isLimitExceededError } from '../../features/subscription/view-usage';
 import { useSidebarStore } from '../../features/ui/open-sidebar';
 import { useMediaQuery } from '../../shared/hooks';
 import { getErrorMessage, handleApiError } from '../../shared/lib';
@@ -18,6 +21,7 @@ import { ChatPanel } from '../../widgets/chat-panel';
 import { ResizableLayout } from '../../widgets/resizable-layout';
 import { Sidebar } from '../../widgets/sidebar';
 import { TripPreview } from '../../widgets/trip-preview';
+import { UpgradeBanner } from '../../widgets/upgrade-banner';
 import styles from './TripPage.module.scss';
 
 export function TripPage() {
@@ -25,6 +29,7 @@ export function TripPage() {
   const tripId = Number(id);
   const { trips, setActiveTrip, updateTrip } = useTripStore();
   const { isAuthenticated } = useUserStore();
+  const queryClient = useQueryClient();
   const { isOpen, isCollapsed, setCollapsed } = useSidebarStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const localTrip = trips.find((trip) => trip.id === tripId) as
@@ -36,6 +41,20 @@ export function TripPage() {
     useState<TripItinerary | null>(null);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [collapsedBeforeFocus, setCollapsedBeforeFocus] = useState(false);
+  const [forceEditLimitReached, setForceEditLimitReached] = useState(false);
+
+  const limitsQuery = useMyLimitsQuery();
+  const limits = limitsQuery.data ?? (isAuthenticated ? fallbackFreeLimits : null);
+  const remainingEdits = limits
+    ? getRemaining(limits.chat_edits_used, limits.chat_edit_limit_per_day)
+    : null;
+  const editsTone = limits
+    ? getUsageTone(limits.chat_edits_used, limits.chat_edit_limit_per_day)
+    : 'ok';
+  const isChatLimitReached =
+    Boolean(isAuthenticated) &&
+    Boolean(limits) &&
+    (forceEditLimitReached || (remainingEdits !== null && remainingEdits <= 0));
 
   useEffect(() => {
     if (Number.isFinite(tripId)) {
@@ -79,6 +98,8 @@ export function TripPage() {
         ...(prev ?? tripQuery.data?.messages.items ?? []),
         response.message,
       ]);
+      setForceEditLimitReached(false);
+      void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
       if (response.updated_itinerary) {
         setItineraryOverride(response.updated_itinerary);
         if (currentTrip) {
@@ -95,6 +116,11 @@ export function TripPage() {
           (message) => message.id !== context?.optimisticId,
         ),
       );
+      if (isLimitExceededError(error)) {
+        setForceEditLimitReached(true);
+        void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
+        return;
+      }
       handleApiError(error);
     },
   });
@@ -149,7 +175,23 @@ export function TripPage() {
             <ChatPanel
               messages={visibleMessages}
               isLoading={tripQuery.isLoading || sendMutation.isPending}
-              isDisabled={!isAuthenticated || tripQuery.isError}
+              isDisabled={!isAuthenticated || tripQuery.isError || isChatLimitReached}
+              disabledPlaceholder={
+                !isAuthenticated
+                  ? 'Sign in to continue this conversation...'
+                  : isChatLimitReached
+                    ? 'Daily AI edit limit reached — upgrade to continue'
+                    : 'Chat is currently unavailable...'
+              }
+              notice={
+                isAuthenticated && limits ? (
+                  <ChatEditLimitNotice
+                    remaining={remainingEdits ?? 0}
+                    limit={limits.chat_edit_limit_per_day}
+                    tone={editsTone}
+                  />
+                ) : null
+              }
               disabledMessage={
                 !isAuthenticated ? (
                   <>
@@ -157,6 +199,15 @@ export function TripPage() {
                   </>
                 ) : tripQuery.isError ? (
                   <>{getErrorMessage(tripQuery.error)}</>
+                ) : isChatLimitReached ? (
+                  <div style={{ paddingTop: 12 }}>
+                    <UpgradeBanner
+                      title="You've reached your daily AI edit limit"
+                      subtitle="Upgrade your plan to keep refining this itinerary today."
+                      ctaTo="/pricing"
+                      ctaLabel="Upgrade"
+                    />
+                  </div>
                 ) : undefined
               }
               onSend={(content) => sendMutation.mutate(content)}

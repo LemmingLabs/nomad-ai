@@ -1,0 +1,50 @@
+@use '../../app/styles/variables' as *;
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.label {
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  color: $color-text;
+}
+
+.meta {
+  font-size: $text-xs;
+  color: $color-text-muted;
+  font-family: $font-mono;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(107, 114, 128, 0.18);
+  overflow: hidden;
+  border: 1px solid rgba(231, 229, 228, 0.9);
+}
+
+.fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: $color-accent;
+  transition: width $transition-normal;
+}
+
+.fillWarn {
+  background: $color-warning;
+}
+
+.fillDanger {
+  background: $color-error;
+}
+

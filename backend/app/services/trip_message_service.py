@@ -1,3 +1,5 @@
+import logging
+
 from app.models.trip import Trip
 from app.models.trip_message import TripMessage
 from app.repositories.trip_message_repository import TripMessageRepository
@@ -7,6 +9,9 @@ from fastapi import HTTPException
 
 from app.services.limit_service import LimitService
 from app.services.usage_service import UsageService
+
+
+logger = logging.getLogger(__name__)
 
 
 class TripMessageService:
@@ -104,15 +109,14 @@ class TripMessageService:
         new_itinerary: dict,
     ) -> set[int]:
         """
-        Return 0-based indexes of days where location-sensitive fields changed:
-        location, routing_location, or city.
-        These are the days that require image and routing re-enrichment.
+        Return 0-based indexes of days where location/semantic fields changed.
+        These are the days that require Google Places / routing / image re-enrichment.
         """
         old_days = old_itinerary.get("days", []) if old_itinerary else []
         new_days = new_itinerary.get("days", []) if new_itinerary else []
         changed: set[int] = set()
 
-        LOC_FIELDS = {"location", "routing_location", "city"}
+        LOC_FIELDS = {"location", "routing_location", "city", "title", "activities"}
 
         for idx, new_day in enumerate(new_days):
             if not isinstance(new_day, dict):
@@ -165,20 +169,85 @@ class TripMessageService:
                     updated_itinerary=updated_itinerary,
                 )
 
-                # 2. Catalog enrichment (always, same as before)
+                merged_itinerary.setdefault("interests", trip.interests or [])
+                merged_itinerary.setdefault("travel_style", trip.travel_style)
+                merged_itinerary.setdefault("total_days", trip.days)
+
+                # 2. Detect changes (pre-enrichment)
+                force_refresh = any(
+                    word in user_content.lower()
+                    for word in ["change", "replace", "another", "better", "different"]
+                )
+                location_changed_indexes = self._detect_location_changed_days(
+                    old_itinerary, merged_itinerary
+                )
+                semantic_changed_indexes = self._detect_changed_days(
+                    old_itinerary, merged_itinerary
+                )
+                missing_place_candidate_indexes: set[int] = set()
+                days = merged_itinerary.get("days", [])
+                if isinstance(days, list):
+                    for idx, day in enumerate(days):
+                        if not isinstance(day, dict):
+                            continue
+                        candidate = day.get("place_candidate")
+                        if not isinstance(candidate, dict) or candidate.get("place_id") is None:
+                            missing_place_candidate_indexes.add(idx)
+
+                place_candidate_refresh_indexes = location_changed_indexes | missing_place_candidate_indexes
+                if force_refresh:
+                    place_candidate_refresh_indexes |= semantic_changed_indexes
+
+                logger.info("[DEBUG] force_refresh=%s", force_refresh)
+                logger.info("[DEBUG] changed_days=%s", place_candidate_refresh_indexes)
+                logger.info("[CONTINUE] location_changed_indexes=%s", location_changed_indexes)
+                logger.info(
+                    "[CONTINUE] place_candidate_refresh_indexes=%s", place_candidate_refresh_indexes
+                )
+
+                # 3. Reset stale fields before re-enrichment
+                if place_candidate_refresh_indexes and isinstance(days, list):
+                    for idx in sorted(place_candidate_refresh_indexes):
+                        if idx < 0 or idx >= len(days):
+                            continue
+                        day = days[idx]
+                        if not isinstance(day, dict):
+                            continue
+                        day.pop("place_candidate", None)
+                        day.pop("images", None)
+                        day.pop("route_from_previous", None)
+
+                # 4. Google Places candidate re-enrichment (selective)
+                if place_candidate_refresh_indexes:
+                    logger.info("[DEBUG] re-enriching places/images")
+                    logger.info(
+                        "[CONTINUE] re-running Google Places enrichment for changed days"
+                    )
+                    from app.services.trip_service import (
+                        enrich_selected_days_with_place_candidates,
+                    )
+
+                    merged_itinerary = enrich_selected_days_with_place_candidates(
+                        merged_itinerary,
+                        changed_day_indexes=place_candidate_refresh_indexes,
+                        interests=list(merged_itinerary.get("interests") or trip.interests or []),
+                        travel_style=str(merged_itinerary.get("travel_style") or trip.travel_style),
+                        prompt=None,
+                    )
+
+                # 5. Catalog enrichment (always, same as before)
                 catalog_service = CatalogService(self.db)
                 enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(
                     merged_itinerary,
                     trip.budget,
                 )
 
-                # 3. Detect which days had location-sensitive changes
-                location_changed_indexes = self._detect_location_changed_days(
-                    old_itinerary, enriched_itinerary
-                )
+                # After place candidate refresh, routing/images must refresh for the same set
+                location_changed_indexes = place_candidate_refresh_indexes
 
-                # 4. Routing enrichment – only when locations actually changed
+                # 6. Routing enrichment – only when locations actually changed
                 if location_changed_indexes:
+                    logger.info("[CONTINUE] re-running routing enrichment")
                     from app.utils.async_runner import run_async
                     from app.services.routing_service import RoutingService
                     try:
@@ -199,10 +268,11 @@ class TripMessageService:
                                     "route_from_previous", old_day["route_from_previous"]
                                 )
 
-                # 5. Image enrichment – only for location-changed days
+                # 7. Image enrichment – only for location-changed days
                 from app.services.image_enrichment_service import ImageEnrichmentService
                 try:
                     if location_changed_indexes:
+                        logger.info("[CONTINUE] re-running image enrichment")
                         # Selective: only re-fetch images for changed days
                         enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(
                             enriched_itinerary,
