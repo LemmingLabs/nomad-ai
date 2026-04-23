@@ -1,4 +1,4 @@
-import { authStorage } from '../model/auth.storage'
+import { apiClient } from '../../../shared/api/client'
 import type {
   AuthUser,
   LoginRequest,
@@ -6,44 +6,21 @@ import type {
   RefreshResponse,
 } from '../model/auth.types'
 
-async function requestJson<TResponse>(
-  path: string,
-  init?: RequestInit,
-): Promise<TResponse> {
-  const res = await fetch(path, init)
-
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status} ${res.statusText}`)
-  }
-
-  return (await res.json()) as TResponse
-}
-
 export const authApi = {
-  login(payload: LoginRequest) {
-    return requestJson<LoginResponse>('/api/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+  async login(payload: LoginRequest) {
+    const { data } = await apiClient.post<LoginResponse>('/auth/login', payload)
+    return data
   },
 
-  refresh(refreshToken: string) {
-    return requestJson<RefreshResponse>('/api/v1/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+  async refresh(refreshToken: string) {
+    const { data } = await apiClient.post<RefreshResponse>('/auth/refresh', {
+      refreshToken,
     })
+    return data
   },
 
-  getMe() {
-    const accessToken = authStorage.getAccessToken()
-
-    return requestJson<AuthUser>('/api/v1/auth/me', {
-      method: 'GET',
-      headers: accessToken
-        ? { Authorization: `Bearer ${accessToken}` }
-        : undefined,
-    })
+  async getMe() {
+    const { data } = await apiClient.get<AuthUser>('/auth/me')
+    return data
   },
 }

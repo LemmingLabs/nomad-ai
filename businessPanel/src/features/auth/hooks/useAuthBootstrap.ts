@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { authApi } from '../api/auth.api'
 import { useAuthStore } from '../model/auth.store'
 import { authStorage } from '../model/auth.storage'
+import { AUTH_UNAUTHORIZED_EVENT } from '../../../shared/api/client'
 
 export function useAuthBootstrap() {
   const bootstrappedRef = useRef(false)
@@ -55,5 +56,16 @@ export function useAuthBootstrap() {
     }
 
     void run()
+  }, [])
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      useAuthStore.getState().clearAuth()
+    }
+
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+    return () => {
+      window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+    }
   }, [])
 }
