@@ -15,6 +15,7 @@ from app.api.v1.auth import get_me, login, register, router as auth_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, oauth2_scheme
 from app.core import security
+from app.models.user import UserRole
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
@@ -47,6 +48,7 @@ def test_user_response_builds_from_attributes_without_exposing_password_hash() -
         def __init__(self) -> None:
             self.id = 7
             self.email = "nomad@example.com"
+            self.role = UserRole.USER
             self.created_at = created_at
             self.password_hash = "hidden"
 
@@ -341,6 +343,7 @@ def test_auth_register_endpoint_returns_created_user_response() -> None:
     class UserORM:
         id = 7
         email = "traveler@example.com"
+        role = UserRole.USER
         created_at = datetime(2026, 4, 18, tzinfo=timezone.utc)
 
     user = UserORM()
@@ -356,6 +359,7 @@ def test_auth_register_endpoint_returns_created_user_response() -> None:
     assert response == UserResponse(
         id=7,
         email="traveler@example.com",
+        role=UserRole.USER,
         created_at=datetime(2026, 4, 18, tzinfo=timezone.utc),
     )
 
@@ -416,6 +420,7 @@ def test_auth_me_endpoint_returns_authenticated_user() -> None:
     class UserORM:
         id = 7
         email = "traveler@example.com"
+        role = UserRole.USER
         created_at = datetime(2026, 4, 18, tzinfo=timezone.utc)
 
     user = UserORM()
@@ -424,6 +429,7 @@ def test_auth_me_endpoint_returns_authenticated_user() -> None:
     assert response == UserResponse(
         id=7,
         email="traveler@example.com",
+        role=UserRole.USER,
         created_at=datetime(2026, 4, 18, tzinfo=timezone.utc),
     )
 

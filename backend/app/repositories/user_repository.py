@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.subscription_plan import BillingPeriod, SubscriptionPlan, SubscriptionPlanName
 from app.models.user_subscription import UserSubscription, UserSubscriptionStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 class UserRepository:
@@ -18,6 +18,26 @@ class UserRepository:
 
     def get_user_by_id(self, user_id: int) -> User | None:
         return self.db.get(User, user_id)
+
+    def list_users(self, *, limit: int = 50, offset: int = 0) -> list[User]:
+        statement = (
+            select(User)
+            .order_by(User.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(self.db.execute(statement).scalars().all())
+
+    def count_admins(self) -> int:
+        statement = select(func.count(User.id)).where(User.role == UserRole.ADMIN)
+        return int(self.db.execute(statement).scalar() or 0)
+
+    def update_user_role(self, user: User, role: UserRole) -> User:
+        user.role = role
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
 
     def _get_or_create_free_plan(self) -> SubscriptionPlan:
         statement = select(SubscriptionPlan).where(
