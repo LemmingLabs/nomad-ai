@@ -3,6 +3,10 @@ from app.models.trip_message import TripMessage
 from app.repositories.trip_message_repository import TripMessageRepository
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
+from fastapi import HTTPException
+
+from app.services.limit_service import LimitService
+from app.services.usage_service import UsageService
 
 
 class TripMessageService:
@@ -132,6 +136,11 @@ class TripMessageService:
         self, trip: Trip, user_content: str
     ) -> tuple[TripMessage, dict | None]:
         try:
+            if trip.user_id is not None and not LimitService(self.db).can_edit_chat(trip.user_id):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Daily limit exceeded. Upgrade your plan.",
+                )
             self.repo.create_message(trip_id=trip.id, role="user", content=user_content)
 
             history, _ = self.repo.get_trip_messages(trip_id=trip.id)
@@ -225,6 +234,9 @@ class TripMessageService:
                 trip.itinerary_json = enriched_itinerary
                 updated_itinerary = enriched_itinerary
                 self.db.add(trip)
+
+            if trip.user_id is not None:
+                UsageService(self.db).increment_chat_edit(trip.user_id)
 
             self.db.commit()
             self.db.refresh(assistant_message)
