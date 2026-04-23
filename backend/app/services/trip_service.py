@@ -2,6 +2,7 @@ import logging
 from collections import Counter
 
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.models.trip import Trip
 from app.repositories.trip_repository import (
@@ -12,7 +13,9 @@ from app.repositories.trip_repository import (
 )
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
+from app.services.limit_service import LimitService
 from app.services.place_candidate_service import get_place_candidate_service
+from app.services.usage_service import UsageService
 
 
 logger = logging.getLogger(__name__)
@@ -358,6 +361,11 @@ def generate_trip(
     """Create a new trip with a generated mock itinerary."""
     if days < 1:
         raise ValueError("Days must be at least 1")
+    if user_id is not None and not LimitService(db).can_generate_trip(user_id):
+        raise HTTPException(
+            status_code=403,
+            detail="Daily limit exceeded. Upgrade your plan.",
+        )
     normalized_budget = budget.strip().lower()
     if not normalized_budget:
         raise ValueError("Budget cannot be empty")
@@ -437,8 +445,23 @@ def generate_trip(
         "travel_style": normalized_travel_style,
         "itinerary_json": cleaned_itinerary,
     }
+    trip = create_trip(db, **trip_data)
 
-    return create_trip(db, **trip_data)
+    from app.repositories.trip_repository import update_trip
+    from app.services.sponsored_injection_service import SponsoredInjectionService
+    try:
+        injected_itinerary = SponsoredInjectionService(db).inject_sponsored_places(
+            dict(trip.itinerary_json or {}),
+            trip_id=trip.id,
+        )
+        trip = update_trip(db, trip, itinerary_json=injected_itinerary)
+    except Exception as exc:
+        print(f"Sponsored injection failed: {exc}")
+
+    if user_id is not None:
+        UsageService(db).increment_trip_generation(user_id)
+        db.commit()
+    return trip
 
 
 def list_user_trips(db: Session, user_id: int) -> list[dict]:

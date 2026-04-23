@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories.user_repository import UserRepository
+from app.services.user_role_service import user_has_any_role, user_is_admin, user_is_business
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -74,3 +75,21 @@ def get_current_user_optional(
         )
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if not user_is_admin(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return current_user
+
+
+def require_business(current_user: User = Depends(get_current_user)) -> User:
+    if not user_is_business(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return current_user
+
+
+def require_admin_or_business(current_user: User = Depends(get_current_user)) -> User:
+    if not user_has_any_role(current_user, {UserRole.ADMIN, UserRole.BUSINESS}):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return current_user

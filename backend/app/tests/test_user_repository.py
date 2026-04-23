@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.models.user import User
+from app.models.subscription_plan import BillingPeriod, SubscriptionPlan, SubscriptionPlanName
 from app.repositories.user_repository import UserRepository
 
 
@@ -53,6 +54,18 @@ def test_get_user_by_id_uses_session_get() -> None:
 
 def test_create_user_adds_commits_refreshes_and_returns_user() -> None:
     db = Mock(spec=Session)
+    free_plan = SubscriptionPlan(
+        name=SubscriptionPlanName.FREE,
+        price=0.0,
+        currency="USD",
+        billing_period=BillingPeriod.FREE,
+        trip_limit_per_day=3,
+        chat_edit_limit_per_day=20,
+        is_active=True,
+    )
+    result = Mock()
+    result.scalar_one_or_none.return_value = free_plan
+    db.execute.return_value = result
     repository = UserRepository(db)
 
     user = repository.create_user(
@@ -63,6 +76,8 @@ def test_create_user_adds_commits_refreshes_and_returns_user() -> None:
     assert isinstance(user, User)
     assert user.email == "newuser@example.com"
     assert user.password_hash == "hashed-password"
-    db.add.assert_called_once_with(user)
+    db.add.assert_any_call(user)
+    assert db.add.call_count == 2
     db.commit.assert_called_once_with()
+    db.flush.assert_called_once_with()
     db.refresh.assert_called_once_with(user)
