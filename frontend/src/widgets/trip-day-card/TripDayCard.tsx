@@ -10,6 +10,7 @@ import { ActivityTimeline } from './ActivityTimeline';
 import { DayHero } from './DayHero';
 import { PlaceCandidateCard } from './PlaceCandidateCard';
 import { QuickFacts } from './QuickFacts';
+import { SponsoredPlaceCard } from './SponsoredPlaceCard';
 import styles from './TripDayCard.module.scss';
 
 interface TripDayCardProps {
@@ -29,12 +30,14 @@ export function TripDayCard({ day }: TripDayCardProps) {
       <div className={styles.body}>
         <QuickFacts day={day} />
 
-        <div className={styles.contentGrid}>
+        <div className={styles.contentStack}>
           <ActivityTimeline activities={day.activities} />
 
-          <div className={styles.sidebar}>
-            <PlaceCandidateCard day={day} />
+          <SponsoredPlaceCard day={day} />
 
+          <PlaceCandidateCard day={day} />
+
+          <div className={styles.metaGrid}>
             <section className={styles.panel}>
               <div className={styles.panelHeader}>
                 <p className={styles.panelEyebrow}>Route summary</p>

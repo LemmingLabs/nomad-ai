@@ -62,6 +62,25 @@ export interface TripPlace {
   sponsored?: boolean;
 }
 
+export interface SponsoredPlace {
+  id: number;
+  business_id: number;
+  title: string;
+  description: string;
+  cta: string;
+  images?: string[] | null;
+  contact?: string | null;
+  website?: string | null;
+  category?: string | null;
+  address?: string | null;
+}
+
+export interface SponsoredPlacePayload {
+  is_sponsored: boolean;
+  badge?: string | null;
+  place?: SponsoredPlace | null;
+}
+
 export interface TripRoute {
   origin: string;
   destination: string;
@@ -83,6 +102,7 @@ export interface TripDay {
   place_candidate?: TripPlaceCandidate | null;
   route_from_previous?: TripRoute | null;
   images?: TripImages | null;
+  sponsored?: SponsoredPlacePayload | null;
 }
 
 export interface TripItinerary {
