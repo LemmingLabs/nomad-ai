@@ -12,6 +12,7 @@ import { AdminAnalyticsPage } from '../../pages/admin/AdminAnalyticsPage'
 import { AdminBusinessesPage } from '../../pages/admin/AdminBusinessesPage'
 import { AdminDashboardPage } from '../../pages/admin/AdminDashboardPage'
 import { AdminModerationPage } from '../../pages/admin/AdminModerationPage'
+import { AdminUsersPage } from '../../pages/admin/AdminUsersPage'
 import { BusinessAnalyticsPage } from '../../pages/business/BusinessAnalyticsPage'
 import { BusinessDashboardPage } from '../../pages/business/BusinessDashboardPage'
 import { BusinessMediaPage } from '../../pages/business/BusinessMediaPage'
@@ -36,6 +37,7 @@ export const routes: RouteObject[] = [
             ),
             children: [
               { index: true, element: <AdminDashboardPage /> },
+              { path: 'users', element: <AdminUsersPage /> },
               { path: 'businesses', element: <AdminBusinessesPage /> },
               {
                 path: 'sponsored-moderation',

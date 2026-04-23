@@ -3,6 +3,11 @@ export const queryKeys = {
     me: ['auth', 'me'] as const,
   },
   admin: {
+    users: {
+      root: ['admin', 'users'] as const,
+      list: ['admin', 'users', 'list'] as const,
+      details: (userId: number) => ['admin', 'users', 'details', userId] as const,
+    },
     businesses: {
       list: ['admin', 'businesses', 'list'] as const,
       details: (businessId: number) =>

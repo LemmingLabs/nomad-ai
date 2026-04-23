@@ -5,6 +5,7 @@ import { DashboardShell } from './DashboardShell'
 
 const adminNav = [
   { to: '/admin', label: 'Dashboard' },
+  { to: '/admin/users', label: 'Users' },
   { to: '/admin/businesses', label: 'Businesses' },
   { to: '/admin/sponsored-moderation', label: 'Sponsored Moderation' },
   { to: '/admin/analytics', label: 'Analytics' },

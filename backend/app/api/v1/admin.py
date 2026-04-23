@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import require_admin
 from app.models.user import User
+from app.schemas.admin_user import AdminUserResponse, AdminUserRoleUpdateRequest
 from app.schemas.business import BusinessResponse
 from app.schemas.sponsored_analytics import BusinessAnalyticsOverviewResponse, SponsoredPlaceAnalyticsResponse
 from app.schemas.sponsored_place import SponsoredPlaceResponse
 from app.services.admin_moderation_service import AdminModerationService
+from app.services.admin_user_service import AdminUserService
 from app.services.sponsored_reporting_service import SponsoredReportingService
 
 
@@ -136,3 +138,38 @@ def admin_sponsored_place_analytics(
         interactions_by_type=breakdown,
     )
 
+
+@router.get("/users", response_model=list[AdminUserResponse])
+def list_users(
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> list[AdminUserResponse]:
+    users = AdminUserService(db).list_users(limit=limit, offset=offset)
+    return [AdminUserResponse.model_validate(user) for user in users]
+
+
+@router.get("/users/{user_id}", response_model=AdminUserResponse)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> AdminUserResponse:
+    user = AdminUserService(db).get_user(user_id)
+    return AdminUserResponse.model_validate(user)
+
+
+@router.patch("/users/{user_id}/role", response_model=AdminUserResponse)
+def update_user_role(
+    user_id: int,
+    payload: AdminUserRoleUpdateRequest,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+) -> AdminUserResponse:
+    user = AdminUserService(db).update_user_role(
+        user_id=user_id,
+        role=payload.role,
+        current_admin_user_id=current_admin.id,
+    )
+    return AdminUserResponse.model_validate(user)
