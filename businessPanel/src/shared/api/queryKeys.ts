@@ -8,6 +8,10 @@ export const queryKeys = {
       list: ['admin', 'users', 'list'] as const,
       details: (userId: number) => ['admin', 'users', 'details', userId] as const,
     },
+    subscriptionPlans: {
+      root: ['admin', 'subscriptionPlans'] as const,
+      list: ['admin', 'subscriptionPlans', 'list'] as const,
+    },
     businesses: {
       list: ['admin', 'businesses', 'list'] as const,
       details: (businessId: number) =>
