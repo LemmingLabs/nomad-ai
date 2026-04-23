@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     PEXELS_API_KEY: str | None = None
     GOOGLE_MAPS_API_KEY: str | None
 
+    ADMIN_EMAIL: str | None = None
+    ADMIN_PASSWORD: str | None = None
+    ADMIN_FIRST_NAME: str | None = None
+    ADMIN_LAST_NAME: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

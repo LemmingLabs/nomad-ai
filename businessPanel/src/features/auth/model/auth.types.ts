@@ -1,7 +1,7 @@
-export type UserRole = 'admin' | 'business'
+export type UserRole = 'admin' | 'business' | 'user'
 
 export type AuthUser = {
-  id: string
+  id: number
   role: UserRole
   email?: string
   name?: string
@@ -14,7 +14,7 @@ export type LoginRequest = {
 
 export type LoginResponse = {
   accessToken: string
-  refreshToken: string
+  refreshToken?: string
   user?: AuthUser
 }
 

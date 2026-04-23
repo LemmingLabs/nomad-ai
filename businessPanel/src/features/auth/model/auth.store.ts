@@ -37,10 +37,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     setStatus('loading')
     try {
       const res = await authApi.login(payload)
-      authStorage.setTokens({
-        accessToken: res.accessToken,
-        refreshToken: res.refreshToken,
-      })
+      authStorage.setTokensOptional({ accessToken: res.accessToken, refreshToken: res.refreshToken })
 
       if (res.user) {
         setUser(res.user)
@@ -51,8 +48,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const user = await authApi.getMe()
       setUser(user)
       setStatus('authenticated')
-    } catch {
+    } catch (error) {
       clearAuth()
+      throw error
     }
   },
 
