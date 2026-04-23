@@ -4,6 +4,8 @@ import { LoginPage } from '../../pages/auth/login';
 import { RegisterPage } from '../../pages/auth/register';
 import { TripPage } from '../../pages/trip';
 import { NotFoundPage } from '../../pages/not-found';
+import { PricingPage } from '../../pages/pricing';
+import { ProfilePage } from '../../pages/profile';
 
 const router = createBrowserRouter([
   {
@@ -21,6 +23,14 @@ const router = createBrowserRouter([
   {
     path: '/auth/register',
     element: <RegisterPage />,
+  },
+  {
+    path: '/pricing',
+    element: <PricingPage />,
+  },
+  {
+    path: '/profile',
+    element: <ProfilePage />,
   },
   {
     path: '*',

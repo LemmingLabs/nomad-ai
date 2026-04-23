@@ -1,0 +1,30 @@
+@use '../../../../app/styles/variables' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.75);
+  color: $color-text;
+}
+
+.dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: $color-accent;
+}
+
+.badge[data-plan='FREE'] .dot {
+  background: #94A3B8;
+}
+
+.badge[data-plan='PRO'] .dot {
+  background: $color-accent;
+}

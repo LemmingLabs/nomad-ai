@@ -1,0 +1,72 @@
+@use '../../app/styles/variables' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(6px);
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-6;
+}
+
+.modal {
+  width: min(560px, 100%);
+  background: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-2xl;
+  box-shadow: $shadow-lg;
+  overflow: hidden;
+}
+
+.header {
+  padding: $space-6 $space-6 $space-4;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-4;
+  border-bottom: 1px solid $color-border;
+}
+
+.title {
+  font-size: $text-lg;
+  font-weight: $weight-extrabold;
+  margin: 0;
+}
+
+.description {
+  margin: $space-2 0 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+}
+
+.close {
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: $radius-lg;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: #fff;
+  }
+}
+
+.body {
+  padding: $space-6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-3;
+  justify-content: flex-end;
+}
+

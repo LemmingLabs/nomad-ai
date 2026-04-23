@@ -1,0 +1,97 @@
+@use '../../app/styles/variables' as *;
+
+.card {
+  position: relative;
+  border: 1px solid $color-border;
+  border-radius: $radius-2xl;
+  background: $color-surface;
+  box-shadow: $shadow-sm;
+  padding: $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.featured {
+  border-color: rgba(20, 184, 166, 0.35);
+  box-shadow: 0 16px 30px rgba(20, 184, 166, 0.10);
+}
+
+.top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-4;
+}
+
+.name {
+  margin: 0;
+  font-size: $text-xl;
+  font-weight: $weight-extrabold;
+  letter-spacing: -0.3px;
+  color: $color-text;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: $color-text;
+}
+
+.amount {
+  font-size: $text-3xl;
+  font-weight: $weight-extrabold;
+}
+
+.period {
+  font-size: $text-sm;
+  color: $color-text-muted;
+}
+
+.desc {
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-3;
+  color: $color-text;
+  font-size: $text-sm;
+}
+
+.itemIcon {
+  color: $color-accent;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.cta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.current {
+  width: 100%;
+}
+
+.hint {
+  color: $color-text-muted;
+  font-size: $text-xs;
+}
+

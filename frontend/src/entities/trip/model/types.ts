@@ -58,6 +58,8 @@ export interface TripPlace {
   price_level?: string | null;
   address?: string | null;
   image_url?: string | null;
+  is_sponsored?: boolean;
+  sponsored?: boolean;
 }
 
 export interface TripRoute {

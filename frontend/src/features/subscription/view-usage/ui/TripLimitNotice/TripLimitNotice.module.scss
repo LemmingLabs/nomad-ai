@@ -1,0 +1,38 @@
+@use '../../../../../app/styles/variables' as *;
+
+.notice {
+  margin-top: $space-4;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  background: rgba(20, 184, 166, 0.06);
+  color: $color-text;
+  font-size: $text-sm;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-weight: $weight-semibold;
+}
+
+.subtitle {
+  color: $color-text-muted;
+  font-size: $text-xs;
+}
+
+.warn {
+  background: rgba(245, 158, 11, 0.10);
+}
+
+.danger {
+  background: rgba(239, 68, 68, 0.08);
+}

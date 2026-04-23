@@ -27,6 +27,8 @@ interface ChatPanelProps {
   isLoading?: boolean;
   isDisabled?: boolean;
   disabledMessage?: ReactNode;
+  disabledPlaceholder?: string;
+  notice?: ReactNode;
   onSend: (content: string) => void;
 }
 
@@ -35,6 +37,8 @@ export function ChatPanel({
   isLoading = false,
   isDisabled = false,
   disabledMessage,
+  disabledPlaceholder = 'Sign in to continue this conversation...',
+  notice,
   onSend,
 }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -179,13 +183,14 @@ export function ChatPanel({
       </div>
 
       {/* Input */}
+      {notice}
       <form className={styles.form} onSubmit={handleSubmit}>
         <textarea
           ref={inputRef}
           className={styles.input}
           placeholder={
             isDisabled
-              ? 'Sign in to continue this conversation...'
+              ? disabledPlaceholder
               : 'Tell me where you want to go...'
           }
           rows={1}

@@ -1,0 +1,20 @@
+@use '../../app/styles/variables' as *;
+
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background: $color-bg;
+}
+
+.main {
+  flex: 1;
+  padding: $space-10 $space-10;
+}
+
+@media (max-width: $bp-md) {
+  .main {
+    padding: $space-8 $space-5;
+  }
+}
+

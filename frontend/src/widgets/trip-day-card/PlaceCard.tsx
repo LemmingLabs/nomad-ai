@@ -15,6 +15,8 @@ function isFoodType(type: string): boolean {
 }
 
 export function PlaceCard({ place }: PlaceCardProps) {
+  const isSponsored = Boolean(place.is_sponsored ?? place.sponsored);
+
   return (
     <article className={styles.card}>
       <div className={styles.media}>
@@ -30,6 +32,7 @@ export function PlaceCard({ place }: PlaceCardProps) {
             {isFoodType(place.type) ? <UtensilsCrossed size={24} /> : <Landmark size={24} />}
           </div>
         )}
+        {isSponsored && <span className={styles.sponsored}>Sponsored</span>}
         <span className={styles.type}>{getTypeLabel(place.type)}</span>
       </div>
 

@@ -3,6 +3,9 @@ import { Minus, Plus, Sparkles, X } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateTripSchema, type GenerateTripFormData } from '../../features/trip/generate-trip';
+import { useMyLimitsQuery } from '../../entities/limit';
+import { useUserStore } from '../../entities/user';
+import { getRemaining, getUsageTone, TripLimitNotice, fallbackFreeLimits } from '../../features/subscription/view-usage';
 import { Button } from '../../shared/ui/button/Button';
 import { Input } from '../../shared/ui/input/Input';
 import { Card, Textarea } from '../../shared/ui';
@@ -49,6 +52,17 @@ interface GenerateTripFormProps {
 }
 
 export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps) {
+  const { isAuthenticated } = useUserStore();
+  const limitsQuery = useMyLimitsQuery();
+  const limits = limitsQuery.data ?? (isAuthenticated ? fallbackFreeLimits : null);
+
+  const remainingTrips = limits
+    ? getRemaining(limits.trip_generations_used, limits.trip_limit_per_day)
+    : null;
+  const tripTone = limits
+    ? getUsageTone(limits.trip_generations_used, limits.trip_limit_per_day)
+    : 'ok';
+
   const {
     register,
     handleSubmit,
@@ -276,6 +290,14 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
           />
         </Card>
       </div>
+
+      {isAuthenticated && limits && remainingTrips !== null && (
+        <TripLimitNotice
+          remaining={remainingTrips}
+          limit={limits.trip_limit_per_day}
+          tone={tripTone}
+        />
+      )}
 
       <Button type="submit" fullWidth isLoading={isLoading} size="lg">
         Generate Itinerary

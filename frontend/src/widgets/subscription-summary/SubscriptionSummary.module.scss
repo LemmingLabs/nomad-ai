@@ -1,0 +1,100 @@
+@use '../../app/styles/variables' as *;
+
+.wrap {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: $space-6;
+}
+
+@media (max-width: $bp-lg) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  border: 1px solid $color-border;
+  border-radius: $radius-2xl;
+  background: $color-surface;
+  box-shadow: $shadow-sm;
+}
+
+.cardInner {
+  padding: $space-6;
+  display: flex;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+}
+
+.title {
+  margin: 0;
+  font-size: $text-xl;
+  font-weight: $weight-extrabold;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-4;
+}
+
+.metaLabel {
+  font-size: $text-xs;
+  color: $color-text-muted;
+}
+
+.metaValue {
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+  color: $color-text;
+  margin-top: 2px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 0.25rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid $color-border;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+  color: $color-text;
+}
+
+.statusDot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: $color-success;
+}
+
+.status[data-status='expired'] .statusDot,
+.status[data-status='canceled'] .statusDot {
+  background: $color-error;
+}
+
+.status[data-status='trialing'] .statusDot {
+  background: $color-warning;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.actions {
+  display: flex;
+  gap: $space-3;
+  flex-wrap: wrap;
+}
+

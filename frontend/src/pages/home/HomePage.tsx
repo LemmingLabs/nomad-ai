@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { Sidebar } from '../../widgets/sidebar';
 import { GenerateTripForm } from '../../widgets/generate-trip-form';
@@ -9,18 +10,23 @@ import { useTripStore } from '../../entities/trip';
 import { useUserStore } from '../../entities/user';
 import { generateTripApi, type GenerateTripFormData } from '../../features/trip/generate-trip';
 import { useSidebarStore } from '../../features/ui/open-sidebar';
+import { isLimitExceededError } from '../../features/subscription/view-usage';
 import { config } from '../../shared/config';
 import { useMediaQuery } from '../../shared/hooks';
 import { handleApiError } from '../../shared/lib';
 import styles from './HomePage.module.scss';
+import { LimitReachedModal } from '../../widgets/limit-reached-modal';
+import { limitQueryKeys } from '../../entities/limit';
 
 export function HomePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isOpen } = useSidebarStore();
   const { addTrip, setActiveTrip } = useTripStore();
   const { isAuthenticated } = useUserStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [showForm, setShowForm] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
 
   const generateMutation = useMutation({
     mutationFn: generateTripApi.generate,
@@ -32,9 +38,16 @@ export function HomePage() {
         }
         setShowForm(false);
         toast.success('Trip generated!');
+        void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
         void navigate(`/trip/${trip.id}`);
       },
-    onError: handleApiError,
+    onError: (error) => {
+      if (isLimitExceededError(error)) {
+        setLimitModalOpen(true);
+        return;
+      }
+      handleApiError(error);
+    },
   });
 
   return (
@@ -81,6 +94,15 @@ export function HomePage() {
           </div>
         )}
       </main>
+
+      <LimitReachedModal
+        open={limitModalOpen}
+        title="Daily trip generation limit reached"
+        description="Upgrade your plan to generate more trips today and keep iterating on your itinerary."
+        onClose={() => setLimitModalOpen(false)}
+        primaryCta={{ to: '/pricing', label: 'Upgrade' }}
+        secondaryCta={!isAuthenticated ? { to: '/auth/login', label: 'Sign in' } : undefined}
+      />
     </div>
   );
 }
