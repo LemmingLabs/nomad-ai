@@ -47,6 +47,13 @@ export const authStorage = {
     this.setRefreshToken(tokens.refreshToken)
   },
 
+  setTokensOptional(tokens: { accessToken: string; refreshToken?: string }) {
+    this.setAccessToken(tokens.accessToken)
+    if (tokens.refreshToken) {
+      this.setRefreshToken(tokens.refreshToken)
+    }
+  },
+
   clearTokens() {
     safeRemoveItem(ACCESS_TOKEN_KEY)
     safeRemoveItem(REFRESH_TOKEN_KEY)

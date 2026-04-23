@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useState } from 'react'
 
 import {
@@ -10,6 +9,11 @@ import type { BusinessMediaFormValues } from '../../features/business/media/mode
 import { BusinessMediaEmptyState } from '../../features/business/media/ui/BusinessMediaEmptyState'
 import { BusinessMediaForm } from '../../features/business/media/ui/BusinessMediaForm'
 import { BusinessMediaList } from '../../features/business/media/ui/BusinessMediaList'
+import { confirmAction } from '../../shared/lib/confirm'
+import { getErrorMessage } from '../../shared/lib/getErrorMessage'
+import { PageErrorState } from '../../shared/ui/PageErrorState'
+import { PageLoadingState } from '../../shared/ui/PageLoadingState'
+import { SectionCard } from '../../shared/ui/SectionCard'
 
 export function BusinessMediaPage() {
   const mediaQuery = useBusinessMediaQuery()
@@ -24,7 +28,10 @@ export function BusinessMediaPage() {
   }
 
   const handleDelete = async (id: number) => {
-    const ok = window.confirm('Delete this media item?')
+    const ok = confirmAction({
+      title: 'Delete this media item?',
+      description: 'This action cannot be undone.',
+    })
     if (!ok) return
 
     setDeletingId(id)
@@ -36,28 +43,16 @@ export function BusinessMediaPage() {
   }
 
   if (mediaQuery.isLoading) {
-    return <div className="text-sm text-neutral-600">Loading media...</div>
+    return <PageLoadingState message="Loading media..." />
   }
 
   if (mediaQuery.isError) {
-    const message = axios.isAxiosError(mediaQuery.error)
-      ? mediaQuery.error.message
-      : 'Failed to load media'
-
     return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">Media library</h1>
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <p className="text-sm text-neutral-700">{message}</p>
-          <button
-            type="button"
-            onClick={() => mediaQuery.refetch()}
-            className="mt-4 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <PageErrorState
+        title="Media library"
+        message={getErrorMessage(mediaQuery.error, 'Failed to load media')}
+        onRetry={() => mediaQuery.refetch()}
+      />
     )
   }
 
@@ -72,18 +67,14 @@ export function BusinessMediaPage() {
         </p>
       </header>
 
-      <section className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h2 className="text-base font-semibold">Add media</h2>
-        <div className="mt-4">
-          <BusinessMediaForm isSubmitting={isSubmitting} onSubmit={handleAdd} />
-        </div>
-
+      <SectionCard title="Add media">
+        <BusinessMediaForm isSubmitting={isSubmitting} onSubmit={handleAdd} />
         {createMutation.isError ? (
           <p className="mt-4 text-sm text-red-600">
-            Failed to add media. Please try again.
+            {getErrorMessage(createMutation.error, 'Failed to add media. Please try again.')}
           </p>
         ) : null}
-      </section>
+      </SectionCard>
 
       {items.length === 0 ? (
         <BusinessMediaEmptyState />

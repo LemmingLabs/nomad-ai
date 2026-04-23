@@ -1,15 +1,9 @@
 import type { BusinessMedia } from '../model/businessMedia.types'
+import { formatDateTime } from '../../../../shared/lib/formatDateTime'
 
 function formatMediaTypeLabel(type: BusinessMedia['type']) {
   if (type === 'logo') return 'Logo'
   return 'Image'
-}
-
-function formatCreatedAt(value?: string) {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
 }
 
 type BusinessMediaCardProps = {
@@ -19,7 +13,7 @@ type BusinessMediaCardProps = {
 }
 
 export function BusinessMediaCard({ item, onDelete, isDeleting }: BusinessMediaCardProps) {
-  const createdAt = formatCreatedAt(item.created_at)
+  const createdAt = item.created_at ? formatDateTime(item.created_at) : null
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
@@ -54,4 +48,3 @@ export function BusinessMediaCard({ item, onDelete, isDeleting }: BusinessMediaC
     </div>
   )
 }
-

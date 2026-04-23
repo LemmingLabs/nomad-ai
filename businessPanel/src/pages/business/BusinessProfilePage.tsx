@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useMemo } from 'react'
 
 import {
@@ -12,6 +11,9 @@ import type { BusinessProfileFormValues } from '../../features/business/profile/
 import { BusinessProfileCard } from '../../features/business/profile/ui/BusinessProfileCard'
 import { BusinessProfileEmptyState } from '../../features/business/profile/ui/BusinessProfileEmptyState'
 import { BusinessProfileForm } from '../../features/business/profile/ui/BusinessProfileForm'
+import { getErrorMessage } from '../../shared/lib/getErrorMessage'
+import { PageErrorState } from '../../shared/ui/PageErrorState'
+import { PageLoadingState } from '../../shared/ui/PageLoadingState'
 
 const emptyFormValues: BusinessProfileFormValues = {
   name: '',
@@ -44,28 +46,16 @@ export function BusinessProfilePage() {
   }
 
   if (profileQuery.isLoading) {
-    return <div className="text-sm text-neutral-600">Loading profile...</div>
+    return <PageLoadingState message="Loading profile..." />
   }
 
   if (profileQuery.isError) {
-    const message = axios.isAxiosError(profileQuery.error)
-      ? profileQuery.error.message
-      : 'Failed to load profile'
-
     return (
-      <div className="space-y-4">
-        <h1 className="text-lg font-semibold">Business profile</h1>
-        <div className="rounded-lg border border-neutral-200 bg-white p-6">
-          <p className="text-sm text-neutral-700">{message}</p>
-          <button
-            type="button"
-            onClick={() => profileQuery.refetch()}
-            className="mt-4 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <PageErrorState
+        title="Business profile"
+        message={getErrorMessage(profileQuery.error, 'Failed to load profile')}
+        onRetry={() => profileQuery.refetch()}
+      />
     )
   }
 
@@ -92,7 +82,10 @@ export function BusinessProfilePage() {
 
         {createMutation.isError || updateMutation.isError ? (
           <p className="mt-4 text-sm text-red-600">
-            Failed to save profile. Please try again.
+            {getErrorMessage(
+              (createMutation.error ?? updateMutation.error) as unknown,
+              'Failed to save profile. Please try again.',
+            )}
           </p>
         ) : null}
       </BusinessProfileCard>
