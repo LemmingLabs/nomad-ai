@@ -21,6 +21,72 @@ from app.services.usage_service import UsageService
 logger = logging.getLogger(__name__)
 
 
+def _build_initial_user_message(
+    *,
+    prompt: str | None,
+    days: int,
+    budget: str,
+    interests: list[str],
+    travel_style: str,
+) -> str:
+    prompt_text = (prompt or "").strip()
+    if prompt_text:
+        return prompt_text
+
+    interests_text = ", ".join([item for item in interests if item]) if interests else ""
+    base = f"Plan me a {days}-day {travel_style.strip()} trip in Kyrgyzstan with {budget.strip()} budget."
+    if interests_text:
+        return f"{base} Interests: {interests_text}."
+    return base
+
+
+def _build_initial_assistant_message(
+    *,
+    assistant_text: str | None,
+    title: str,
+    itinerary_json: dict,
+    days: int,
+    travel_style: str,
+) -> str:
+    text = (assistant_text or "").strip()
+    if text:
+        return text
+
+    summary = str((itinerary_json or {}).get("summary") or "").strip()
+    trip_days = (itinerary_json or {}).get("days")
+    cities: list[str] = []
+    highlights: list[str] = []
+    if isinstance(trip_days, list):
+        for day in trip_days:
+            if not isinstance(day, dict):
+                continue
+            city = str(day.get("city") or "").strip()
+            if city and city not in cities:
+                cities.append(city)
+            location = str(day.get("location") or "").strip()
+            if location and len(highlights) < 3:
+                highlights.append(location)
+
+    cities_text = ""
+    if cities:
+        cities_text = " through " + " and ".join(cities[:2])
+
+    highlights_text = ""
+    if highlights:
+        highlights_text = f" Highlights: {', '.join(highlights)}."
+
+    if summary:
+        return (
+            f'I created a {days}-day {travel_style.strip()} trip{cities_text} titled "{title}". '
+            f"{summary}{highlights_text}"
+        ).strip()
+
+    return (
+        f'I created a {days}-day {travel_style.strip()} trip{cities_text} titled "{title}".'
+        f"{highlights_text}"
+    ).strip()
+
+
 def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> dict:
     """Generate a mock itinerary for development purposes."""
     interest_focus = ", ".join(interests[:2]) if interests else "local highlights"
@@ -349,6 +415,162 @@ def enrich_itinerary_with_place_candidates(
     return itinerary
 
 
+def enrich_selected_days_with_place_candidates(
+    itinerary: dict,
+    changed_day_indexes: set[int],
+    interests: list[str],
+    travel_style: str,
+    prompt: str | None = None,
+) -> dict:
+    """Re-enrich only selected days with Google Places candidates."""
+    if not changed_day_indexes:
+        return itinerary
+    if not isinstance(itinerary, dict) or not isinstance(itinerary.get("days"), list):
+        return itinerary
+
+    place_candidate_service = get_place_candidate_service()
+
+    used_place_ids: set[str] = set()
+    used_place_names: set[str] = set()
+    selected_type_counts: Counter = Counter()
+    selected_interest_counts: Counter = Counter()
+
+    days: list = itinerary["days"]
+
+    for idx, day in enumerate(days):
+        if idx in changed_day_indexes or not isinstance(day, dict):
+            continue
+
+        candidate = day.get("place_candidate")
+        if isinstance(candidate, dict):
+            place_id = candidate.get("place_id")
+            if place_id:
+                used_place_ids.add(place_id)
+
+            place_name = candidate.get("name")
+            if place_name:
+                used_place_names.add(" ".join(str(place_name).strip().lower().split()))
+
+            primary_type = next(
+                (
+                    place_type
+                    for place_type in candidate.get("types", [])
+                    if place_type not in {"establishment", "point_of_interest"}
+                ),
+                None,
+            )
+            if primary_type:
+                selected_type_counts[primary_type] += 1
+
+        interest = _day_interest(day, idx, interests)
+        selected_interest_counts[interest] += 1
+
+    previous_interest: str | None = None
+    previous_location: dict | None = None
+
+    for index, day in enumerate(days):
+        if not isinstance(day, dict):
+            continue
+
+        city = str(day.get("city") or "").strip()
+        if not city:
+            city = "Bishkek"
+            day["city"] = city
+
+        interest = _day_interest(day, index, interests)
+
+        if index not in changed_day_indexes:
+            candidate = day.get("place_candidate")
+            if isinstance(candidate, dict):
+                if candidate.get("lat") is not None and candidate.get("lng") is not None:
+                    previous_location = {
+                        "lat": candidate.get("lat"),
+                        "lng": candidate.get("lng"),
+                    }
+            _ensure_day_routing_location(day)
+            previous_interest = interest
+            continue
+
+        candidates = place_candidate_service.get_candidates_for_day(
+            city=city,
+            interests=[interest],
+            travel_style=travel_style,
+            user_prompt=prompt,
+            limit=8,
+            exclude_place_ids=used_place_ids,
+            exclude_names=used_place_names,
+            selected_type_counts=selected_type_counts,
+            selected_interest_counts=selected_interest_counts,
+            previous_interest=previous_interest,
+            previous_location=previous_location,
+        )
+
+        if not candidates:
+            logger.info(
+                "No Google Places candidates for day=%s city=%s interest=%s (selective)",
+                day.get("day") or index + 1,
+                city,
+                interest,
+            )
+            day.pop("place_candidate", None)
+            _ensure_day_routing_location(day)
+            previous_interest = interest
+            continue
+
+        selected = candidates[0]
+        if len(candidates) > 3:
+            selected = (
+                place_candidate_service.select_best_candidate_with_ai(
+                    candidates=candidates,
+                    city=city,
+                    interests=[interest],
+                    travel_style=travel_style,
+                    user_prompt=prompt,
+                )
+                or candidates[0]
+            )
+
+        place_id = selected.get("place_id")
+        if place_id:
+            used_place_ids.add(place_id)
+        place_name = selected.get("name")
+        if place_name:
+            used_place_names.add(" ".join(str(place_name).strip().lower().split()))
+
+        primary_type = next(
+            (
+                place_type
+                for place_type in selected.get("types", [])
+                if place_type not in {"establishment", "point_of_interest"}
+            ),
+            None,
+        )
+        if primary_type:
+            selected_type_counts[primary_type] += 1
+        selected_interest_counts[interest] += 1
+
+        if place_name:
+            day["location"] = place_name
+            day["routing_location"] = _build_routing_location(day, selected, city)
+            day["place_candidate"] = selected
+            logger.info(
+                "[CONTINUE] re-enriched place candidate for day=%s",
+                day.get("day") or index + 1,
+            )
+        else:
+            day.pop("place_candidate", None)
+            _ensure_day_routing_location(day)
+
+        if selected.get("lat") is not None and selected.get("lng") is not None:
+            previous_location = {
+                "lat": selected.get("lat"),
+                "lng": selected.get("lng"),
+            }
+        previous_interest = interest
+
+    return itinerary
+
+
 def generate_trip(
     db: Session,
     user_id: int | None,
@@ -378,6 +600,7 @@ def generate_trip(
     ai_service = AIService()
     title = None
     itinerary = None
+    assistant_text = None
     
     try:
         ai_result = ai_service.generate_initial_trip(
@@ -392,6 +615,13 @@ def generate_trip(
             candidate_itinerary = ai_result.get("itinerary")
             if isinstance(candidate_itinerary, dict) and "days" in candidate_itinerary:
                 itinerary = candidate_itinerary
+            candidate_message = (
+                ai_result.get("message")
+                or ai_result.get("assistant_message")
+                or ai_result.get("content")
+            )
+            if isinstance(candidate_message, str) and candidate_message.strip():
+                assistant_text = candidate_message.strip()
     except Exception as exc:
         print(f"AI initial generation failed: {exc}")
 
@@ -434,6 +664,15 @@ def generate_trip(
     except Exception as exc:
         print(f"Image enrichment failed: {exc}")
 
+    from app.services.sponsored_injection_service import SponsoredInjectionService
+    try:
+        enriched_itinerary = SponsoredInjectionService(db).inject_sponsored_places(
+            enriched_itinerary,
+            trip_id=None,
+        )
+    except Exception as exc:
+        logger.exception("Sponsored injection failed: %s", exc)
+
     cleaned_itinerary = enriched_itinerary
 
     trip_data = {
@@ -447,20 +686,38 @@ def generate_trip(
     }
     trip = create_trip(db, **trip_data)
 
-    from app.repositories.trip_repository import update_trip
-    from app.services.sponsored_injection_service import SponsoredInjectionService
     try:
-        injected_itinerary = SponsoredInjectionService(db).inject_sponsored_places(
-            dict(trip.itinerary_json or {}),
-            trip_id=trip.id,
+        from app.repositories.trip_message_repository import TripMessageRepository
+
+        message_repo = TripMessageRepository(db)
+        initial_user_message = _build_initial_user_message(
+            prompt=prompt,
+            days=days,
+            budget=normalized_budget,
+            interests=normalized_interests,
+            travel_style=normalized_travel_style,
         )
-        trip = update_trip(db, trip, itinerary_json=injected_itinerary)
-    except Exception as exc:
-        print(f"Sponsored injection failed: {exc}")
+        initial_assistant_message = _build_initial_assistant_message(
+            assistant_text=assistant_text,
+            title=title,
+            itinerary_json=cleaned_itinerary,
+            days=days,
+            travel_style=normalized_travel_style,
+        )
+
+        message_repo.create_message(trip_id=trip.id, role="user", content=initial_user_message)
+        message_repo.create_message(
+            trip_id=trip.id,
+            role="assistant",
+            content=initial_assistant_message,
+        )
+    except Exception:
+        logger.exception("Failed to create initial trip chat messages")
 
     if user_id is not None:
         UsageService(db).increment_trip_generation(user_id)
-        db.commit()
+
+    db.commit()
     return trip
 
 

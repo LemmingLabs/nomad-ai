@@ -25,6 +25,7 @@ class SponsoredInjectionService:
         self.db = db
 
     def inject_sponsored_places(self, itinerary_json: dict, trip_id: int | None = None) -> dict:
+        logger.info("[SPONSORED] Injecting into itinerary...")
         days = itinerary_json.get("days")
         if not isinstance(days, list):
             return itinerary_json
@@ -72,6 +73,7 @@ class SponsoredInjectionService:
                 )
             )
 
+        logger.info("[SPONSORED] Injection complete")
         return itinerary_json
 
     def _infer_desired_categories(self, day: dict) -> set[str] | None:
