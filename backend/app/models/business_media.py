@@ -10,6 +10,7 @@ from app.models.base import Base
 class BusinessMediaType(str, Enum):
     IMAGE = "image"
     LOGO = "logo"
+    COVER = "cover"
 
 
 class BusinessMedia(Base):
@@ -39,4 +40,3 @@ class BusinessMedia(Base):
         "Business",
         back_populates="media",
     )
-

@@ -9,6 +9,7 @@ from app.models.user_usage_stat import UserUsageStat
 from app.models.business import Business
 from app.models.business_media import BusinessMedia, BusinessMediaType
 from app.models.sponsored_place import SponsoredPlace
+from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlaceMediaType
 from app.models.sponsored_impression import SponsoredImpression
 from app.models.sponsored_interaction import SponsoredInteraction, SponsoredInteractionType
 
@@ -26,6 +27,8 @@ __all__ = [
     "BusinessMedia",
     "BusinessMediaType",
     "SponsoredPlace",
+    "SponsoredPlaceMedia",
+    "SponsoredPlaceMediaType",
     "SponsoredImpression",
     "SponsoredInteraction",
     "SponsoredInteractionType",

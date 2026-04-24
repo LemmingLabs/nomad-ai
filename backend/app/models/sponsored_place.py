@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models.sponsored_place_media import SponsoredPlaceMedia  # noqa: F401
 
 
 class SponsoredPlace(Base):
@@ -54,4 +55,8 @@ class SponsoredPlace(Base):
         "Business",
         back_populates="sponsored_places",
     )
-
+    media: Mapped[list["SponsoredPlaceMedia"]] = relationship(
+        "SponsoredPlaceMedia",
+        back_populates="sponsored_place",
+        cascade="all, delete-orphan",
+    )

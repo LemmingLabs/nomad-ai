@@ -6,7 +6,6 @@ import { DashboardShell } from './DashboardShell'
 const businessNav = [
   { to: '/business', label: 'Dashboard' },
   { to: '/business/profile', label: 'Business Profile' },
-  { to: '/business/media', label: 'Media Library' },
   { to: '/business/sponsored-places', label: 'Sponsored Places' },
   { to: '/business/analytics', label: 'Analytics' },
 ]

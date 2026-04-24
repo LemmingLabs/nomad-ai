@@ -1,3 +1,5 @@
+import type { SponsoredPlaceMedia } from '../media/model/sponsoredPlaceMedia.types'
+
 export type SponsoredPlace = {
   id: number
   business_id: number
@@ -14,6 +16,7 @@ export type SponsoredPlace = {
   is_active: boolean
   is_approved: boolean
   created_at?: string
+  media?: SponsoredPlaceMedia[]
 }
 
 export type CreateSponsoredPlacePayload = {
@@ -44,3 +47,9 @@ export type SponsoredPlaceFormValues = {
   cta_text: string
 }
 
+export type SponsoredPlaceLocationValue = {
+  lat: string
+  lng: string
+  address: string
+  city: string
+}

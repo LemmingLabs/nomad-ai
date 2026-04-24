@@ -1,5 +1,6 @@
 import type { SponsoredPlace } from '../model/sponsoredPlaces.types'
 import { StatusBadge } from '../../../../shared/ui/StatusBadge'
+import { SponsoredPlaceMediaManager } from '../media/ui/SponsoredPlaceMediaManager'
 
 type SponsoredPlaceCardProps = {
   place: SponsoredPlace
@@ -51,6 +52,11 @@ export function SponsoredPlaceCard({
           </button>
         </div>
       </div>
+
+      <SponsoredPlaceMediaManager
+        placeId={place.id}
+        initialItems={place.media ?? []}
+      />
     </div>
   )
 }

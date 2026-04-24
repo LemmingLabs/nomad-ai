@@ -122,7 +122,6 @@ function QuickActionsCard() {
 
   const actions = [
     { label: 'Edit Profile', to: '/business/profile', variant: 'primary' as const },
-    { label: 'Manage Media', to: '/business/media', variant: 'secondary' as const },
     {
       label: 'Create Sponsored Place',
       to: '/business/sponsored-places',
@@ -180,4 +179,3 @@ export function BusinessDashboardView({
     </div>
   )
 }
-

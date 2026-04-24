@@ -34,6 +34,8 @@ export const queryKeys = {
     profile: ['business', 'profile'] as const,
     media: ['business', 'media'] as const,
     sponsoredPlaces: ['business', 'sponsoredPlaces'] as const,
+    sponsoredPlaceMedia: (placeId: number) =>
+      ['business', 'sponsoredPlaces', placeId, 'media'] as const,
     analytics: ['business', 'analytics'] as const,
     analyticsOverview: ['business', 'analytics', 'overview'] as const,
     sponsoredPlaceAnalytics: (placeId: number) =>

@@ -6,8 +6,10 @@ from sqlalchemy.pool import StaticPool
 from app.models.base import Base
 from app.models.business import Business
 from app.models.sponsored_place import SponsoredPlace
+from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlaceMediaType
 from app.models.user import User
-from app.services.sponsored_injection_service import SponsoredInjectionService
+from app.services.sponsored_injection_service import DEFAULT_SPONSORED_IMAGE, SponsoredInjectionService
+from app.services.sponsored_place_service import SponsoredPlaceService
 
 
 @pytest.fixture
@@ -107,3 +109,87 @@ def test_category_match_supports_canteen_and_cafe_aliases(db_session):
 
     assert service._category_match_score("Modern Canteen / Cafe", {"restaurant"}) >= 2
     assert service._category_match_score("Food Court Cafe", {"restaurant"}) >= 2
+
+
+def test_inject_sponsored_place_uses_only_place_media(db_session):
+    place = _create_sponsored_place(db_session)
+    db_session.add(
+        SponsoredPlaceMedia(
+            sponsored_place_id=place.id,
+            type=SponsoredPlaceMediaType.IMAGE,
+            url=f"/media/businesses/{place.business_id}/sponsored_places/{place.id}/photo.jpg",
+            filename="photo.jpg",
+            content_type="image/jpeg",
+        )
+    )
+    db_session.commit()
+
+    itinerary = {
+        "days": [
+            {
+                "day": 1,
+                "city": "Bishkek",
+                "title": "Lunch",
+                "activities": [{"type": "meal", "description": "Lunch stop"}],
+            }
+        ]
+    }
+
+    result = SponsoredInjectionService(db_session).inject_sponsored_places(itinerary)
+
+    assert result["days"][0]["sponsored"]["place"]["images"] == [
+        f"/media/businesses/{place.business_id}/sponsored_places/{place.id}/photo.jpg"
+    ]
+
+
+def test_inject_sponsored_place_uses_fallback_image_when_media_missing(db_session):
+    _create_sponsored_place(db_session)
+    itinerary = {
+        "days": [
+            {
+                "day": 1,
+                "city": "Bishkek",
+                "title": "Lunch",
+                "activities": [{"type": "meal", "description": "Lunch stop"}],
+            }
+        ]
+    }
+
+    result = SponsoredInjectionService(db_session).inject_sponsored_places(itinerary)
+
+    assert result["days"][0]["sponsored"]["place"]["images"] == [DEFAULT_SPONSORED_IMAGE]
+
+
+def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session):
+    user = User(email="biz2@example.com", password_hash="hashed")
+    db_session.add(user)
+    db_session.flush()
+
+    business = Business(
+        owner_id=user.id,
+        name="Cafe Test",
+        description="Test business",
+        contact_phone="+996555000222",
+        website_url="https://example.com",
+    )
+    db_session.add(business)
+    db_session.commit()
+    db_session.refresh(user)
+
+    place = SponsoredPlaceService(db_session).create_my_place(
+        user,
+        title="Cafe Test",
+        description="Desc",
+        city="  Bishkek, Kyrgyzstan  ",
+        lat=42.87,
+        lng=74.59,
+        google_place_id=None,
+        address="Addr",
+        category="  Modern Canteen / Cafe  ",
+        cta_text="Visit",
+        contact_phone="+996555000222",
+        website_url="https://example.com",
+    )
+
+    assert place.city == "bishkek"
+    assert place.category == "modern canteen / cafe"

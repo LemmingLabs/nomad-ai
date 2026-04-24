@@ -23,3 +23,9 @@ body {
 #root {
   min-height: 100%;
 }
+
+gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+  color-scheme: light;
+}

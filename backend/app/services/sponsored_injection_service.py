@@ -6,13 +6,20 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.business import Business
-from app.models.business_media import BusinessMediaType
 from app.models.sponsored_impression import SponsoredImpression
 from app.models.sponsored_place import SponsoredPlace
+from app.models.sponsored_place_media import SponsoredPlaceMediaType
 
 
 logger = logging.getLogger(__name__)
+MIN_SCORE = 1
+MAX_SPONSORED_PER_TRIP = 2
+DEFAULT_SPONSORED_IMAGES = {
+    "restaurant": "/media/defaults/restaurant.svg",
+    "activity": "/media/defaults/activity.svg",
+    "default": "/media/defaults/place.svg",
+}
+DEFAULT_SPONSORED_IMAGE = DEFAULT_SPONSORED_IMAGES["restaurant"]
 
 _CITY_STOPWORDS = {
     "city",
@@ -71,7 +78,12 @@ class SponsoredInjectionService:
         if not isinstance(days, list):
             return itinerary_json
 
+        for day in days:
+            if isinstance(day, dict):
+                day.pop("sponsored", None)
+
         used_place_ids: set[int] = set()
+        injected_count = 0
         for day in days:
             if not isinstance(day, dict):
                 continue
@@ -85,7 +97,12 @@ class SponsoredInjectionService:
                 [a.get("type") for a in day.get("activities", []) if isinstance(a, dict)],
             )
 
-            if day.get("sponsored"):
+            if injected_count >= MAX_SPONSORED_PER_TRIP:
+                logger.info(
+                    "[SPONSORED] reached trip limit: injected=%s max=%s",
+                    injected_count,
+                    MAX_SPONSORED_PER_TRIP,
+                )
                 continue
 
             day_number = day.get("day")
@@ -110,14 +127,26 @@ class SponsoredInjectionService:
                 used_place_ids=used_place_ids,
             )
             if candidate is None:
+                logger.info(
+                    "[SPONSORED] no candidate selected for day=%s city=%s desired_categories=%s",
+                    day.get("day"),
+                    city,
+                    sorted(desired_categories or []),
+                )
                 continue
 
             used_place_ids.add(candidate.id)
             day["sponsored"] = self._build_day_payload(candidate)
+            injected_count += 1
             logger.info(
                 "[SPONSORED DEBUG] final sponsored for day=%s -> %s",
                 day.get("day"),
                 day.get("sponsored"),
+            )
+            logger.info(
+                "[SPONSORED] impression tracked trip_id=%s place_id=%s",
+                trip_id,
+                candidate.id,
             )
             self.db.add(
                 SponsoredImpression(
@@ -197,9 +226,10 @@ class SponsoredInjectionService:
         coords: _Coords | None,
         used_place_ids: set[int],
     ) -> SponsoredPlace | None:
-        city_norm = self._normalize_city(city)
+        city_norm = normalize_city(city)
         logger.info("[SPONSORED DEBUG] city raw=%s normalized=%s", city, city_norm)
         if not city_norm:
+            logger.info("[SPONSORED] city normalization produced empty value for raw=%s", city)
             return None
 
         statement = (
@@ -207,13 +237,26 @@ class SponsoredInjectionService:
             .where(SponsoredPlace.is_active.is_(True))
             .where(SponsoredPlace.is_approved.is_(True))
             .options(
-                selectinload(SponsoredPlace.business).selectinload(Business.media),
+                selectinload(SponsoredPlace.media),
             )
             .limit(250)
         )
 
         all_candidates = list(self.db.execute(statement).scalars().all())
-        candidates = [place for place in all_candidates if self._city_matches(city_norm, place.city)]
+        logger.info("[SPONSORED] candidates found: %s", len(all_candidates))
+
+        candidates: list[SponsoredPlace] = []
+        for place in all_candidates:
+            if self._city_matches(city_norm, place.city):
+                candidates.append(place)
+                continue
+            logger.info(
+                "[SPONSORED] filtered out place_id=%s title=%s reason=city_mismatch day_city=%s place_city=%s",
+                place.id,
+                place.title,
+                city_norm,
+                place.city,
+            )
         logger.info(
             "[SPONSORED DEBUG] city=%s matched %s/%s approved active candidates",
             city_norm,
@@ -221,13 +264,24 @@ class SponsoredInjectionService:
             len(all_candidates),
         )
         if not candidates:
+            logger.info("[SPONSORED] filtered candidates: 0")
             return None
 
-        filtered = [place for place in candidates if place.id not in used_place_ids]
+        filtered: list[SponsoredPlace] = []
+        for place in candidates:
+            if place.id in used_place_ids:
+                logger.info(
+                    "[SPONSORED] filtered out place_id=%s title=%s reason=already_used",
+                    place.id,
+                    place.title,
+                )
+                continue
+            filtered.append(place)
+        logger.info("[SPONSORED] filtered candidates: %s", len(filtered))
         if not filtered:
             return None
 
-        desired_categories_norm = {self._normalize_category(cat) for cat in (desired_categories or set())}
+        desired_categories_norm = {normalize_category(cat) for cat in (desired_categories or set())}
 
         def score(place: SponsoredPlace) -> tuple[int, float, int]:
             category_score = self._category_match_score(place.category, desired_categories_norm)
@@ -255,15 +309,40 @@ class SponsoredInjectionService:
                 recency_score,
             )
 
-        return max(filtered, key=score)
+        selected = max(filtered, key=score)
+        selected_score, _, _ = score(selected)
+        if selected_score < MIN_SCORE:
+            logger.info(
+                "[SPONSORED] final candidate rejected by MIN_SCORE: place_id=%s score=%s min_score=%s",
+                selected.id,
+                selected_score,
+                MIN_SCORE,
+            )
+            return None
+        logger.info(
+            "[SPONSORED] final choice: place_id=%s title=%s city=%s category=%s score=%s",
+            selected.id,
+            selected.title,
+            selected.city,
+            selected.category,
+            selected_score,
+        )
+        return selected
 
     def _build_day_payload(self, place: SponsoredPlace) -> dict:
-        images: list[str] = []
-        business = place.business
-        if business is not None:
-            for media in business.media or []:
-                if media.type == BusinessMediaType.IMAGE:
-                    images.append(media.url)
+        images = [
+            media.url
+            for media in (place.media or [])
+            if media.type in {SponsoredPlaceMediaType.IMAGE, SponsoredPlaceMediaType.COVER}
+        ]
+        if not images:
+            fallback_image = self._fallback_image_for_category(place.category)
+            logger.warning(
+                "[SPONSORED] place_id=%s has no media, using fallback image %s",
+                place.id,
+                fallback_image,
+            )
+            images = [fallback_image]
 
         return {
             "is_sponsored": True,
@@ -283,7 +362,15 @@ class SponsoredInjectionService:
         }
 
     def _normalize_category(self, raw: str) -> str:
-        return " ".join(str(raw or "").strip().lower().replace("_", " ").split())
+        return normalize_category(raw)
+
+    def _fallback_image_for_category(self, category: str | None) -> str:
+        category_norm = self._normalize_category(category or "")
+        if any(token in category_norm for token in {"restaurant", "cafe", "canteen", "food", "self service"}):
+            return DEFAULT_SPONSORED_IMAGES["restaurant"]
+        if any(token in category_norm for token in {"activity", "attraction", "museum", "park", "tour"}):
+            return DEFAULT_SPONSORED_IMAGES["activity"]
+        return DEFAULT_SPONSORED_IMAGES["default"]
 
     def _category_match_score(self, place_category: str | None, desired: set[str]) -> int:
         if not desired:
@@ -294,7 +381,7 @@ class SponsoredInjectionService:
             return 0
         place_parts = self._split_category_parts(place_category or "")
 
-        desired_norm = {self._normalize_category(item) for item in desired if self._normalize_category(item)}
+        desired_norm = {normalize_category(item) for item in desired if normalize_category(item)}
 
         if place_norm in desired_norm or any(part in desired_norm for part in place_parts):
             return 3
@@ -322,6 +409,10 @@ class SponsoredInjectionService:
                 "self-service",
                 "self-service cafe",
                 "self-service restaurant",
+                "self-service canteen",
+                "self service canteen",
+                "canteens",
+                "foodcourt",
             },
             "attraction": {
                 "attraction",
@@ -368,12 +459,7 @@ class SponsoredInjectionService:
         return parts
 
     def _normalize_city(self, raw: str) -> str:
-        cleaned = self._normalize_text(raw)
-        if not cleaned:
-            return ""
-
-        tokens = [token for token in cleaned.split() if token not in _CITY_STOPWORDS]
-        return " ".join(tokens) or cleaned
+        return normalize_city(raw)
 
     def _city_matches(self, day_city_norm: str, place_city: str | None) -> bool:
         place_city_norm = self._normalize_city(place_city or "")
@@ -402,3 +488,16 @@ class SponsoredInjectionService:
         a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return r * c
+
+
+def normalize_category(raw: str | None) -> str:
+    return " ".join(str(raw or "").strip().lower().replace("_", " ").split())
+
+
+def normalize_city(raw: str | None) -> str:
+    cleaned = " ".join(re.sub(r"[^a-z0-9]+", " ", str(raw or "").lower()).split())
+    if not cleaned:
+        return ""
+
+    tokens = [token for token in cleaned.split() if token not in _CITY_STOPWORDS]
+    return " ".join(tokens) or cleaned

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -7,12 +7,15 @@ from app.models.user import User
 from app.schemas.business import BusinessCreateRequest, BusinessResponse, BusinessUpdateRequest
 from app.schemas.business_media import BusinessMediaCreateRequest, BusinessMediaResponse
 from app.schemas.sponsored_analytics import BusinessAnalyticsOverviewResponse, SponsoredPlaceAnalyticsResponse
+from app.schemas.sponsored_place_media import SponsoredPlaceMediaResponse
 from app.schemas.sponsored_place import (
     SponsoredPlaceCreateRequest,
     SponsoredPlaceResponse,
     SponsoredPlaceUpdateRequest,
 )
+from app.models.sponsored_place_media import SponsoredPlaceMediaType
 from app.services.business_service import BusinessService
+from app.services.sponsored_place_media_service import SponsoredPlaceMediaService
 from app.services.sponsored_place_service import SponsoredPlaceService
 from app.services.sponsored_reporting_service import SponsoredReportingService
 
@@ -141,6 +144,51 @@ def deactivate_my_sponsored_place(
     current_user: User = Depends(require_business),
 ) -> None:
     SponsoredPlaceService(db).deactivate_my_place(current_user, place_id)
+
+
+@router.get("/me/sponsored-places/{place_id}/media", response_model=list[SponsoredPlaceMediaResponse])
+def list_my_sponsored_place_media(
+    place_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_business),
+) -> list[SponsoredPlaceMediaResponse]:
+    items = SponsoredPlaceMediaService(db).list_my_place_media(current_user, place_id)
+    return [SponsoredPlaceMediaResponse.model_validate(item) for item in items]
+
+
+@router.post(
+    "/me/sponsored-places/{place_id}/media",
+    response_model=SponsoredPlaceMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_my_sponsored_place_media(
+    place_id: int,
+    type: SponsoredPlaceMediaType = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_business),
+) -> SponsoredPlaceMediaResponse:
+    item = await SponsoredPlaceMediaService(db).upload_my_place_media(
+        current_user,
+        place_id=place_id,
+        type=type,
+        file=file,
+    )
+    return SponsoredPlaceMediaResponse.model_validate(item)
+
+
+@router.delete("/me/sponsored-places/{place_id}/media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_sponsored_place_media(
+    place_id: int,
+    media_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_business),
+) -> None:
+    SponsoredPlaceMediaService(db).delete_my_place_media(
+        current_user,
+        place_id=place_id,
+        media_id=media_id,
+    )
 
 
 @router.get("/me/analytics/overview", response_model=BusinessAnalyticsOverviewResponse)

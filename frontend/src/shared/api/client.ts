@@ -12,6 +12,12 @@ export const apiClient = axios.create({
 // ─── Request Interceptor ─────────────────────────────────────────────────────
 apiClient.interceptors.request.use(
   (req) => {
+    if (typeof FormData !== 'undefined' && req.data instanceof FormData) {
+      if (req.headers) {
+        delete req.headers['Content-Type'];
+      }
+    }
+
     const token = localStorage.getItem(config.storageKeys.accessToken);
     if (token && req.headers) {
       req.headers.Authorization = `Bearer ${token}`;

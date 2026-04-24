@@ -13,6 +13,11 @@ export const apiClient: AxiosInstance = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    config.headers = config.headers ?? {}
+    delete config.headers['Content-Type']
+  }
+
   const accessToken = authStorage.getAccessToken()
   if (accessToken) {
     config.headers = config.headers ?? {}
@@ -34,4 +39,3 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   },
 )
-

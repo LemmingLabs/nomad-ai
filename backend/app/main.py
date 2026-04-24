@@ -1,8 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import router
 from app.core.config import settings
@@ -21,6 +23,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+media_dir = Path(__file__).resolve().parents[1] / "media"
+media_dir.mkdir(parents=True, exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,4 +34,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/media", StaticFiles(directory=media_dir), name="media")
 app.include_router(router)
