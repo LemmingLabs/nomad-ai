@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Activity placeholder</title>
+  <desc id="desc">Fallback background for sponsored activities.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b9e7d9"/>
+      <stop offset="50%" stop-color="#4fae9d"/>
+      <stop offset="100%" stop-color="#1d4f63"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="920" cy="170" r="110" fill="#f1fffb" opacity="0.2"/>
+  <circle cx="250" cy="640" r="150" fill="#ffffff" opacity="0.12"/>
+  <path d="M270 560 L480 300 L650 470 L820 230 L1010 560 Z" fill="#f4fffb" opacity="0.9"/>
+  <text x="120" y="690" fill="#f3fffc" font-family="Arial, sans-serif" font-size="72" font-weight="700">
+    Partner Pick
+  </text>
+  <text x="120" y="748" fill="#e4fffa" font-family="Arial, sans-serif" font-size="34">
+    Sponsored activity preview
+  </text>
+</svg>

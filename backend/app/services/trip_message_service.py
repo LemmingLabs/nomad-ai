@@ -8,6 +8,7 @@ from app.services.catalog_service import CatalogService
 from fastapi import HTTPException
 
 from app.services.limit_service import LimitService
+from app.services.sponsored_injection_service import SponsoredInjectionService
 from app.services.usage_service import UsageService
 
 
@@ -300,6 +301,14 @@ class TripMessageService:
                             )
                 except Exception as exc:
                     print(f"Image enrichment failed on update: {exc}")
+
+                try:
+                    enriched_itinerary = SponsoredInjectionService(self.db).inject_sponsored_places(
+                        enriched_itinerary,
+                        trip_id=trip.id,
+                    )
+                except Exception as exc:
+                    logger.exception("Sponsored injection failed on update: %s", exc)
 
                 trip.itinerary_json = enriched_itinerary
                 updated_itinerary = enriched_itinerary

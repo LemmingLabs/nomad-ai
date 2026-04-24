@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.sponsored_place_media import SponsoredPlaceMediaResponse
+
 
 class SponsoredPlaceCreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
@@ -51,4 +53,4 @@ class SponsoredPlaceResponse(BaseModel):
     is_approved: bool
     is_active: bool
     created_at: datetime
-
+    media: list[SponsoredPlaceMediaResponse] = Field(default_factory=list)

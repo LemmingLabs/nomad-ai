@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Restaurant placeholder</title>
+  <desc id="desc">Warm restaurant themed fallback background for sponsored places.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4d6a0"/>
+      <stop offset="50%" stop-color="#d78552"/>
+      <stop offset="100%" stop-color="#6e3b2e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="940" cy="180" r="120" fill="#f7ebcf" opacity="0.18"/>
+  <circle cx="240" cy="620" r="160" fill="#fff7e7" opacity="0.12"/>
+  <g fill="#fff6e8" opacity="0.92">
+    <rect x="410" y="210" width="42" height="260" rx="20"/>
+    <rect x="500" y="210" width="42" height="260" rx="20"/>
+    <rect x="590" y="210" width="42" height="260" rx="20"/>
+    <rect x="680" y="210" width="42" height="260" rx="20"/>
+    <rect x="778" y="210" width="58" height="320" rx="28"/>
+    <rect x="430" y="470" width="28" height="130" rx="14"/>
+    <rect x="515" y="470" width="28" height="130" rx="14"/>
+    <rect x="605" y="470" width="28" height="130" rx="14"/>
+    <rect x="700" y="470" width="28" height="130" rx="14"/>
+    <rect x="795" y="530" width="28" height="120" rx="14"/>
+  </g>
+  <text x="120" y="690" fill="#fff7ec" font-family="Arial, sans-serif" font-size="72" font-weight="700">
+    Partner Pick
+  </text>
+  <text x="120" y="748" fill="#fff1de" font-family="Arial, sans-serif" font-size="34">
+    Sponsored restaurant preview
+  </text>
+</svg>

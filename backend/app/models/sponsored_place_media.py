@@ -7,27 +7,28 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 
-class BusinessMediaType(str, Enum):
+class SponsoredPlaceMediaType(str, Enum):
     IMAGE = "image"
-    LOGO = "logo"
     COVER = "cover"
 
 
-class BusinessMedia(Base):
-    __tablename__ = "business_media"
+class SponsoredPlaceMedia(Base):
+    __tablename__ = "sponsored_place_media"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    business_id: Mapped[int] = mapped_column(
-        ForeignKey("businesses.id", ondelete="CASCADE"),
+    sponsored_place_id: Mapped[int] = mapped_column(
+        ForeignKey("sponsored_places.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    type: Mapped[BusinessMediaType] = mapped_column(
-        SqlEnum(BusinessMediaType, native_enum=False),
+    type: Mapped[SponsoredPlaceMediaType] = mapped_column(
+        SqlEnum(SponsoredPlaceMediaType, native_enum=False),
         nullable=False,
         index=True,
     )
     url: Mapped[str] = mapped_column(String(500), nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -36,7 +37,7 @@ class BusinessMedia(Base):
         index=True,
     )
 
-    business: Mapped["Business"] = relationship(
-        "Business",
+    sponsored_place: Mapped["SponsoredPlace"] = relationship(
+        "SponsoredPlace",
         back_populates="media",
     )

@@ -11,6 +11,8 @@ from sqlalchemy.pool import StaticPool
 import app.integrations.groq_client as groq_module
 from app.api.v1.messages import continue_trip_messages
 from app.models.base import Base
+from app.models.business import Business
+from app.models.sponsored_place import SponsoredPlace
 from app.models.trip import Trip
 from app.models.trip_message import TripMessage
 from app.models.user import User
@@ -76,6 +78,18 @@ def trip(db_session, user):
     db_session.commit()
     db_session.refresh(db_trip)
     return db_trip
+
+
+@pytest.fixture(autouse=True)
+def _allow_trip_chat_limits(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.trip_message_service.LimitService.can_edit_chat",
+        lambda self, user_id: True,
+    )
+    monkeypatch.setattr(
+        "app.services.trip_message_service.UsageService.increment_chat_edit",
+        lambda self, user_id: None,
+    )
 
 
 def test_trip_message_create_request_strips_whitespace():
@@ -339,7 +353,8 @@ def test_trip_message_service_saves_user_and_assistant_messages(db_session, trip
 
     assert [message.role for message in messages] == ["user", "assistant"]
     assert assistant_message.content == "assistant reply"
-    assert updated_itinerary == {"days": [{"day": 2}]}
+    assert updated_itinerary is not None
+    assert updated_itinerary["days"][0]["day"] == 2
 
 
 def test_trip_message_service_updates_trip_itinerary(db_session, trip):
@@ -351,7 +366,7 @@ def test_trip_message_service_updates_trip_itinerary(db_session, trip):
     service.continue_trip(trip=trip, user_content="change plan")
     db_session.refresh(trip)
 
-    assert trip.itinerary_json == {"days": [{"day": 3}]}
+    assert trip.itinerary_json["days"][0]["day"] == 3
 
 
 def test_trip_message_service_keeps_existing_itinerary_when_ai_returns_none(
@@ -368,6 +383,96 @@ def test_trip_message_service_keeps_existing_itinerary_when_ai_returns_none(
     db_session.refresh(trip)
 
     assert trip.itinerary_json == original_itinerary
+
+
+def test_trip_message_service_reinjects_sponsored_after_image_enrichment(
+    db_session, user, monkeypatch
+):
+    trip = Trip(
+        user_id=user.id,
+        title="Food day",
+        budget="300",
+        days=1,
+        interests={"food": True},
+        travel_style="balanced",
+        itinerary_json={
+            "days": [
+                {
+                    "day": 1,
+                    "city": "Bishkek",
+                    "location": "Bishkek center",
+                    "title": "Lunch stop",
+                    "activities": [{"type": "meal", "description": "Lunch"}],
+                    "images": {"hero": {"url": "/media/existing.jpg"}},
+                }
+            ]
+        },
+    )
+    db_session.add(trip)
+    db_session.flush()
+
+    business = Business(
+        owner_id=user.id,
+        name="Cantin",
+        description="Modern city canteen",
+        contact_phone="+996555000111",
+        website_url="https://cantin.example.com",
+    )
+    db_session.add(business)
+    db_session.flush()
+
+    place = SponsoredPlace(
+        business_id=business.id,
+        title="Cantin",
+        description="Modern stylish canteen in the city center",
+        city="bishkek",
+        lat=42.8746,
+        lng=74.5698,
+        google_place_id=None,
+        address="Bishkek center",
+        category="modern canteen / cafe",
+        cta_text="Book a table",
+        contact_phone="+996555000111",
+        website_url="https://cantin.example.com",
+        is_approved=True,
+        is_active=True,
+    )
+    db_session.add(place)
+    db_session.commit()
+    db_session.refresh(trip)
+
+    class FakeAIService:
+        def continue_trip(self, history_messages, user_message, current_itinerary):
+            return "assistant reply", {
+                "days": [
+                    {
+                        "day": 1,
+                        "city": "Bishkek",
+                        "location": "Bishkek center",
+                        "title": "Lunch stop",
+                        "activities": [{"type": "meal", "description": "Lunch"}],
+                    }
+                ]
+            }
+
+    class FakeCatalogService:
+        def __init__(self, db):
+            self.db = db
+
+        def enrich_itinerary_with_catalog(self, itinerary, budget):
+            return itinerary
+
+    monkeypatch.setattr("app.services.trip_message_service.CatalogService", FakeCatalogService)
+
+    service = TripMessageService(db_session, ai_service=FakeAIService())
+    _, updated_itinerary = service.continue_trip(trip=trip, user_content="keep lunch")
+    db_session.refresh(trip)
+
+    sponsored = updated_itinerary["days"][0].get("sponsored")
+    assert sponsored is not None
+    assert sponsored["is_sponsored"] is True
+    assert sponsored["badge"] == "Partner Pick"
+    assert trip.itinerary_json["days"][0]["sponsored"]["place"]["id"] == place.id
 
 
 def test_continue_trip_messages_function_returns_404_for_missing_trip(db_session, user):

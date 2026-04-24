@@ -5,6 +5,7 @@ from app.models.sponsored_place import SponsoredPlace
 from app.models.user import User
 from app.repositories.business_repository import BusinessRepository
 from app.repositories.sponsored_place_repository import SponsoredPlaceRepository
+from app.services.sponsored_injection_service import normalize_category, normalize_city
 
 
 class SponsoredPlaceService:
@@ -35,6 +36,7 @@ class SponsoredPlaceService:
 
     def create_my_place(self, current_user: User, **payload) -> SponsoredPlace:
         business_id = self._get_my_business_id(current_user)
+        payload = self._normalize_payload(payload)
         return self.place_repo.create_for_business(business_id=business_id, **payload)
 
     def update_my_place(self, current_user: User, place_id: int, **updates) -> SponsoredPlace:
@@ -43,8 +45,17 @@ class SponsoredPlaceService:
             return place
         # Business cannot approve via this endpoint
         updates.pop("is_approved", None)
+        updates = self._normalize_payload(updates)
         return self.place_repo.update(place, **updates)
 
     def deactivate_my_place(self, current_user: User, place_id: int) -> SponsoredPlace:
         place = self.get_my_place(current_user, place_id)
         return self.place_repo.update(place, is_active=False)
+
+    def _normalize_payload(self, payload: dict) -> dict:
+        normalized = dict(payload)
+        if "city" in normalized and normalized["city"] is not None:
+            normalized["city"] = normalize_city(normalized["city"])
+        if "category" in normalized and normalized["category"] is not None:
+            normalized["category"] = normalize_category(normalized["category"])
+        return normalized
