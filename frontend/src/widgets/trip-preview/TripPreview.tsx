@@ -8,6 +8,7 @@ import styles from './TripPreview.module.scss';
 
 interface TripPreviewProps {
   itinerary: TripItinerary | null | undefined;
+  tripId?: number;
   tripTitle?: string;
   budget?: string;
   actions?: ReactNode;
@@ -15,6 +16,7 @@ interface TripPreviewProps {
 
 export function TripPreview({
   itinerary,
+  tripId,
   tripTitle,
   budget,
   actions,
@@ -46,7 +48,7 @@ export function TripPreview({
             {day.route_from_previous && (
               <RouteTransition route={day.route_from_previous} />
             )}
-            <TripDayCard day={day} />
+            <TripDayCard day={day} tripId={tripId} />
           </Fragment>
         ))}
       </div>

@@ -67,7 +67,7 @@ export interface SponsoredPlace {
   business_id: number;
   title: string;
   description: string;
-  cta: string;
+  cta: string | null;
   images?: string[] | null;
   contact?: string | null;
   website?: string | null;

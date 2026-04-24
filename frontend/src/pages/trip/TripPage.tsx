@@ -224,6 +224,7 @@ export function TripPage() {
           <div className={styles.previewPane}>
             <TripPreview
               itinerary={itinerary}
+              tripId={currentTrip?.id ?? (Number.isFinite(tripId) ? tripId : undefined)}
               tripTitle={tripTitle}
               budget={currentTrip?.budget}
               actions={previewActions}

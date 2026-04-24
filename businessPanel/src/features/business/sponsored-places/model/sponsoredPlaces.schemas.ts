@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const kyrgyzPhoneRegex = /^\+996\s\d{3}\s\d{3}\s\d{3}$/
+
 const emptyOrUrl = z
   .string()
   .trim()
@@ -10,16 +12,16 @@ const emptyOrUrl = z
 const emptyOrPhone = z
   .string()
   .trim()
-  .refine((value) => value === '' || (value.length >= 6 && value.length <= 32), {
-    message: 'Invalid phone number',
+  .refine((value) => value === '' || kyrgyzPhoneRegex.test(value), {
+    message: 'Phone must be in format +996 XXX XXX XXX',
   })
 
-const numberString = (label: string) =>
+const locationNumberString = () =>
   z
     .string()
     .trim()
     .refine((value) => value !== '' && Number.isFinite(Number(value)), {
-      message: `${label} must be a number`,
+      message: 'Please select a location on the map',
     })
 
 export const sponsoredPlaceFormSchema = z.object({
@@ -28,8 +30,8 @@ export const sponsoredPlaceFormSchema = z.object({
   city: z.string().trim().min(1, 'City is required'),
   category: z.string().trim().min(1, 'Category is required'),
   address: z.string().trim().min(1, 'Address is required'),
-  lat: numberString('Latitude'),
-  lng: numberString('Longitude'),
+  lat: locationNumberString(),
+  lng: locationNumberString(),
   contact_phone: emptyOrPhone,
   website_url: emptyOrUrl,
   cta_text: z.string().trim(),

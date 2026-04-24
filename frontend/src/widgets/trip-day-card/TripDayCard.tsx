@@ -1,4 +1,5 @@
 import type { TripDay } from '../../entities/trip';
+import { SponsoredCard } from '../../features/sponsored/ui/SponsoredCard';
 import {
   formatDistance,
   formatDuration,
@@ -10,14 +11,14 @@ import { ActivityTimeline } from './ActivityTimeline';
 import { DayHero } from './DayHero';
 import { PlaceCandidateCard } from './PlaceCandidateCard';
 import { QuickFacts } from './QuickFacts';
-import { SponsoredPlaceCard } from './SponsoredPlaceCard';
 import styles from './TripDayCard.module.scss';
 
 interface TripDayCardProps {
   day: TripDay;
+  tripId?: number | null;
 }
 
-export function TripDayCard({ day }: TripDayCardProps) {
+export function TripDayCard({ day, tripId }: TripDayCardProps) {
   const routeAvailable = isRouteAvailable(day.route_from_previous);
   const placeCandidate = day.place_candidate;
   const heroImage = day.images?.hero;
@@ -33,7 +34,9 @@ export function TripDayCard({ day }: TripDayCardProps) {
         <div className={styles.contentStack}>
           <ActivityTimeline activities={day.activities} />
 
-          <SponsoredPlaceCard day={day} />
+          {day.sponsored ? (
+            <SponsoredCard sponsored={day.sponsored} tripId={tripId} />
+          ) : null}
 
           <PlaceCandidateCard day={day} />
 

@@ -1,9 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
+import { env } from '../../../../shared/config/env'
 import { sponsoredPlaceFormSchema } from '../model/sponsoredPlaces.schemas'
-import type { SponsoredPlaceFormValues } from '../model/sponsoredPlaces.types'
+import type {
+  SponsoredPlaceFormValues,
+  SponsoredPlaceLocationValue,
+} from '../model/sponsoredPlaces.types'
+import { formatKyrgyzPhoneInput } from '../model/sponsoredPlaces.utils'
+import { SponsoredPlaceLocationPicker } from './SponsoredPlaceLocationPicker'
 
 type SponsoredPlaceFormProps = {
   initialValues: SponsoredPlaceFormValues
@@ -20,6 +26,10 @@ export function SponsoredPlaceForm({
   onCancel,
   onSubmit,
 }: SponsoredPlaceFormProps) {
+  const [cityWasEditedManually, setCityWasEditedManually] = useState(
+    initialValues.city.trim() !== '',
+  )
+
   const form = useForm<SponsoredPlaceFormValues>({
     resolver: zodResolver(sponsoredPlaceFormSchema),
     defaultValues: initialValues,
@@ -27,11 +37,46 @@ export function SponsoredPlaceForm({
   })
 
   useEffect(() => {
-    form.reset(initialValues)
+    setCityWasEditedManually(initialValues.city.trim() !== '')
+    form.reset({
+      ...initialValues,
+      contact_phone: formatKyrgyzPhoneInput(initialValues.contact_phone),
+    })
   }, [form, initialValues])
+
+  const watchedLocation: SponsoredPlaceLocationValue = {
+    lat: form.watch('lat'),
+    lng: form.watch('lng'),
+    address: form.watch('address'),
+    city: form.watch('city'),
+  }
+
+  const googleMapsConfigured = env.googleMapsApiKey !== ''
+  const locationError =
+    form.formState.errors.lat?.message ?? form.formState.errors.lng?.message
+
+  const handleLocationChange = (location: SponsoredPlaceLocationValue) => {
+    form.setValue('lat', location.lat, { shouldDirty: true, shouldValidate: true })
+    form.setValue('lng', location.lng, { shouldDirty: true, shouldValidate: true })
+    form.setValue('address', location.address, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+    form.setValue('city', location.city, { shouldDirty: true, shouldValidate: true })
+  }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <SponsoredPlaceLocationPicker
+        value={watchedLocation}
+        disabled={isSubmitting}
+        shouldAutofillCity={!cityWasEditedManually}
+        onChange={handleLocationChange}
+      />
+      {locationError ? (
+        <p className="text-sm text-red-600">{locationError as string}</p>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-neutral-700">Title</label>
@@ -49,16 +94,32 @@ export function SponsoredPlaceForm({
 
         <div>
           <label className="block text-sm font-medium text-neutral-700">City</label>
-          <input
-            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
-            {...form.register('city')}
-            disabled={isSubmitting}
+          <Controller
+            control={form.control}
+            name="city"
+            render={({ field }) => (
+              <input
+                value={field.value}
+                onChange={(event) => {
+                  setCityWasEditedManually(true)
+                  field.onChange(event.target.value)
+                }}
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+                className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                disabled={isSubmitting}
+              />
+            )}
           />
           {form.formState.errors.city?.message ? (
             <p className="mt-1 text-sm text-red-600">
               {form.formState.errors.city.message}
             </p>
           ) : null}
+          <p className="mt-1 text-xs text-neutral-500">
+            Confirm the city manually if Google Places suggests the wrong region.
+          </p>
         </div>
       </div>
 
@@ -112,49 +173,60 @@ export function SponsoredPlaceForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700">Lat</label>
-          <input
-            type="number"
-            step="any"
-            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
-            {...form.register('lat')}
-            disabled={isSubmitting}
-          />
-          {form.formState.errors.lat?.message ? (
-            <p className="mt-1 text-sm text-red-600">
-              {form.formState.errors.lat.message as string}
-            </p>
-          ) : null}
-        </div>
+      {googleMapsConfigured ? (
+        <>
+          <input type="hidden" {...form.register('lat')} />
+          <input type="hidden" {...form.register('lng')} />
+        </>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700">Lat</label>
+            <input
+              type="number"
+              step="any"
+              className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+              {...form.register('lat')}
+              disabled={isSubmitting}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-neutral-700">Lng</label>
-          <input
-            type="number"
-            step="any"
-            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
-            {...form.register('lng')}
-            disabled={isSubmitting}
-          />
-          {form.formState.errors.lng?.message ? (
-            <p className="mt-1 text-sm text-red-600">
-              {form.formState.errors.lng.message as string}
-            </p>
-          ) : null}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700">Lng</label>
+            <input
+              type="number"
+              step="any"
+              className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+              {...form.register('lng')}
+              disabled={isSubmitting}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
           <label className="block text-sm font-medium text-neutral-700">
             Contact phone
           </label>
-          <input
-            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
-            {...form.register('contact_phone')}
-            disabled={isSubmitting}
+          <Controller
+            control={form.control}
+            name="contact_phone"
+            render={({ field }) => (
+              <input
+                value={field.value}
+                onChange={(event) =>
+                  field.onChange(formatKyrgyzPhoneInput(event.target.value))
+                }
+                onBlur={field.onBlur}
+                name={field.name}
+                ref={field.ref}
+                placeholder="+996 700 123 456"
+                className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
+                disabled={isSubmitting}
+                inputMode="numeric"
+              />
+            )}
           />
           {form.formState.errors.contact_phone?.message ? (
             <p className="mt-1 text-sm text-red-600">
@@ -218,4 +290,3 @@ export function SponsoredPlaceForm({
     </form>
   )
 }
-
