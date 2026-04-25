@@ -10,6 +10,7 @@ interface TripState {
   updateTrip: (trip: Trip) => void;
   addTrip: (trip: TripListItem) => void;
   removeTrip: (id: number) => void;
+  clearTrips: () => void;
   activeTrip: () => TripListItem | undefined;
 }
 
@@ -31,6 +32,7 @@ export const useTripStore = create<TripState>()(
           trips: s.trips.filter((t) => t.id !== id),
           activeTripId: s.activeTripId === id ? null : s.activeTripId,
         })),
+      clearTrips: () => set({ trips: [], activeTripId: null }),
       activeTrip: () => {
         const { trips, activeTripId } = get();
         return trips.find((t) => t.id === activeTripId);

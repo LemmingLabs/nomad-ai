@@ -11,6 +11,7 @@ import { toast } from 'react-toastify';
 import styles from './Sidebar.module.scss';
 import { useTripStore } from '../../entities/trip';
 import { useUserStore } from '../../entities/user';
+import { LogoutButton } from '../../features/auth/logout';
 import { deleteTripApi } from '../../features/trip/delete-trip';
 import { useSidebarStore } from '../../features/ui/open-sidebar';
 import { config } from '../../shared/config';
@@ -123,23 +124,26 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
       <UsageWidget isCollapsed={isCollapsed} />
 
       <div className={styles.footer}>
-        <button
-          type="button"
-          className={styles.profileButton}
-          onClick={() => void navigate(user ? '/profile' : '/auth/login')}
-          aria-label={user ? 'Open profile' : 'Sign in'}
-        >
-          {user ? (
-            <div className={styles.profile}>
-              <Avatar name={user.full_name ?? user.email} size="sm" />
-              {!isCollapsed && (
+        {user ? (
+          <div className={styles.footerStack}>
+            {!isCollapsed && (
+              <div className={styles.profileSummary}>
+                <Avatar name={user.full_name ?? user.email} size="sm" />
                 <div className={styles.profileCopy}>
                   <p className={styles.profileName}>{user.full_name ?? 'Traveler'}</p>
                   <p className={styles.profileEmail}>{user.email}</p>
                 </div>
-              )}
-            </div>
-          ) : (
+              </div>
+            )}
+            <LogoutButton isCollapsed={isCollapsed} />
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={styles.profileButton}
+            onClick={() => void navigate('/auth/login')}
+            aria-label="Sign in"
+          >
             <div className={styles.profile}>
               <span className={styles.profileGhost}>
                 <UserRound size={16} />
@@ -151,8 +155,8 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
                 </div>
               )}
             </div>
-          )}
-        </button>
+          </button>
+        )}
       </div>
     </aside>
   );
