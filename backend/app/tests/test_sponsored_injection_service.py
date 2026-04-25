@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.config import settings
 from app.models.base import Base
 from app.models.business import Business
 from app.models.sponsored_place import SponsoredPlace
@@ -160,6 +161,30 @@ def test_inject_sponsored_place_uses_fallback_image_when_media_missing(db_sessio
     assert result["days"][0]["sponsored"]["place"]["images"] == [DEFAULT_SPONSORED_IMAGE]
 
 
+def test_inject_sponsored_place_uses_configured_fallback_image_when_media_missing(db_session, monkeypatch):
+    monkeypatch.setattr(settings, "DEFAULT_RESTAURANT_IMAGE_URL", "https://cdn.example.com/defaults/restaurant.svg")
+    monkeypatch.setattr(settings, "DEFAULT_ACTIVITY_IMAGE_URL", None)
+    monkeypatch.setattr(settings, "DEFAULT_PLACE_IMAGE_URL", None)
+
+    _create_sponsored_place(db_session)
+    itinerary = {
+        "days": [
+            {
+                "day": 1,
+                "city": "Bishkek",
+                "title": "Lunch",
+                "activities": [{"type": "meal", "description": "Lunch stop"}],
+            }
+        ]
+    }
+
+    result = SponsoredInjectionService(db_session).inject_sponsored_places(itinerary)
+
+    assert result["days"][0]["sponsored"]["place"]["images"] == [
+        "https://cdn.example.com/defaults/restaurant.svg"
+    ]
+
+
 def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session):
     user = User(email="biz2@example.com", password_hash="hashed")
     db_session.add(user)
@@ -193,3 +218,40 @@ def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session
 
     assert place.city == "bishkek"
     assert place.category == "modern canteen / cafe"
+
+
+def test_inject_sponsored_place_uses_signed_urls_in_gcs_mode(db_session, monkeypatch):
+    place = _create_sponsored_place(db_session)
+    db_session.add(
+        SponsoredPlaceMedia(
+            sponsored_place_id=place.id,
+            type=SponsoredPlaceMediaType.IMAGE,
+            url=f"media/businesses/{place.business_id}/sponsored_places/{place.id}/photo.jpg",
+            filename="photo.jpg",
+            content_type="image/jpeg",
+        )
+    )
+    db_session.commit()
+
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "gcs")
+    monkeypatch.setattr(
+        "app.services.storage_service.StorageService.get_access_url",
+        lambda self, value: f"https://signed.example.com/{value}",
+    )
+
+    itinerary = {
+        "days": [
+            {
+                "day": 1,
+                "city": "Bishkek",
+                "title": "Lunch",
+                "activities": [{"type": "meal", "description": "Lunch stop"}],
+            }
+        ]
+    }
+
+    result = SponsoredInjectionService(db_session).inject_sponsored_places(itinerary)
+
+    assert result["days"][0]["sponsored"]["place"]["images"] == [
+        f"https://signed.example.com/media/businesses/{place.business_id}/sponsored_places/{place.id}/photo.jpg"
+    ]

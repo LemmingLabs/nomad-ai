@@ -19,12 +19,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     logger.info("FastAPI application startup")
     logger.info("Application debug mode enabled: %s", settings.DEBUG)
+    logger.info("Storage backend: %s", settings.STORAGE_BACKEND)
     yield
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
-media_dir = Path(__file__).resolve().parents[1] / "media"
-media_dir.mkdir(parents=True, exist_ok=True)
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,5 +33,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/media", StaticFiles(directory=media_dir), name="media")
+if settings.STORAGE_BACKEND == "local":
+    media_dir = Path(__file__).resolve().parents[1] / "media"
+    media_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/media", StaticFiles(directory=media_dir), name="media")
+
 app.include_router(router)

@@ -1,3 +1,4 @@
+import logging
 import re
 import unicodedata
 from pathlib import Path
@@ -10,6 +11,10 @@ from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlace
 from app.models.user import User
 from app.repositories.sponsored_place_media_repository import SponsoredPlaceMediaRepository
 from app.services.sponsored_place_service import SponsoredPlaceService
+from app.services.storage_service import StorageService
+
+
+logger = logging.getLogger(__name__)
 
 
 class SponsoredPlaceMediaService:
@@ -24,7 +29,7 @@ class SponsoredPlaceMediaService:
         self.db = db
         self.place_service = SponsoredPlaceService(db)
         self.media_repo = SponsoredPlaceMediaRepository(db)
-        self.media_root = Path(__file__).resolve().parents[2] / "media"
+        self.storage_service = StorageService()
 
     def list_my_place_media(self, current_user: User, place_id: int) -> list[SponsoredPlaceMedia]:
         place = self.place_service.get_my_place(current_user, place_id)
@@ -58,26 +63,38 @@ class SponsoredPlaceMediaService:
                 detail=f"File is too large. Maximum size is {self.MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB",
             )
 
-        relative_url, absolute_path, stored_filename = self._build_storage_path(
+        destination_path, stored_filename = self._build_storage_path(
             business_id=place.business_id,
             place_id=place.id,
             original_filename=file.filename,
             content_type=content_type,
         )
-        absolute_path.parent.mkdir(parents=True, exist_ok=True)
-        absolute_path.write_bytes(file_bytes)
 
+        stored_url: str | None = None
         try:
+            stored_url = self.storage_service.upload_bytes(
+                file_bytes,
+                destination_path=destination_path,
+                content_type=content_type,
+            )
             return self.media_repo.create(
                 sponsored_place_id=place.id,
                 type=type,
-                url=relative_url,
+                url=stored_url,
                 filename=stored_filename,
                 content_type=content_type,
             )
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(exc),
+            ) from exc
         except Exception:
-            if absolute_path.exists():
-                absolute_path.unlink()
+            if stored_url:
+                try:
+                    self.storage_service.delete_by_url(stored_url)
+                except Exception:
+                    logger.exception("[SPONSORED MEDIA] Failed to rollback uploaded media url=%s", stored_url)
             raise
         finally:
             await file.close()
@@ -88,10 +105,14 @@ class SponsoredPlaceMediaService:
         if media is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsored place media not found")
 
-        file_path = self._file_path_from_url(media.url)
+        try:
+            self.storage_service.delete_by_url(media.url)
+        except RuntimeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=str(exc),
+            ) from exc
         self.media_repo.delete(media)
-        if file_path.exists():
-            file_path.unlink()
 
     def _build_storage_path(
         self,
@@ -100,7 +121,7 @@ class SponsoredPlaceMediaService:
         place_id: int,
         original_filename: str | None,
         content_type: str,
-    ) -> tuple[str, Path, str]:
+    ) -> tuple[str, str]:
         safe_name = self._sanitize_filename(original_filename)
         extension = Path(safe_name).suffix.lower()
         expected_extension = self.ALLOWED_CONTENT_TYPES[content_type]
@@ -108,13 +129,8 @@ class SponsoredPlaceMediaService:
             extension = expected_extension
         stem = Path(safe_name).stem or "image"
         stored_filename = f"{stem}-{uuid4().hex}{extension}"
-        relative_path = Path("businesses") / str(business_id) / "sponsored_places" / str(place_id) / stored_filename
-        relative_url = f"/media/{relative_path.as_posix()}"
-        return relative_url, self.media_root / relative_path, stored_filename
-
-    def _file_path_from_url(self, url: str) -> Path:
-        relative = url.removeprefix("/media/").lstrip("/")
-        return self.media_root / relative
+        storage_path = Path("media") / "businesses" / str(business_id) / "sponsored_places" / str(place_id) / stored_filename
+        return storage_path.as_posix(), stored_filename
 
     def _sanitize_filename(self, filename: str | None) -> str:
         raw_name = Path(filename or "image").name

@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import require_business
 from app.models.user import User
+from app.models.sponsored_place import SponsoredPlace
+from app.models.sponsored_place_media import SponsoredPlaceMedia
+from app.models.business_media import BusinessMedia
 from app.schemas.business import BusinessCreateRequest, BusinessResponse, BusinessUpdateRequest
 from app.schemas.business_media import BusinessMediaCreateRequest, BusinessMediaResponse
 from app.schemas.sponsored_analytics import BusinessAnalyticsOverviewResponse, SponsoredPlaceAnalyticsResponse
@@ -18,9 +21,35 @@ from app.services.business_service import BusinessService
 from app.services.sponsored_place_media_service import SponsoredPlaceMediaService
 from app.services.sponsored_place_service import SponsoredPlaceService
 from app.services.sponsored_reporting_service import SponsoredReportingService
+from app.services.storage_service import StorageService
 
 
 router = APIRouter(prefix="/business", tags=["business"])
+
+
+def _storage() -> StorageService:
+    return StorageService()
+
+
+def _business_media_response(item: BusinessMedia) -> BusinessMediaResponse:
+    response = BusinessMediaResponse.model_validate(item)
+    data = response.model_dump()
+    data["url"] = _storage().get_access_url(item.url)
+    return BusinessMediaResponse(**data)
+
+
+def _sponsored_place_media_response(item: SponsoredPlaceMedia) -> SponsoredPlaceMediaResponse:
+    response = SponsoredPlaceMediaResponse.model_validate(item)
+    data = response.model_dump()
+    data["url"] = _storage().get_access_url(item.url)
+    return SponsoredPlaceMediaResponse(**data)
+
+
+def _sponsored_place_response(place: SponsoredPlace) -> SponsoredPlaceResponse:
+    response = SponsoredPlaceResponse.model_validate(place)
+    data = response.model_dump()
+    data["media"] = [_sponsored_place_media_response(item).model_dump() for item in (place.media or [])]
+    return SponsoredPlaceResponse(**data)
 
 
 @router.get("/me", response_model=BusinessResponse)
@@ -67,7 +96,7 @@ def list_my_media(
     current_user: User = Depends(require_business),
 ) -> list[BusinessMediaResponse]:
     items = BusinessService(db).list_my_media(current_user)
-    return [BusinessMediaResponse.model_validate(item) for item in items]
+    return [_business_media_response(item) for item in items]
 
 
 @router.post("/me/media", response_model=BusinessMediaResponse, status_code=status.HTTP_201_CREATED)
@@ -77,7 +106,7 @@ def add_my_media(
     current_user: User = Depends(require_business),
 ) -> BusinessMediaResponse:
     item = BusinessService(db).add_my_media(current_user, type=payload.type, url=payload.url)
-    return BusinessMediaResponse.model_validate(item)
+    return _business_media_response(item)
 
 
 @router.delete("/me/media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -95,7 +124,7 @@ def list_my_sponsored_places(
     current_user: User = Depends(require_business),
 ) -> list[SponsoredPlaceResponse]:
     places = SponsoredPlaceService(db).list_my_places(current_user)
-    return [SponsoredPlaceResponse.model_validate(place) for place in places]
+    return [_sponsored_place_response(place) for place in places]
 
 
 @router.post(
@@ -109,7 +138,7 @@ def create_my_sponsored_place(
     current_user: User = Depends(require_business),
 ) -> SponsoredPlaceResponse:
     place = SponsoredPlaceService(db).create_my_place(current_user, **payload.model_dump())
-    return SponsoredPlaceResponse.model_validate(place)
+    return _sponsored_place_response(place)
 
 
 @router.get("/me/sponsored-places/{place_id}", response_model=SponsoredPlaceResponse)
@@ -119,7 +148,7 @@ def get_my_sponsored_place(
     current_user: User = Depends(require_business),
 ) -> SponsoredPlaceResponse:
     place = SponsoredPlaceService(db).get_my_place(current_user, place_id)
-    return SponsoredPlaceResponse.model_validate(place)
+    return _sponsored_place_response(place)
 
 
 @router.patch("/me/sponsored-places/{place_id}", response_model=SponsoredPlaceResponse)
@@ -134,7 +163,7 @@ def update_my_sponsored_place(
         place_id,
         **payload.model_dump(exclude_unset=True),
     )
-    return SponsoredPlaceResponse.model_validate(place)
+    return _sponsored_place_response(place)
 
 
 @router.delete("/me/sponsored-places/{place_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -153,7 +182,7 @@ def list_my_sponsored_place_media(
     current_user: User = Depends(require_business),
 ) -> list[SponsoredPlaceMediaResponse]:
     items = SponsoredPlaceMediaService(db).list_my_place_media(current_user, place_id)
-    return [SponsoredPlaceMediaResponse.model_validate(item) for item in items]
+    return [_sponsored_place_media_response(item) for item in items]
 
 
 @router.post(
@@ -174,7 +203,7 @@ async def upload_my_sponsored_place_media(
         type=type,
         file=file,
     )
-    return SponsoredPlaceMediaResponse.model_validate(item)
+    return _sponsored_place_media_response(item)
 
 
 @router.delete("/me/sponsored-places/{place_id}/media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)

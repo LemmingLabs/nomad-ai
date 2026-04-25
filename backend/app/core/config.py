@@ -1,4 +1,4 @@
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,9 +27,19 @@ class Settings(BaseSettings):
     ADMIN_FIRST_NAME: str | None = None
     ADMIN_LAST_NAME: str | None = None
 
-    @field_validator("DEBUG", mode="before")
+    STORAGE_BACKEND: str = "local"
+    GCS_BUCKET_NAME: str | None = None
+    GCS_MEDIA_PREFIX: str = "media"
+    GCS_SIGNED_URL_EXPIRATION_MINUTES: int = 60
+    USE_GCS_STORAGE: bool = False
+
+    DEFAULT_RESTAURANT_IMAGE_URL: str | None = None
+    DEFAULT_ACTIVITY_IMAGE_URL: str | None = None
+    DEFAULT_PLACE_IMAGE_URL: str | None = None
+
+    @field_validator("DEBUG", "USE_GCS_STORAGE", mode="before")
     @classmethod
-    def parse_debug(cls, value):
+    def parse_bool(cls, value):
         if isinstance(value, bool):
             return value
         normalized = str(value or "").strip().lower()
@@ -38,6 +48,20 @@ class Settings(BaseSettings):
         if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
             return False
         return value
+
+    @field_validator("STORAGE_BACKEND", mode="before")
+    @classmethod
+    def normalize_storage_backend(cls, value):
+        normalized = str(value or "").strip().lower()
+        return normalized or "local"
+
+    @model_validator(mode="after")
+    def apply_storage_backend_compatibility(self):
+        if self.STORAGE_BACKEND not in {"local", "gcs"}:
+            raise ValueError("STORAGE_BACKEND must be either 'local' or 'gcs'")
+        if self.USE_GCS_STORAGE:
+            self.STORAGE_BACKEND = "gcs"
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -11,5 +11,6 @@ python-multipart
 httpx
 email-validator
 groq
+google-cloud-storage
 pytest
 pytest-asyncio

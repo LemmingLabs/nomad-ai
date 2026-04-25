@@ -6,20 +6,22 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.models.sponsored_impression import SponsoredImpression
 from app.models.sponsored_place import SponsoredPlace
 from app.models.sponsored_place_media import SponsoredPlaceMediaType
+from app.services.storage_service import StorageService
 
 
 logger = logging.getLogger(__name__)
 MIN_SCORE = 1
 MAX_SPONSORED_PER_TRIP = 2
-DEFAULT_SPONSORED_IMAGES = {
+_LOCAL_DEFAULT_SPONSORED_IMAGES = {
     "restaurant": "/media/defaults/restaurant.svg",
     "activity": "/media/defaults/activity.svg",
     "default": "/media/defaults/place.svg",
 }
-DEFAULT_SPONSORED_IMAGE = DEFAULT_SPONSORED_IMAGES["restaurant"]
+DEFAULT_SPONSORED_IMAGE = _LOCAL_DEFAULT_SPONSORED_IMAGES["restaurant"]
 
 _CITY_STOPWORDS = {
     "city",
@@ -71,6 +73,7 @@ class _Coords:
 class SponsoredInjectionService:
     def __init__(self, db: Session):
         self.db = db
+        self.storage = StorageService()
 
     def inject_sponsored_places(self, itinerary_json: dict, trip_id: int | None = None) -> dict:
         logger.info("[SPONSORED] Injecting into itinerary...")
@@ -290,10 +293,6 @@ class SponsoredInjectionService:
             if coords is not None:
                 distance_km = self._haversine_km(coords.lat, coords.lng, place.lat, place.lng)
 
-            # Higher is better:
-            # - match category first (with aliases)
-            # - then closer distance
-            # - then newer places (by id)
             return (category_score, -distance_km, place.id)
 
         for place in filtered:
@@ -331,7 +330,7 @@ class SponsoredInjectionService:
 
     def _build_day_payload(self, place: SponsoredPlace) -> dict:
         images = [
-            media.url
+            self.storage.get_access_url(media.url)
             for media in (place.media or [])
             if media.type in {SponsoredPlaceMediaType.IMAGE, SponsoredPlaceMediaType.COVER}
         ]
@@ -365,12 +364,26 @@ class SponsoredInjectionService:
         return normalize_category(raw)
 
     def _fallback_image_for_category(self, category: str | None) -> str:
+        default_images = self._default_sponsored_images()
         category_norm = self._normalize_category(category or "")
         if any(token in category_norm for token in {"restaurant", "cafe", "canteen", "food", "self service"}):
-            return DEFAULT_SPONSORED_IMAGES["restaurant"]
+            return default_images["restaurant"]
         if any(token in category_norm for token in {"activity", "attraction", "museum", "park", "tour"}):
-            return DEFAULT_SPONSORED_IMAGES["activity"]
-        return DEFAULT_SPONSORED_IMAGES["default"]
+            return default_images["activity"]
+        return default_images["default"]
+
+    def _default_sponsored_images(self) -> dict[str, str]:
+        return {
+            "restaurant": self.storage.get_access_url(
+                settings.DEFAULT_RESTAURANT_IMAGE_URL or _LOCAL_DEFAULT_SPONSORED_IMAGES["restaurant"]
+            ),
+            "activity": self.storage.get_access_url(
+                settings.DEFAULT_ACTIVITY_IMAGE_URL or _LOCAL_DEFAULT_SPONSORED_IMAGES["activity"]
+            ),
+            "default": self.storage.get_access_url(
+                settings.DEFAULT_PLACE_IMAGE_URL or _LOCAL_DEFAULT_SPONSORED_IMAGES["default"]
+            ),
+        }
 
     def _category_match_score(self, place_category: str | None, desired: set[str]) -> int:
         if not desired:
