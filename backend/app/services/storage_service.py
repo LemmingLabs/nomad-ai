@@ -123,11 +123,36 @@ class StorageService:
             ttl_minutes = 60
         logger.debug("[STORAGE] generating signed url for %s", object_path)
         blob = self._get_bucket().blob(object_path)
-        return blob.generate_signed_url(
-            expiration=timedelta(minutes=ttl_minutes),
-            method="GET",
-            version="v4",
-        )
+        expiration = timedelta(minutes=ttl_minutes)
+
+        service_account_email = (settings.GCP_SERVICE_ACCOUNT_EMAIL or "").strip()
+        if service_account_email:
+            try:
+                import google.auth
+                from google.auth.transport.requests import Request
+            except ImportError as exc:
+                raise RuntimeError(
+                    "GCS signed URLs require google-auth support, but the dependency is unavailable"
+                ) from exc
+
+            credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+            credentials.refresh(Request())
+            return blob.generate_signed_url(
+                expiration=expiration,
+                method="GET",
+                version="v4",
+                service_account_email=service_account_email,
+                access_token=credentials.token,
+            )
+
+        try:
+            return blob.generate_signed_url(
+                expiration=expiration,
+                method="GET",
+                version="v4",
+            )
+        except AttributeError as exc:
+            raise RuntimeError("GCP_SERVICE_ACCOUNT_EMAIL is required for signed URLs on Cloud Run") from exc
 
     def _normalize_destination_path(self, destination_path: str) -> str:
         raw_path = str(destination_path or "").strip().lstrip("/")

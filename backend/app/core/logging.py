@@ -15,7 +15,7 @@ def configure_logging(debug: bool) -> None:
                     "datefmt": "%Y-%m-%d %H:%M:%S",
                 },
                 "access": {
-                    "format": "%(asctime)s | %(levelname)s | %(name)s | %(client_addr)s - \"%(request_line)s\" %(status_code)s",
+                    "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
                     "datefmt": "%Y-%m-%d %H:%M:%S",
                 },
             },

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     GCS_BUCKET_NAME: str | None = None
     GCS_MEDIA_PREFIX: str = "media"
     GCS_SIGNED_URL_EXPIRATION_MINUTES: int = 60
+    GCP_SERVICE_ACCOUNT_EMAIL: str | None = None
     USE_GCS_STORAGE: bool = False
 
     DEFAULT_RESTAURANT_IMAGE_URL: str | None = None

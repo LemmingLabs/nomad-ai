@@ -1,0 +1,34 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: nomadai-backend
+spec:
+  template:
+    spec:
+      containers:
+        - image: asia-northeast1-docker.pkg.dev/nomadai-production/nomadai-repo/nomadai-backend
+          env:
+            - name: APP_NAME
+              value: 'NomadAI Backend'
+            - name: DEBUG
+              value: 'False'
+            - name: POSTGRES_DB
+              value: 'nomadai'
+            - name: POSTGRES_USER
+              value: 'postgres'
+            - name: POSTGRES_PASSWORD
+              value: 'postgres'
+            - name: POSTGRES_HOST
+              value: '35.243.110.148'
+            - name: POSTGRES_PORT
+              value: '5432'
+            - name: DATABASE_URL
+              value: 'postgresql+psycopg2://postgres:postgres@35.243.110.148:5432/nomadai'
+            - name: JWT_SECRET_KEY
+              value: 'supersecretkey'
+            - name: GOOGLE_MAPS_API_KEY
+              value: 'your_key'
+            - name: STORAGE_BACKEND
+              value: 'gcs'
+            - name: GCS_BUCKET_NAME
+              value: 'nomadai-media-prod-2026'
