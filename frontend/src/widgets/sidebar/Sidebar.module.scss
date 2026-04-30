@@ -43,6 +43,10 @@
     .profile {
       justify-content: center;
     }
+
+    .footerStack {
+      align-items: center;
+    }
   }
 }
 
@@ -124,6 +128,18 @@
 .footer {
   padding: $space-4 $space-5;
   border-top: 1px solid $color-border;
+}
+
+.footerStack {
+  @include flex-col;
+  gap: $space-3;
+}
+
+.profileSummary {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  min-width: 0;
 }
 
 .profileButton {

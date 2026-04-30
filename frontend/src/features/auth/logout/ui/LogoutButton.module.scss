@@ -1,0 +1,45 @@
+@use '../../../../app/styles/variables' as *;
+@use '../../../../app/styles/mixins' as *;
+
+.button {
+  width: 100%;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: rgba(255, 255, 255, 0.92);
+  color: $color-text-muted;
+  padding: $space-3 $space-4;
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    border-color $transition-fast,
+    background $transition-fast,
+    box-shadow $transition-fast;
+
+  &:hover:not(:disabled) {
+    color: $color-accent;
+    border-color: rgba(20, 184, 166, 0.18);
+    background: rgba(20, 184, 166, 0.08);
+    box-shadow: 0 12px 24px rgba(20, 184, 166, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(20, 184, 166, 0.3);
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.72;
+    cursor: wait;
+  }
+
+  &--collapsed {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    padding-inline: 0;
+  }
+}

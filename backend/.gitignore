@@ -37,3 +37,7 @@ htmlcov/
 
 # Misc
 *.sqlite3
+
+# Media files
+/media
+media
