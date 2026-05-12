@@ -341,6 +341,10 @@ Files are served directly by FastAPI via the `/media` static route.
 | Business Panel | [nomad-ai-pi.vercel.app](https://nomad-ai-pi.vercel.app) |
 
 ---
+# Hackaton Certificate
+
+![Hackaton certificate](docs/NomadAICertificate.jpeg)
+---
 
 ## License
 
