@@ -346,6 +346,4 @@ Files are served directly by FastAPI via the `/media` static route.
 ![Hackaton certificate](docs/NomadAICertificate.jpeg)
 ---
 
-## License
-
-MIT License.
+Copyright © 2026 LemmingLabs. All rights reserved.Unauthorized copying, distribution, or use of this file and its contents, via any medium, is strictly prohibited.
