@@ -212,17 +212,17 @@ RouteSegment (optional normalized entity)
 
 ## API Documentation
 
-All endpoints are documented via Swagger UI at `/docs` when running locally.
+All endpoints are documented via Swagger UI at `/docs` when running locally. Application endpoints use the `/api/v1` prefix; `/health` is unversioned.
 
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/auth/register` | Create user account | — |
-| `POST` | `/auth/login` | Authenticate user | — |
-| `POST` | `/trips/generate` | Create a new trip | Guest or user |
-| `GET` | `/trips` | List saved trips | Required |
-| `GET` | `/trips/{id}` | Get trip with chat context | Required |
-| `POST` | `/trips/{id}/messages` | Continue AI conversation | Required |
-| `POST` | `/trips/sync-guest` | Sync guest trip after login | Required |
+| `POST` | `/api/v1/auth/register` | Create user account | — |
+| `POST` | `/api/v1/auth/login` | Authenticate user | — |
+| `POST` | `/api/v1/trips/generate` | Create a new trip | Guest or user |
+| `GET` | `/api/v1/trips` | List saved trips | Required |
+| `GET` | `/api/v1/trips/{id}` | Get trip with chat context | Required |
+| `POST` | `/api/v1/trips/{id}/messages` | Continue AI conversation | Required |
+| `POST` | `/api/v1/trips/sync-guest` | Sync guest trip after login | Required |
 
 **Additional API groups:**
 
@@ -270,29 +270,21 @@ Future commission model with tourism partners: hotels, tours, transport provider
 ```bash
 cd backend
 cp .env.example .env
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-
-
-### Run Migrations & Start
-
-```bash
-docker compose up -d 
-alembic upgrade head
+docker compose up --build -d
+docker compose exec app alembic upgrade head
 ```
 
 API: `http://localhost:8000`  
 Swagger: `http://localhost:8000/docs`
+
+For a local Python setup instead, see [backend/README.md](backend/README.md).
 
 ### User Frontend
 
 ```bash
 cd frontend
 cp .env.example .env
-npm install
+npm ci
 npm run dev
 ```
 
@@ -301,9 +293,13 @@ npm run dev
 ```bash
 cd businessPanel
 cp .env.example .env
-npm install
+npm ci
 npm run dev
 ```
+
+## Development context
+
+AI coding agents should start with [AGENTS.md](AGENTS.md), then read the application-specific `AGENTS.md` file. The current implementation targets Kyrgyzstan. [Destination and route quality expansion](docs/EXPANSION_PLAN.md) records the planned multi-country work and route provenance requirements; those capabilities are not implemented yet.
 ---
 
 ## User Roles
