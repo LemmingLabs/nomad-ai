@@ -100,26 +100,18 @@ def test_routing_service_error_raised_and_caught():
         assert str(e) == "test message"
 
 
-def test_settings_loads_twogis_api_key(monkeypatch):
-    """Settings loads TWOGIS_API_KEY from environment."""
-    monkeypatch.setenv("TWOGIS_API_KEY", "test_mock_api_key")
-    
-    # Import inside the test to force re-evaluation of settings if needed,
-    # or just instantiate the module's exported Settings class
+def test_settings_loads_google_maps_api_key(monkeypatch):
+    """Settings loads the active maps provider key from the environment."""
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "test_mock_api_key")
+
     from app.core.config import Settings
     s = Settings()
-    assert s.TWOGIS_API_KEY == "test_mock_api_key"
+    assert s.GOOGLE_MAPS_API_KEY == "test_mock_api_key"
 
 
-def test_settings_base_urls_match():
-    """Settings base URLs match the exact values defined."""
-    # We set a dummy key to bypass validation if .env is missing during test discovery
-    import os
-    os.environ["TWOGIS_API_KEY"] = "dummy"
-    
-    from app.core.config import Settings
-    s = Settings()
-    
-    assert s.TWOGIS_PLACES_BASE_URL == "https://catalog.api.2gis.com/3.0/items"
-    assert s.TWOGIS_ROUTING_BASE_URL == "https://routing.api.2gis.com/routing/7.0.0/global"
-    assert s.TWOGIS_MATRIX_BASE_URL == "https://routing.api.2gis.com/get_dist_matrix"
+def test_google_maps_base_urls_match():
+    """The active provider points at Google's Places and Routes APIs."""
+    from app.integrations.google_maps_client import PLACES_BASE_URL, ROUTES_BASE_URL
+
+    assert PLACES_BASE_URL == "https://places.googleapis.com/v1"
+    assert ROUTES_BASE_URL == "https://routes.googleapis.com"

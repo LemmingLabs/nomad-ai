@@ -18,4 +18,4 @@ The current form does not have a country field, and the backend request contract
 
 ## Local checks
 
-Use `npm ci`, `npm run build`, and `npm run lint`; start with `npm run dev -- --host 127.0.0.1`. The app expects `frontend/.env` based on `.env.example` and a backend at the configured URL. Do not commit `.env` or generated `dist/` files.
+Use Node 24.12+ and run `npm ci`, `npm run lint`, `npm test`, and `npm run build`; start with `npm run dev -- --host 127.0.0.1`. The app expects `frontend/.env` based on `.env.example` and a backend at the configured URL. Do not commit `.env` or generated `dist/` files.

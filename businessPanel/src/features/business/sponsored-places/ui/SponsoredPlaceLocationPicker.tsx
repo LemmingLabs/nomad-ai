@@ -3,7 +3,6 @@ import {
   AdvancedMarker,
   APIProvider,
   Map,
-  type MapCameraChangedEvent,
   type MapMouseEvent,
   useApiIsLoaded,
   useMap,
@@ -61,8 +60,6 @@ function LocationPickerInner({
   const [pickerError, setPickerError] = useState<string | null>(null)
   const [searchInitError, setSearchInitError] = useState<string | null>(null)
   const [isResolvingAddress, setIsResolvingAddress] = useState(false)
-  const [center, setCenter] = useState(defaultCenter)
-  const [zoom, setZoom] = useState(defaultZoom)
   const [isMapReady, setIsMapReady] = useState(false)
 
   const position = useMemo(() => getPosition(value), [value])
@@ -74,17 +71,10 @@ function LocationPickerInner({
   }, [value.address])
 
   useEffect(() => {
-    if (position) {
-      setCenter(position)
-      setZoom(selectedZoom)
-    }
-  }, [position])
-
-  useEffect(() => {
-    if (!apiIsLoaded) {
-      setIsMapReady(false)
-    }
-  }, [apiIsLoaded])
+    if (!position || !map) return
+    map.panTo(position)
+    map.setZoom(selectedZoom)
+  }, [position, map])
 
   useEffect(() => {
     if (
@@ -95,6 +85,7 @@ function LocationPickerInner({
       return
     }
 
+    const autocompleteContainer = autocompleteContainerRef.current
     try {
       const autocomplete = new google.maps.places.PlaceAutocompleteElement({
         includedRegionCodes: ['kg'],
@@ -105,8 +96,7 @@ function LocationPickerInner({
       autocomplete.placeholder = 'Search address in Kyrgyzstan'
 
       autocompleteRef.current = autocomplete
-      autocompleteContainerRef.current.replaceChildren(autocomplete)
-      setSearchInitError(null)
+      autocompleteContainer.replaceChildren(autocomplete)
 
       const handlePlaceSelect: EventListener = async (rawEvent) => {
         const event = rawEvent as google.maps.places.PlacePredictionSelectEvent
@@ -142,8 +132,6 @@ function LocationPickerInner({
 
         map?.panTo({ lat, lng })
         map?.setZoom(selectedZoom)
-        setCenter({ lat, lng })
-        setZoom(selectedZoom)
         setPickerError(null)
       }
 
@@ -151,15 +139,18 @@ function LocationPickerInner({
 
       return () => {
         autocomplete.removeEventListener('gmp-select', handlePlaceSelect)
-        autocompleteContainerRef.current?.replaceChildren()
+        autocompleteContainer.replaceChildren()
         autocompleteRef.current = null
       }
     } catch {
-      setSearchInitError('Search is unavailable. You can select location on map.')
-      autocompleteContainerRef.current.replaceChildren()
+      const errorFrame = requestAnimationFrame(() => {
+        setSearchInitError('Search is unavailable. You can select location on map.')
+      })
+      autocompleteContainer.replaceChildren()
       autocompleteRef.current = null
+      return () => cancelAnimationFrame(errorFrame)
     }
-  }, [onChange, placesLibrary, shouldAutofillCity, value.address, value.city])
+  }, [map, onChange, placesLibrary, shouldAutofillCity, value.address, value.city])
 
   const handleMapClick = async (event: MapMouseEvent) => {
     const latLng = event.detail.latLng
@@ -183,8 +174,6 @@ function LocationPickerInner({
 
     map?.panTo({ lat, lng })
     map?.setZoom(selectedZoom)
-    setCenter({ lat, lng })
-    setZoom(selectedZoom)
 
     try {
       const geocoder = new google.maps.Geocoder()
@@ -210,11 +199,6 @@ function LocationPickerInner({
     } finally {
       setIsResolvingAddress(false)
     }
-  }
-
-  const handleCameraChanged = (event: MapCameraChangedEvent) => {
-    setCenter(event.detail.center)
-    setZoom(event.detail.zoom)
   }
 
   return (
@@ -249,9 +233,7 @@ function LocationPickerInner({
           mapId={env.googleMapsMapId}
           style={{ width: '100%', height: 320 }}
           defaultCenter={position ?? defaultCenter}
-          center={center}
           defaultZoom={position ? selectedZoom : defaultZoom}
-          zoom={zoom}
           draggable
           minZoom={6}
           gestureHandling="greedy"
@@ -261,7 +243,6 @@ function LocationPickerInner({
             strictBounds: false,
           }}
           onClick={handleMapClick}
-          onCameraChanged={handleCameraChanged}
           onTilesLoaded={() => setIsMapReady(true)}
         >
           {position ? <AdvancedMarker position={position} /> : null}

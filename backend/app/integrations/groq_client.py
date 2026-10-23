@@ -42,7 +42,7 @@ class GroqClient:
             if mode == "initial":
                 return {}
             return {"message": "Invalid JSON from AI", "updated_itinerary": None}
-        except Exception as e:
+        except Exception:
             return self._mock_response(messages, mode)
 
     def get_structured_output(self, messages: list[dict[str, str]]) -> dict[str, Any]:

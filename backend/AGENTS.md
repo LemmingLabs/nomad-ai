@@ -16,4 +16,4 @@ Store source, license, geographic scope, update date, and verification status fo
 
 ## Local checks
 
-`docker compose up --build -d` in this directory starts PostgreSQL and the API using `backend/.env`; run `docker compose exec app alembic upgrade head` for migrations. Check `http://localhost:8000/health` and `/docs`. Alternatively install `requirements.txt` in a Python 3.11+ virtual environment, point `DATABASE_URL` at a reachable PostgreSQL instance, then run `python -m uvicorn app.main:app --reload`. Run `python -m pytest`; some legacy 2GIS tests currently reference removed modules, so distinguish that failure from new failures.
+`docker compose up --build -d` in this directory starts PostgreSQL and the API using `backend/.env`; run `docker compose exec app alembic upgrade head` for migrations. Check `http://localhost:8000/health` and `/docs`. Alternatively install `requirements.txt` in a Python 3.11+ virtual environment, point `DATABASE_URL` at a reachable PostgreSQL instance, then run `python -m uvicorn app.main:app --reload`. Run `python -m pytest -q` and `python -m ruff check app` before merging; CI installs `requirements-ci.txt` and runs both.
