@@ -1,6 +1,6 @@
-export type SubscriptionBillingPeriod = 'monthly' | 'yearly' | string;
+export type SubscriptionBillingPeriod = string;
 
-export type SubscriptionStatus = 'active' | 'canceled' | 'expired' | 'trialing' | string;
+export type SubscriptionStatus = string;
 
 export interface SubscriptionPlan {
   id: number;
