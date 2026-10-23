@@ -6,11 +6,6 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
-  push:
-    branches: [dev]
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
 
 permissions:
   contents: read
@@ -62,4 +57,4 @@ jobs:
       - name: Check migrations
         run: python -m alembic upgrade head
       - name: Run tests
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=app --cov-config=.coveragerc --cov-report=term-missing:skip-covered --cov-fail-under=60

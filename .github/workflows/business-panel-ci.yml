@@ -6,11 +6,6 @@ on:
     paths:
       - 'businessPanel/**'
       - '.github/workflows/business-panel-ci.yml'
-  push:
-    branches: [dev]
-    paths:
-      - 'businessPanel/**'
-      - '.github/workflows/business-panel-ci.yml'
 
 permissions:
   contents: read

@@ -18,4 +18,4 @@ The current form does not have a country field, and the backend request contract
 
 ## Local checks
 
-Use Node 24.12+ and run `npm ci`, `npm run lint`, `npm test`, and `npm run build`; start with `npm run dev -- --host 127.0.0.1`. The app expects `frontend/.env` based on `.env.example` and a backend at the configured URL. Do not commit `.env` or generated `dist/` files.
+Use Node 24.12+ and run `npm ci`, `npm run lint`, `npm test`, and `npm run build`; start with `npm run dev -- --host 127.0.0.1`. Vitest tests live in `src/tests/` grouped by user flow; its coverage report includes all production `src` modules, including uncovered ones. Add interaction tests for traveler behavior and mock external boundaries. The app expects `frontend/.env` based on `.env.example` and a backend at the configured URL. Do not commit `.env`, generated `dist/`, or `coverage/` files.

@@ -4,13 +4,9 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 import app.integrations.groq_client as groq_module
 from app.api.v1.messages import continue_trip_messages
-from app.models.base import Base
 from app.models.business import Business
 from app.models.sponsored_place import SponsoredPlace
 from app.models.trip import Trip
@@ -26,23 +22,6 @@ from app.services.ai_service import AIService
 from app.services.trip_message_service import TripMessageService
 from app.integrations.groq_client import GroqClient
 from app.utils.prompt_builder import PromptBuilder
-
-
-@pytest.fixture
-def db_session():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    testing_session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    Base.metadata.create_all(bind=engine)
-    session = testing_session()
-    try:
-        yield session
-    finally:
-        session.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture

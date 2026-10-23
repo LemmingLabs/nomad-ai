@@ -303,7 +303,7 @@ AI coding agents should start with [AGENTS.md](AGENTS.md), then read the applica
 
 ## Continuous integration
 
-Three GitHub Actions workflows check the backend, traveler frontend, and business panel independently. On PRs to `dev` and pushes to `dev`, each workflow runs only when its application directory or its own workflow file changes. The backend runs Ruff, Alembic, and pytest; each React app runs ESLint, Node tests, and a TypeScript/Vite build. See [the restart audit](docs/RESTART_AUDIT.md) for coverage limits.
+Three GitHub Actions workflows check the backend, traveler frontend, and business panel independently. On PRs to `dev`, each workflow runs only when its application directory or its own workflow file changes. Merging the PR into `dev` does not rerun these workflows. The backend runs Ruff, Alembic, and pytest with branch coverage; each React app runs ESLint, Vitest with whole-source coverage, and a TypeScript/Vite build. Coverage gates preserve the current baseline while the remaining workflows receive tests. See [the restart audit](docs/RESTART_AUDIT.md) for measured gaps.
 ---
 
 ## User Roles
