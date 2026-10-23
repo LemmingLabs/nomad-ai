@@ -11,9 +11,9 @@ export function useMockPurchase() {
     mutation.mutate(
       { plan_id: planId },
       {
-        onSuccess: async () => {
+        onSuccess: () => {
           toast.success('Plan updated!');
-          await Promise.all([
+          void Promise.all([
             queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.me() }),
             queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() }),
             queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.plans() }),

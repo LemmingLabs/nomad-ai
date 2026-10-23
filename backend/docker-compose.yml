@@ -1,26 +1,26 @@
+name: nomadai
+
 services:
   db:
     image: postgres:15
-    container_name: nomadai_db
     restart: always
     environment:
       POSTGRES_DB: nomadai
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PUBLISHED_PORT:-5433}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data:Z
+      - postgres_data:/var/lib/postgresql/data
 
   app:
     build: .
-    container_name: nomadai_app
     working_dir: /app
     command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
     volumes:
       - .:/app:Z
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${APP_PUBLISHED_PORT:-8000}:8000"
     depends_on:
       - db
     env_file:

@@ -11,10 +11,14 @@ logger = logging.getLogger(__name__)
 @router.post("/estimate", response_model=RoutingResponse)
 async def estimate_routing(request: RoutingRequest) -> RoutingResponse:
     svc = RoutingService()
-    segments = await svc.enrich_itinerary(
-        request.locations,
-        request.transport_type,
-    )
+    try:
+        segments = await svc.enrich_itinerary(
+            request.locations,
+            request.transport_type,
+        )
+    except Exception:
+        logger.exception("Routing estimate failed")
+        return RoutingResponse(segments=[])
     return RoutingResponse(
         segments=segments,
         total_distance_km=sum(s.distance_km or 0.0 for s in segments),
