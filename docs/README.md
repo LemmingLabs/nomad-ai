@@ -7,7 +7,7 @@ This folder describes the current state of the product and the agreed developmen
 | Section | Documents |
 |---|---|
 | [Product](product/) | [Goals and Scope](product/PRODUCT_VISION.md) |
-| [Roadmap](roadmap/) | [Destination Expansion and Route Quality](roadmap/EXPANSION_PLAN.md) |
+| [Roadmap](roadmap/) | [Destination Expansion and Route Quality](roadmap/EXPANSION_PLAN.md); [Epic order and implementation backlog](roadmap/IMPLEMENTATION_BACKLOG.md); [local issues and GitHub sync](../planning/backlog/README.md) |
 | [Architecture](architecture/) | [Meaningful and Verifiable Itinerary](architecture/ITINERARY_QUALITY.md) |
 | [Integrations](integrations/) | [Flights, Stays, and Price Offers](integrations/FLIGHTS_AND_STAYS.md) |
 | [Business Model](business/) | [International Partners](business/INTERNATIONAL_PARTNER_MODEL.md); [Current Sponsored System](business/MONETIZATION_AND_SPONSORED_SYSTEM.md) |
