@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { useState } from 'react'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import { env } from '../../../../shared/config/env'
 import { sponsoredPlaceFormSchema } from '../model/sponsoredPlaces.schemas'
@@ -32,24 +32,18 @@ export function SponsoredPlaceForm({
 
   const form = useForm<SponsoredPlaceFormValues>({
     resolver: zodResolver(sponsoredPlaceFormSchema),
-    defaultValues: initialValues,
+    defaultValues: {
+      ...initialValues,
+      contact_phone: formatKyrgyzPhoneInput(initialValues.contact_phone),
+    },
     mode: 'onSubmit',
   })
 
-  useEffect(() => {
-    setCityWasEditedManually(initialValues.city.trim() !== '')
-    form.reset({
-      ...initialValues,
-      contact_phone: formatKyrgyzPhoneInput(initialValues.contact_phone),
-    })
-  }, [form, initialValues])
-
-  const watchedLocation: SponsoredPlaceLocationValue = {
-    lat: form.watch('lat'),
-    lng: form.watch('lng'),
-    address: form.watch('address'),
-    city: form.watch('city'),
-  }
+  const [lat, lng, address, city] = useWatch({
+    control: form.control,
+    name: ['lat', 'lng', 'address', 'city'],
+  })
+  const watchedLocation: SponsoredPlaceLocationValue = { lat, lng, address, city }
 
   const googleMapsConfigured = env.googleMapsApiKey !== ''
   const locationError =

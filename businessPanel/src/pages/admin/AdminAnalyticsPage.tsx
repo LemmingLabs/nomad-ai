@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import type { AdminAnalyticsMode } from '../../features/admin/analytics/model/adminAnalytics.types'
 import {
@@ -27,39 +27,26 @@ export function AdminAnalyticsPage() {
   const businessesQuery = useAdminBusinessesQuery()
   const sponsoredPlacesQuery = useAdminSponsoredPlacesQuery({ preset: 'all' })
 
-  useEffect(() => {
-    setSelectedId(null)
-  }, [mode])
-
   const selectionQuery = mode === 'business' ? businessesQuery : sponsoredPlacesQuery
   const selectionItems = selectionQuery.data ?? []
-
-  useEffect(() => {
-    if (selectedId != null) return
-    if (selectionItems.length === 0) return
-    setSelectedId(selectionItems[0].id)
-  }, [selectionItems, selectedId])
-
-  const selectedBusiness = useMemo(() => {
-    if (mode !== 'business' || selectedId == null) return null
-    return (selectionItems as AdminBusiness[]).find((b) => b.id === selectedId) ?? null
-  }, [mode, selectedId, selectionItems])
-
-  const selectedPlace = useMemo(() => {
-    if (mode !== 'sponsoredPlace' || selectedId == null) return null
-    return (
-      (selectionItems as AdminSponsoredPlace[]).find((p) => p.id === selectedId) ?? null
-    )
-  }, [mode, selectedId, selectionItems])
+  const effectiveSelectedId = selectionItems.some((item) => item.id === selectedId)
+    ? selectedId
+    : selectionItems[0]?.id ?? null
+  const selectedBusiness = mode === 'business'
+    ? (selectionItems as AdminBusiness[]).find((business) => business.id === effectiveSelectedId) ?? null
+    : null
+  const selectedPlace = mode === 'sponsoredPlace'
+    ? (selectionItems as AdminSponsoredPlace[]).find((place) => place.id === effectiveSelectedId) ?? null
+    : null
 
   const businessAnalyticsQuery = useAdminBusinessAnalyticsQuery(
-    selectedId ?? Number.NaN,
-    mode === 'business' && selectedId != null,
+    effectiveSelectedId ?? Number.NaN,
+    mode === 'business' && effectiveSelectedId != null,
   )
 
   const placeAnalyticsQuery = useAdminSponsoredPlaceAnalyticsQuery(
-    selectedId ?? Number.NaN,
-    mode === 'sponsoredPlace' && selectedId != null,
+    effectiveSelectedId ?? Number.NaN,
+    mode === 'sponsoredPlace' && effectiveSelectedId != null,
   )
 
   const analyticsQuery = mode === 'business' ? businessAnalyticsQuery : placeAnalyticsQuery
@@ -88,7 +75,13 @@ export function AdminAnalyticsPage() {
               View analytics for businesses and sponsored places.
             </p>
           </div>
-          <AdminAnalyticsModeSwitcher value={mode} onChange={setMode} />
+          <AdminAnalyticsModeSwitcher
+            value={mode}
+            onChange={(nextMode) => {
+              setMode(nextMode)
+              setSelectedId(null)
+            }}
+          />
         </div>
       </header>
 
@@ -104,21 +97,21 @@ export function AdminAnalyticsPage() {
               <AdminAnalyticsSelectionPanel
                 mode="business"
                 items={selectionItems as AdminBusiness[]}
-                selectedId={selectedId}
+                selectedId={effectiveSelectedId}
                 onSelect={setSelectedId}
               />
             ) : (
               <AdminAnalyticsSelectionPanel
                 mode="sponsoredPlace"
                 items={selectionItems as AdminSponsoredPlace[]}
-                selectedId={selectedId}
+                selectedId={effectiveSelectedId}
                 onSelect={setSelectedId}
               />
             )}
           </div>
 
           <div className="space-y-6 lg:col-span-2">
-            {selectedId == null ? (
+            {effectiveSelectedId == null ? (
               <SectionCard>
                 <p className="text-sm text-neutral-600">Select an item to view analytics.</p>
               </SectionCard>
@@ -132,7 +125,7 @@ export function AdminAnalyticsPage() {
               </SectionCard>
             )}
 
-            {selectedId != null ? (
+            {effectiveSelectedId != null ? (
               analyticsQuery.isLoading ? (
                 <PageLoadingState message="Loading metrics..." />
               ) : analyticsQuery.isError ? (

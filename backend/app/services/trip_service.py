@@ -108,13 +108,13 @@ def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> 
 
         if city == "Bishkek":
             location = "Ala-Too Square" if day == 1 else "Bishkek City Center"
-            title = f"Arrival and Exploration in Bishkek" if day == 1 else f"Exploring Bishkek"
+            title = "Arrival and Exploration in Bishkek" if day == 1 else "Exploring Bishkek"
         elif city == "Karakol":
             location = "Karakol Town" if day == 3 else "Mountain Area"
-            title = f"Journey to Karakol" if day == 3 else f"Mountain Adventure in Karakol"
+            title = "Journey to Karakol" if day == 3 else "Mountain Adventure in Karakol"
         else:
             location = "Cholpon-Ata Lakefront" if day == 5 else "Issyk-Kul Shore"
-            title = f"Arrival at Issyk-Kul Lake" if day == 5 else f"Relaxing by the Lake"
+            title = "Arrival at Issyk-Kul Lake" if day == 5 else "Relaxing by the Lake"
 
         day_interest = interests[(day - 1) % len(interests)] if interests else ""
 

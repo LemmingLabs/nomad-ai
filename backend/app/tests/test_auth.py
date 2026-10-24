@@ -12,7 +12,6 @@ from pydantic import ValidationError
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.api.v1.auth import get_me, login, register, router as auth_router
-from app.core.database import get_db
 from app.core.dependencies import get_current_user, oauth2_scheme
 from app.core import security
 from app.models.user import UserRole

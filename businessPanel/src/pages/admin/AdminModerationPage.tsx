@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import type { AdminSponsoredPlaceListFilters } from '../../features/admin/sponsored-moderation/model/adminSponsoredModeration.types'
 import {
@@ -21,21 +21,15 @@ export function AdminModerationPage() {
   const placesQuery = useAdminSponsoredPlacesQuery(filters)
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null)
+  const places = placesQuery.data ?? []
+  const effectiveSelectedId = places.some((place) => place.id === selectedPlaceId)
+    ? selectedPlaceId
+    : places[0]?.id ?? null
 
   const detailsQuery = useAdminSponsoredPlaceDetailsQuery(
-    selectedPlaceId ?? Number.NaN,
-    selectedPlaceId != null,
+    effectiveSelectedId ?? Number.NaN,
+    effectiveSelectedId != null,
   )
-
-  useEffect(() => {
-    setSelectedPlaceId(null)
-  }, [filters.preset])
-
-  useEffect(() => {
-    if (!placesQuery.data || placesQuery.data.length === 0) return
-    if (selectedPlaceId != null) return
-    setSelectedPlaceId(placesQuery.data[0].id)
-  }, [placesQuery.data, selectedPlaceId])
 
   if (placesQuery.isLoading) {
     return <PageLoadingState message="Loading sponsored places..." />
@@ -51,8 +45,6 @@ export function AdminModerationPage() {
     )
   }
 
-  const places = placesQuery.data ?? []
-
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -62,7 +54,13 @@ export function AdminModerationPage() {
         </p>
       </header>
 
-      <AdminSponsoredModerationFilters value={filters} onChange={setFilters} />
+      <AdminSponsoredModerationFilters
+        value={filters}
+        onChange={(nextFilters) => {
+          setFilters(nextFilters)
+          setSelectedPlaceId(null)
+        }}
+      />
 
       {places.length === 0 ? (
         <AdminSponsoredModerationEmptyState />
@@ -71,13 +69,13 @@ export function AdminModerationPage() {
           <div className="lg:col-span-2">
             <AdminSponsoredPlacesTable
               places={places}
-              selectedPlaceId={selectedPlaceId}
+              selectedPlaceId={effectiveSelectedId}
               onSelect={setSelectedPlaceId}
             />
           </div>
 
           <div className="lg:col-span-1">
-            {selectedPlaceId == null ? (
+            {effectiveSelectedId == null ? (
               <SectionCard>
                 <p className="text-sm text-neutral-600">
                   Select a sponsored place to view details.

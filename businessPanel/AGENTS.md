@@ -15,4 +15,4 @@ The sponsored place form and location utilities currently validate Kyrgyzstan co
 
 ## Local checks
 
-Use `npm ci`, `npm run build`, and `npm run lint`; start with `npm run dev -- --host 127.0.0.1`. The panel needs `businessPanel/.env` based on `.env.example` and a reachable backend for authenticated workflows. Do not commit `.env` or generated `dist/` files.
+Use Node 24.12+ and run `npm ci`, `npm run lint`, `npm test`, and `npm run build`; start with `npm run dev -- --host 127.0.0.1`. Vitest tests live in `tests/` grouped by domain and include all production `src` modules in coverage. Test business and admin workflows through rendered forms and routes as coverage grows. The panel needs `businessPanel/.env` based on `.env.example` and a reachable backend for authenticated workflows. Do not commit `.env`, generated `dist/`, or `coverage/` files.

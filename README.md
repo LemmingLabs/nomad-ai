@@ -259,7 +259,7 @@ Future commission model with tourism partners: hotels, tours, transport provider
 ### Prerequisites
 
 - Python 3.11+
-- Node.js 18+
+- Node.js 24.12+
 - PostgreSQL
 - Groq API key
 - Google Cloud project with Places API and Routes API enabled
@@ -300,6 +300,10 @@ npm run dev
 ## Development context
 
 AI coding agents should start with [AGENTS.md](AGENTS.md), then read the application-specific `AGENTS.md` file. The current implementation targets Kyrgyzstan. [Destination and route quality expansion](docs/EXPANSION_PLAN.md) records the planned multi-country work and route provenance requirements; those capabilities are not implemented yet.
+
+## Continuous integration
+
+Three GitHub Actions workflows check the backend, traveler frontend, and business panel independently. On PRs to `dev`, each workflow runs only when its application directory or its own workflow file changes. Merging the PR into `dev` does not rerun these workflows. The backend runs Ruff, Alembic, and pytest with branch coverage; each React app runs ESLint, Vitest with whole-source coverage, and a TypeScript/Vite build. Coverage gates preserve the current baseline while the remaining workflows receive tests. See [the restart audit](docs/RESTART_AUDIT.md) for measured gaps.
 ---
 
 ## User Roles

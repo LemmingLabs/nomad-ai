@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import {
   useAdminBusinessDetailsQuery,
@@ -15,17 +15,15 @@ import { SectionCard } from '../../shared/ui/SectionCard'
 export function AdminBusinessesPage() {
   const businessesQuery = useAdminBusinessesQuery()
   const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null)
+  const businesses = businessesQuery.data ?? []
+  const effectiveSelectedId = businesses.some((business) => business.id === selectedBusinessId)
+    ? selectedBusinessId
+    : businesses[0]?.id ?? null
 
   const detailsQuery = useAdminBusinessDetailsQuery(
-    selectedBusinessId ?? Number.NaN,
-    selectedBusinessId != null,
+    effectiveSelectedId ?? Number.NaN,
+    effectiveSelectedId != null,
   )
-
-  useEffect(() => {
-    if (!businessesQuery.data || businessesQuery.data.length === 0) return
-    if (selectedBusinessId != null) return
-    setSelectedBusinessId(businessesQuery.data[0].id)
-  }, [businessesQuery.data, selectedBusinessId])
 
   if (businessesQuery.isLoading) {
     return <PageLoadingState message="Loading businesses..." />
@@ -40,8 +38,6 @@ export function AdminBusinessesPage() {
       />
     )
   }
-
-  const businesses = businessesQuery.data ?? []
 
   if (businesses.length === 0) {
     return (
@@ -70,13 +66,13 @@ export function AdminBusinessesPage() {
         <div className="lg:col-span-2">
           <AdminBusinessesTable
             businesses={businesses}
-            selectedBusinessId={selectedBusinessId}
+            selectedBusinessId={effectiveSelectedId}
             onSelect={setSelectedBusinessId}
           />
         </div>
 
         <div className="lg:col-span-1">
-          {selectedBusinessId == null ? (
+          {effectiveSelectedId == null ? (
             <SectionCard>
               <p className="text-sm text-neutral-600">Select a business to view details.</p>
             </SectionCard>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { useAuthStore } from '../../features/auth/model/auth.store'
 import { useAdminUserDetailsQuery, useAdminUsersQuery } from '../../features/admin/users/model/adminUsers.hooks'
@@ -16,17 +16,15 @@ export function AdminUsersPage() {
 
   const usersQuery = useAdminUsersQuery()
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const users = usersQuery.data ?? []
+  const effectiveSelectedId = users.some((user) => user.id === selectedUserId)
+    ? selectedUserId
+    : users[0]?.id ?? null
 
   const detailsQuery = useAdminUserDetailsQuery(
-    selectedUserId ?? Number.NaN,
-    selectedUserId != null,
+    effectiveSelectedId ?? Number.NaN,
+    effectiveSelectedId != null,
   )
-
-  useEffect(() => {
-    if (!usersQuery.data || usersQuery.data.length === 0) return
-    if (selectedUserId != null) return
-    setSelectedUserId(usersQuery.data[0].id)
-  }, [usersQuery.data, selectedUserId])
 
   if (usersQuery.isLoading) {
     return <PageLoadingState message="Loading users..." />
@@ -42,8 +40,6 @@ export function AdminUsersPage() {
     )
   }
 
-  const users = usersQuery.data ?? []
-
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -58,11 +54,11 @@ export function AdminUsersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <AdminUsersTable users={users} selectedUserId={selectedUserId} onSelect={setSelectedUserId} />
+            <AdminUsersTable users={users} selectedUserId={effectiveSelectedId} onSelect={setSelectedUserId} />
           </div>
 
           <div className="space-y-6 lg:col-span-1">
-            {selectedUserId == null ? (
+            {effectiveSelectedId == null ? (
               <SectionCard>
                 <p className="text-sm text-neutral-600">Select a user to view details.</p>
               </SectionCard>

@@ -140,6 +140,7 @@ export function BusinessSponsoredPlacesPage() {
           title={editing ? 'Edit sponsored place' : 'Create sponsored place'}
         >
           <SponsoredPlaceForm
+            key={editing?.id ?? 'create'}
             initialValues={initialValues}
             submitLabel={editing ? 'Save changes' : 'Create'}
             isSubmitting={isSubmitting}
