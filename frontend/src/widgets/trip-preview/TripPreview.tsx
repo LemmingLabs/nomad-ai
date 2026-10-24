@@ -10,6 +10,7 @@ interface TripPreviewProps {
   itinerary: TripItinerary | null | undefined;
   tripId?: number;
   tripTitle?: string;
+  destinationName?: string;
   budget?: string;
   actions?: ReactNode;
 }
@@ -18,6 +19,7 @@ export function TripPreview({
   itinerary,
   tripId,
   tripTitle,
+  destinationName,
   budget,
   actions,
 }: TripPreviewProps) {
@@ -35,6 +37,7 @@ export function TripPreview({
     <div className={styles.preview}>
       <TripHeader
         title={tripTitle ?? itinerary.summary}
+        destinationName={destinationName}
         totalDays={itinerary.total_days || itinerary.days.length}
         summary={itinerary.summary}
         budget={budget}

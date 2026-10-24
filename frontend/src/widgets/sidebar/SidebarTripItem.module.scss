@@ -76,6 +76,13 @@
   color: $color-text-muted;
 }
 
+.destination {
+  @include text-truncate;
+  color: $color-accent;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+}
+
 .action {
   position: absolute;
   top: $space-2;

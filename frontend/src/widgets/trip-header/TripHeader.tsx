@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   CalendarRange,
   Compass,
+  MapPin,
   Sparkles,
   Wallet,
 } from 'lucide-react';
@@ -11,6 +12,7 @@ import styles from './TripHeader.module.scss';
 
 interface TripHeaderProps {
   title: string;
+  destinationName?: string;
   totalDays: number;
   summary?: string;
   budget?: string;
@@ -21,6 +23,7 @@ interface TripHeaderProps {
 
 export function TripHeader({
   title,
+  destinationName,
   totalDays,
   summary,
   budget,
@@ -39,6 +42,12 @@ export function TripHeader({
             AI trip story
           </span>
           <span className={styles.badge}>{totalDays} days</span>
+          {destinationName && (
+            <span className={styles.kicker}>
+              <MapPin size={14} />
+              {destinationName}
+            </span>
+          )}
         </div>
         {actions && <div className={styles.actions}>{actions}</div>}
       </div>
