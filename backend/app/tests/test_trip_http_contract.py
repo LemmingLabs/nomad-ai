@@ -45,7 +45,7 @@ def test_guest_generation_returns_persisted_trip_on_versioned_route(client, db_s
             travel_style=kwargs["travel_style"],
             country_code=kwargs["country_code"],
             destination_id=kwargs["destination_id"],
-            destination_name=kwargs["destination_name"],
+            destination_name="Kyrgyzstan",
             itinerary_json={"summary": "A weekend in Bishkek", "days": []},
         )
 

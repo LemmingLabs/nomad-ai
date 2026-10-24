@@ -3,6 +3,8 @@ import { expect, test } from 'vitest';
 import { generateTripSchema } from '../../features/trip/generate-trip/model/schema.ts';
 
 const validTrip = {
+  country_code: 'KG',
+  destination_id: 'kg',
   budget: 'medium',
   days: 5,
   interests: 'nature, culture',
