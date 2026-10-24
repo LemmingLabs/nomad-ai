@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "milestones": [
+    {
+      "id": "PHASE-1",
+      "title": "Phase 1 — Destination Contract",
+      "description": "Make country and destination explicit across the API, trip persistence, traveler UI, prompts, chat edits, and guest sync. Preserve existing Kyrgyzstan trips and clients."
+    },
+    {
+      "id": "PHASE-2",
+      "title": "Phase 2 — Country-aware Data and Partners",
+      "description": "Make place enrichment, routing, sponsored matching, business location entry, and moderation country-aware. Keep Kyrgyzstan as the compatibility baseline."
+    },
+    {
+      "id": "PHASE-3",
+      "title": "Phase 3 — Itinerary Quality and Trust",
+      "description": "Improve detailed day plans and route feasibility; expose provenance, attribution, and degraded provider behavior. Review rights before importing data."
+    },
+    {
+      "id": "PHASE-4",
+      "title": "Phase 4 — Offers and International Scale",
+      "description": "Add read-only flight and accommodation offers and expand partner markets only after confirming provider access, economics, and operational readiness."
+    }
+  ],
+  "labels": [
+    {"name": "epic", "color": "5319e7", "description": "Phase-level outcome tracked by a parent issue"},
+    {"name": "roadmap", "color": "0e8a16", "description": "Issue managed through the NomadAI implementation backlog"}
+  ],
+  "issues": [
+    {"id": "EPIC-DESTINATION", "kind": "epic", "title": "[Epic] Multi-country destination contract", "milestone": "PHASE-1", "file": "epics/EPIC-DESTINATION.md", "children": ["DEST-01", "DEST-02", "DEST-03"]},
+    {"id": "DEST-01", "kind": "task", "title": "DEST-01 Define and persist the country-aware trip contract", "milestone": "PHASE-1", "file": "issues/DEST-01.md", "depends_on": []},
+    {"id": "DEST-02", "kind": "task", "title": "DEST-02 Add a supported destination catalogue and traveler selection", "milestone": "PHASE-1", "file": "issues/DEST-02.md", "depends_on": ["DEST-01"]},
+    {"id": "DEST-03", "kind": "task", "title": "DEST-03 Carry destination context through generation, chat, and guest sync", "milestone": "PHASE-1", "file": "issues/DEST-03.md", "depends_on": ["DEST-01", "DEST-02"]},
+
+    {"id": "EPIC-COUNTRY-DATA", "kind": "epic", "title": "[Epic] Country-aware place data and partner workflows", "milestone": "PHASE-2", "file": "epics/EPIC-COUNTRY-DATA.md", "children": ["GEO-01", "GEO-02"]},
+    {"id": "GEO-01", "kind": "task", "title": "GEO-01 Scope place search, enrichment, and routing to the selected country", "milestone": "PHASE-2", "file": "issues/GEO-01.md", "depends_on": ["DEST-01"]},
+    {"id": "GEO-02", "kind": "task", "title": "GEO-02 Make sponsored places and business moderation country-aware", "milestone": "PHASE-2", "file": "issues/GEO-02.md", "depends_on": ["DEST-01", "DEST-02"]},
+
+    {"id": "EPIC-ITINERARY-TRUST", "kind": "epic", "title": "[Epic] Detailed, feasible, and evidence-aware itineraries", "milestone": "PHASE-3", "file": "epics/EPIC-ITINERARY-TRUST.md", "children": ["ROUTE-01", "ROUTE-02", "ROUTE-03", "ROUTE-04"]},
+    {"id": "ROUTE-01", "kind": "task", "title": "ROUTE-01 Review route and POI sources for the first supported destinations", "milestone": "PHASE-3", "file": "issues/ROUTE-01.md", "depends_on": ["DEST-02"]},
+    {"id": "ROUTE-02", "kind": "task", "title": "ROUTE-02 Add useful activities, timing, and practical details to each itinerary day", "milestone": "PHASE-3", "file": "issues/ROUTE-02.md", "depends_on": ["DEST-01"]},
+    {"id": "ROUTE-03", "kind": "task", "title": "ROUTE-03 Validate route feasibility and show degraded generation states", "milestone": "PHASE-3", "file": "issues/ROUTE-03.md", "depends_on": ["DEST-01"]},
+    {"id": "ROUTE-04", "kind": "task", "title": "ROUTE-04 Store and display source provenance for reviewed route knowledge", "milestone": "PHASE-3", "file": "issues/ROUTE-04.md", "depends_on": ["ROUTE-01", "ROUTE-02"]},
+
+    {"id": "EPIC-OFFERS-SCALE", "kind": "epic", "title": "[Epic] Travel offers and country-by-country partner scale", "milestone": "PHASE-4", "file": "epics/EPIC-OFFERS-SCALE.md", "children": ["OFFERS-01", "OFFERS-02", "OFFERS-03", "PARTNER-01"]},
+    {"id": "OFFERS-01", "kind": "task", "title": "OFFERS-01 Verify flight and accommodation provider access for pilot markets", "milestone": "PHASE-4", "file": "issues/OFFERS-01.md", "depends_on": ["DEST-02"]},
+    {"id": "OFFERS-02", "kind": "task", "title": "OFFERS-02 Add a normalized read-only flight and stay offers API", "milestone": "PHASE-4", "file": "issues/OFFERS-02.md", "depends_on": ["OFFERS-01"]},
+    {"id": "OFFERS-03", "kind": "task", "title": "OFFERS-03 Show fresh offers and supplier handoff in the traveler app", "milestone": "PHASE-4", "file": "issues/OFFERS-03.md", "depends_on": ["OFFERS-02"]},
+    {"id": "PARTNER-01", "kind": "task", "title": "PARTNER-01 Add a country-by-country rollout model for business partners", "milestone": "PHASE-4", "file": "issues/PARTNER-01.md", "depends_on": ["GEO-02", "DEST-02"]}
+  ]
+}
