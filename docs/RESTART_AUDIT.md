@@ -13,13 +13,14 @@ This is a local development snapshot, not proof that external AI, maps, images, 
 
 ## Known gaps
 
-- Traveler frontend tests exercise trip form validation and the guest generation navigation flow. Whole-source line coverage is 13.78% (10 tests); the business panel covers 3.10% (8 tests), including login form validation. These are low baselines, not sufficient confidence for all application flows.
+- Traveler frontend tests exercise guest generation and sync, chat edits, itinerary rendering, usage, pricing, and form validation. Whole-source line coverage is 50.37% (19 tests); the business panel covers 50.00% (25 tests) across login, business profile, sponsored places, moderation, subscription plans, analytics, and role management. Branch coverage remains 38.42% and 44.08% respectively, so important paths still need tests.
 - Both frontend builds warn about large bundles. The traveler build also warns about deprecated Sass color helpers.
+- GitHub currently reports `dev` as unprotected. Direct pushes could bypass the PR-only CI. Protect `dev` and require pull requests before relying on this policy.
 - The business panel's npm install reports dependency audit findings. Review with `npm audit` before a production release rather than applying automated major upgrades blindly.
 - Live trip generation, paid flow, provider quotas, and country expansion were not tested. They require valid credentials and end to end data checks.
 
 ## Next engineering checks
 
-1. Raise frontend and business-panel coverage with browser-level tests for guest sync, editing an itinerary, subscriptions, and sponsored place workflows using a disposable database. Do not increase gates by excluding untested production code.
+1. Raise frontend and business-panel branch coverage with browser-level tests for real provider errors, subscription changes, and sponsored media uploads using a disposable database. Do not increase gates by excluding untested production code.
 2. Exercise a real authenticated trip and sponsored place workflow with test credentials.
 3. Work through [EXPANSION_PLAN.md](EXPANSION_PLAN.md) after the hackathon requirements arrive.

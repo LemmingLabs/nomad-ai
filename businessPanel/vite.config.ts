@@ -12,7 +12,7 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/vite-env.d.ts'],
       reporter: ['text', 'lcov'],
-      thresholds: { lines: 3 },
+      thresholds: { lines: 48, branches: 40 },
     },
   },
   plugins: [react(), tailwindcss()],

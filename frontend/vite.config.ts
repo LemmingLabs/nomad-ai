@@ -12,7 +12,7 @@ export default defineConfig({
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/tests/**', 'src/**/*.d.ts', 'src/main.tsx', 'src/vite-env.d.ts'],
       reporter: ['text', 'lcov'],
-      thresholds: { lines: 13 },
+      thresholds: { lines: 48, branches: 35 },
     },
   },
   plugins: [
