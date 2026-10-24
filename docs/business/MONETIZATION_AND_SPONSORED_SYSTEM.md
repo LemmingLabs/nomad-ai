@@ -1,6 +1,8 @@
 # NomadAI — Monetization & Sponsored System
 
-Production-level technical documentation for the **sponsored places monetization layer** in **NomadAI (AI Trip Planner)**.
+Technical overview of the **sponsored places monetization layer** in **NomadAI (AI Trip Planner)**. This document describes the system, but code is authoritative for current behavior.
+
+> **Implementation note (2026-10-24):** this document contains older design details that no longer match the current pipeline. The current injector caps sponsored placements at **two per trip**, and generation currently calls it **before** the trip is persisted, passing `trip_id=None`; impressions can therefore be stored without a trip ID. Media is now also attached to a sponsored place through `sponsored_place_media`. Verify these behaviors in `backend/app/services/sponsored_injection_service.py`, `backend/app/services/trip_service.py`, and `backend/app/models/sponsored_place_media.py` before changing or relying on this flow. Multi-country rollout is planned in [PARTNER_MODEL_EXPANSION.md](PARTNER_MODEL_EXPANSION.md).
 
 This document targets:
 - Backend engineers (data model, services, API contracts)
@@ -42,8 +44,8 @@ NomadAI monetizes trip planning through **native sponsored recommendations** tha
 8) Updated trip is returned to frontend
 
 ### Where injection happens
-- Injection is performed in the trip generation pipeline **after the trip is created** (so `trip_id` exists).
-- The itinerary JSON stored in the `trips` table is updated after injection.
+- The current generation path injects sponsored places before the trip is created (so `trip_id` is currently `None`).
+- The enriched itinerary, including sponsored content, is then stored in the `trips` table.
 
 ### Where analytics is logged
 - **Impressions** are written during injection (when a sponsored place is attached to a day).
@@ -149,7 +151,7 @@ Key fields:
 ## 4. Sponsored Injection Logic
 
 ### Goal
-For each day in the itinerary, attach at most one sponsored recommendation:
+For eligible days in the itinerary, attach sponsored recommendations subject to the current limit of two per trip:
 - relevant to the day’s city and intent
 - not spammy
 - safe (approved + active)
@@ -182,8 +184,7 @@ If the day has coordinates from Google Places (`day.place_candidate.lat/lng`), t
 - distance is used as a ranking signal (category relevance is still prioritized)
 
 ### Duplicate avoidance
-Within a single itinerary injection run:
-- A sponsored place ID is used at most once across all days.
+Within a single itinerary injection run, a sponsored place ID is used at most once across all days.
 
 ### Best-candidate selection
 Candidates are scored and the max score wins:
