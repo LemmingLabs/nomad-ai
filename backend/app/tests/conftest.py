@@ -3,8 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.models  # noqa: F401 - register SQLAlchemy models with Base.metadata
-import app.models.route_segment  # noqa: F401 - register route segments
 from app.models.base import Base
 
 
