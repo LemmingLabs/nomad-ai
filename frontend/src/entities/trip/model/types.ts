@@ -119,6 +119,9 @@ export interface TripListItem {
   days: number;
   created_at: string;
   updated_at: string;
+  country_code?: string;
+  destination_id?: string;
+  destination_name?: string;
   last_message_preview?: string | null;
 }
 

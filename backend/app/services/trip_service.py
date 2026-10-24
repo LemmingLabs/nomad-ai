@@ -13,6 +13,11 @@ from app.repositories.trip_repository import (
 )
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
+from app.core.destination_registry import (
+    DEFAULT_COUNTRY_CODE,
+    DEFAULT_DESTINATION_ID,
+    resolve_destination,
+)
 from app.services.limit_service import LimitService
 from app.services.place_candidate_service import get_place_candidate_service
 from app.services.usage_service import UsageService
@@ -28,13 +33,14 @@ def _build_initial_user_message(
     budget: str,
     interests: list[str],
     travel_style: str,
+    destination_name: str = "Kyrgyzstan",
 ) -> str:
     prompt_text = (prompt or "").strip()
     if prompt_text:
         return prompt_text
 
     interests_text = ", ".join([item for item in interests if item]) if interests else ""
-    base = f"Plan me a {days}-day {travel_style.strip()} trip in Kyrgyzstan with {budget.strip()} budget."
+    base = f"Plan me a {days}-day {travel_style.strip()} trip in {destination_name} with {budget.strip()} budget."
     if interests_text:
         return f"{base} Interests: {interests_text}."
     return base
@@ -579,6 +585,8 @@ def generate_trip(
     interests: list[str],
     travel_style: str,
     prompt: str | None = None,
+    country_code: str = DEFAULT_COUNTRY_CODE,
+    destination_id: str = DEFAULT_DESTINATION_ID,
 ) -> Trip:
     """Create a new trip with a generated mock itinerary."""
     if days < 1:
@@ -596,6 +604,10 @@ def generate_trip(
         raise ValueError("Travel style cannot be empty")
     normalized_interests = [item.strip() for item in interests if item.strip()]
     normalized_prompt = prompt.strip() if prompt else None
+    destination = resolve_destination(
+        country_code=country_code,
+        destination_id=destination_id,
+    )
 
     ai_service = AIService()
     title = None
@@ -609,6 +621,8 @@ def generate_trip(
             interests=normalized_interests,
             travel_style=normalized_travel_style,
             prompt=normalized_prompt,
+            country_code=destination.country_code,
+            destination_id=destination.id,
         )
         if isinstance(ai_result, dict):
             title = ai_result.get("title")
@@ -682,6 +696,9 @@ def generate_trip(
         "days": days,
         "interests": normalized_interests,
         "travel_style": normalized_travel_style,
+        "country_code": destination.country_code,
+        "destination_id": destination.id,
+        "destination_name": destination.name,
         "itinerary_json": cleaned_itinerary,
     }
     trip = create_trip(db, **trip_data)
@@ -696,6 +713,7 @@ def generate_trip(
             budget=normalized_budget,
             interests=normalized_interests,
             travel_style=normalized_travel_style,
+            destination_name=destination.name,
         )
         initial_assistant_message = _build_initial_assistant_message(
             assistant_text=assistant_text,
@@ -744,6 +762,9 @@ def list_user_trips(db: Session, user_id: int) -> list[dict]:
             "id": trip.id,
             "title": trip.title,
             "days": trip.days,
+            "country_code": trip.country_code,
+            "destination_id": trip.destination_id,
+            "destination_name": trip.destination_name,
             "created_at": trip.created_at,
             "updated_at": trip.updated_at,
             "last_message_preview": last_message_preview,

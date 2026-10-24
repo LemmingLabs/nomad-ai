@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { Minus, Plus, Sparkles, X } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateTripSchema, type GenerateTripFormData } from '../../features/trip/generate-trip';
 import { useMyLimitsQuery } from '../../entities/limit';
 import { useUserStore } from '../../entities/user';
+import { useDestinationsQuery } from '../../entities/destination';
 import { getRemaining, getUsageTone, TripLimitNotice, fallbackFreeLimits } from '../../features/subscription/view-usage';
 import { Button } from '../../shared/ui/button/Button';
 import { Input } from '../../shared/ui/input/Input';
@@ -54,6 +55,7 @@ interface GenerateTripFormProps {
 export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps) {
   const { isAuthenticated } = useUserStore();
   const limitsQuery = useMyLimitsQuery();
+  const destinationsQuery = useDestinationsQuery();
   const limits = limitsQuery.data ?? (isAuthenticated ? fallbackFreeLimits : null);
 
   const remainingTrips = limits
@@ -72,6 +74,8 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
   } = useForm<GenerateTripFormData>({
     resolver: zodResolver(generateTripSchema),
     defaultValues: {
+      country_code: '',
+      destination_id: '',
       budget: 'medium',
       days: 5,
       interests: 'nature, culture',
@@ -84,6 +88,17 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
   const days = useWatch({ control, name: 'days' });
   const interests = parseInterests(useWatch({ control, name: 'interests' }));
   const travelStyle = useWatch({ control, name: 'travel_style' });
+  const destinationId = useWatch({ control, name: 'destination_id' });
+  const destinations = useMemo(() => destinationsQuery.data ?? [], [destinationsQuery.data]);
+  const selectedDestination = destinations.find((destination) => destination.id === destinationId);
+
+  useEffect(() => {
+    if (!destinationId && destinations.length > 0) {
+      const firstDestination = destinations[0];
+      setValue('destination_id', firstDestination.id, { shouldValidate: true });
+      setValue('country_code', firstDestination.country_code, { shouldValidate: true });
+    }
+  }, [destinationId, destinations, setValue]);
 
   const updateInterests = (nextInterests: string[]) => {
     setValue('interests', nextInterests.join(', '), { shouldValidate: true });
@@ -108,6 +123,7 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
       }}
     >
       <input type="hidden" {...register('budget')} />
+      <input type="hidden" {...register('country_code')} />
       <input type="hidden" {...register('interests')} />
       <input type="hidden" {...register('travel_style')} />
 
@@ -124,6 +140,56 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
       </div>
 
       <div className={styles.fields}>
+        <Card className={styles.section} padding="lg">
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Destination</h3>
+            <p className={styles.sectionHint}>
+              Choose a destination currently supported by NomadAI.
+            </p>
+          </div>
+          <label className={styles.destinationLabel} htmlFor="trip-destination">
+            Country or destination
+          </label>
+          <select
+            id="trip-destination"
+            className={styles.destinationSelect}
+            value={destinationId}
+            disabled={destinationsQuery.isLoading || destinationsQuery.isError || destinations.length === 0}
+            aria-invalid={Boolean(errors.destination_id)}
+            aria-describedby="trip-destination-status"
+            {...register('destination_id', {
+              onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+                const selected = destinations.find((destination) => destination.id === event.target.value);
+                setValue('country_code', selected?.country_code ?? '', { shouldValidate: true });
+              },
+            })}
+          >
+            {destinationsQuery.isLoading && <option value="">Loading supported destinations…</option>}
+            {destinations.map((destination) => (
+              <option key={destination.id} value={destination.id}>
+                {destination.name === destination.country_name
+                  ? destination.name
+                  : `${destination.name}, ${destination.country_name}`}
+              </option>
+            ))}
+          </select>
+          <p id="trip-destination-status" className={styles.sectionHint} role={destinationsQuery.isError ? 'alert' : undefined}>
+            {destinationsQuery.isError
+              ? 'Supported destinations could not be loaded. Try again before generating a trip.'
+              : destinations.length === 0 && !destinationsQuery.isLoading
+                ? 'There are no destinations available for trip generation right now.'
+                : selectedDestination
+                  ? `${selectedDestination.country_name} is currently available for trip planning.`
+                  : 'Loading the destinations available for trip planning.'}
+          </p>
+          {destinationsQuery.isError && (
+            <Button type="button" variant="secondary" onClick={() => void destinationsQuery.refetch()}>
+              Retry loading destinations
+            </Button>
+          )}
+          {errors.destination_id?.message && <p className={styles.error}>{errors.destination_id.message}</p>}
+        </Card>
+
         <Card className={styles.section} padding="lg">
           <div className={styles.sectionHeader}>
             <h3 className={styles.sectionTitle}>Budget</h3>
@@ -299,7 +365,13 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
         />
       )}
 
-      <Button type="submit" fullWidth isLoading={isLoading} size="lg">
+      <Button
+        type="submit"
+        fullWidth
+        isLoading={isLoading}
+        size="lg"
+        disabled={!selectedDestination || destinationsQuery.isLoading || destinationsQuery.isError || Boolean(isLoading)}
+      >
         Generate Itinerary
       </Button>
     </form>

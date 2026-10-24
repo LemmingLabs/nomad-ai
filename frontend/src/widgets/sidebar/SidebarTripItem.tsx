@@ -39,6 +39,9 @@ export function SidebarTripItem({
         <span className={styles.marker}>{trip.days}</span>
         <div className={styles.copy}>
           <span className={styles.title}>{trip.title}</span>
+          {trip.destination_name && (
+            <span className={styles.destination}>{trip.destination_name}</span>
+          )}
           <span className={styles.preview}>
             {trip.last_message_preview ?? 'No messages yet'}
           </span>

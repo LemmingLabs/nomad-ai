@@ -226,6 +226,7 @@ export function TripPage() {
               itinerary={itinerary}
               tripId={currentTrip?.id ?? (Number.isFinite(tripId) ? tripId : undefined)}
               tripTitle={tripTitle}
+              destinationName={currentTrip?.destination_name}
               budget={currentTrip?.budget}
               actions={previewActions}
             />
