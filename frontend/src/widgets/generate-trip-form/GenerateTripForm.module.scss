@@ -76,6 +76,34 @@
   line-height: 1.6;
 }
 
+.destinationLabel {
+  margin-bottom: -$space-3;
+  color: $color-text;
+  font-size: $text-sm;
+  font-weight: $weight-semibold;
+}
+
+.destinationSelect {
+  width: 100%;
+  min-height: 48px;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: rgba(255, 255, 255, 0.9);
+  color: $color-text;
+  font: inherit;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+}
+
 .optionGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

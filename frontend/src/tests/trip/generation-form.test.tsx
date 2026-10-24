@@ -5,6 +5,13 @@ import { GenerateTripForm } from '../../widgets/generate-trip-form/GenerateTripF
 
 vi.mock('../../entities/limit', () => ({ useMyLimitsQuery: () => ({ data: null }) }));
 vi.mock('../../entities/user', () => ({ useUserStore: () => ({ isAuthenticated: false }) }));
+vi.mock('../../entities/destination', () => ({
+  useDestinationsQuery: () => ({
+    data: [{ id: 'kg', country_code: 'KG', country_name: 'Kyrgyzstan', name: 'Kyrgyzstan', enabled: true }],
+    isLoading: false,
+    isError: false,
+  }),
+}));
 
 afterEach(cleanup);
 
@@ -25,6 +32,8 @@ test('submits the selected budget, interests, and trip brief', async () => {
     days: 5,
     interests: 'nature, culture, stargazing',
     prompt: 'Quiet mountain roads',
+    country_code: 'KG',
+    destination_id: 'kg',
   });
 });
 

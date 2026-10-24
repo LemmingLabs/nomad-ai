@@ -2,6 +2,8 @@ import { apiClient } from '../../../../shared/api';
 import type { Trip } from '../../../../entities/trip';
 
 interface GeneratePayload {
+  country_code: string;
+  destination_id: string;
   budget: string;
   days: number;
   interests: string[];

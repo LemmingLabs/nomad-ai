@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 export const generateTripSchema = z.object({
+  country_code: z.string().regex(/^[A-Z]{2}$/, 'Choose a supported country'),
+  destination_id: z.string().min(1, 'Choose a supported destination'),
   budget: z.enum(['low', 'medium', 'high'], {
     error: 'Choose a budget: low, medium, or high',
   }),

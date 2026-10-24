@@ -11,6 +11,13 @@ const setActiveTrip = vi.fn();
 
 vi.mock('../../entities/trip', () => ({ useTripStore: () => ({ addTrip, setActiveTrip }) }));
 vi.mock('../../entities/user', () => ({ useUserStore: () => ({ isAuthenticated: false }) }));
+vi.mock('../../entities/destination', () => ({
+  useDestinationsQuery: () => ({
+    data: [{ id: 'kg', country_code: 'KG', country_name: 'Kyrgyzstan', name: 'Kyrgyzstan', enabled: true }],
+    isLoading: false,
+    isError: false,
+  }),
+}));
 vi.mock('../../entities/limit', () => ({
   useMyLimitsQuery: () => ({ data: null }),
   limitQueryKeys: { me: () => ['limits', 'me'] },
@@ -56,6 +63,8 @@ test('creates a guest trip, saves its identifier, and opens the trip workspace',
     budget: 'medium',
     interests: ['nature', 'culture'],
     prompt: 'Quiet lakes',
+    country_code: 'KG',
+    destination_id: 'kg',
   }));
   expect(addTrip).toHaveBeenCalledWith(trip);
   expect(setActiveTrip).toHaveBeenCalledWith(42);
