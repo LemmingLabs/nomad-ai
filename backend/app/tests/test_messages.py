@@ -194,6 +194,22 @@ def test_prompt_builder_initial_prompt_with_string_interests():
     assert "not specified" in prompt
 
 
+def test_prompt_builder_initial_prompt_stays_with_selected_destination():
+    prompt = PromptBuilder().build_initial_generation_prompt(
+        days=2,
+        interests=["nature"],
+        travel_style="relaxed",
+        budget="medium",
+        country_name="Kyrgyzstan",
+        destination_name="Kyrgyzstan",
+        supported_cities=("Bishkek", "Osh"),
+    )
+
+    assert "Selected country: Kyrgyzstan" in prompt
+    assert "Do not substitute a different country or destination" in prompt
+    assert "Bishkek, Osh" in prompt
+
+
 def test_prompt_builder_continuation_prompt_serializes_itinerary():
     builder = PromptBuilder()
 
@@ -204,6 +220,21 @@ def test_prompt_builder_continuation_prompt_serializes_itinerary():
 
     assert "add a museum" in prompt
     assert '{"days": [{"day": 1}]}' in prompt
+
+
+def test_prompt_builder_continuation_keeps_saved_destination_context():
+    prompt = PromptBuilder().build_continuation_prompt(
+        "add a museum",
+        {"days": []},
+        country_code="KG",
+        country_name="Kyrgyzstan",
+        destination_name="Kyrgyzstan",
+        supported_cities=("Bishkek", "Osh"),
+    )
+
+    assert "Selected trip destination: Kyrgyzstan, Kyrgyzstan (KG)" in prompt
+    assert "Do not switch destination implicitly" in prompt
+    assert "Bishkek, Osh" in prompt
 
 
 def test_prompt_builder_build_chat_messages_replaces_duplicate_latest_user():
@@ -297,7 +328,9 @@ def test_ai_service_normalizes_raw_json_string():
 
 def test_ai_service_continue_trip_uses_prompt_builder_and_client():
     class FakePromptBuilder:
-        def build_chat_messages(self, history_messages, user_message, current_itinerary):
+        def build_chat_messages(self, **kwargs):
+            assert kwargs["country_code"] == "KG"
+            assert kwargs["destination_name"] == "Kyrgyzstan"
             return [{"role": "user", "content": "payload"}]
 
     class FakeGroqClient:
@@ -318,7 +351,9 @@ def test_ai_service_continue_trip_uses_prompt_builder_and_client():
 
 def test_trip_message_service_saves_user_and_assistant_messages(db_session, trip):
     class FakeAIService:
-        def continue_trip(self, history_messages, user_message, current_itinerary):
+        def continue_trip(self, history_messages, user_message, current_itinerary, **kwargs):
+            assert kwargs["country_code"] == trip.country_code
+            assert kwargs["destination_id"] == trip.destination_id
             return "assistant reply", {"days": [{"day": 2}]}
 
     service = TripMessageService(db_session, ai_service=FakeAIService())
@@ -338,7 +373,7 @@ def test_trip_message_service_saves_user_and_assistant_messages(db_session, trip
 
 def test_trip_message_service_updates_trip_itinerary(db_session, trip):
     class FakeAIService:
-        def continue_trip(self, history_messages, user_message, current_itinerary):
+        def continue_trip(self, history_messages, user_message, current_itinerary, **kwargs):
             return "assistant reply", {"days": [{"day": 3}]}
 
     service = TripMessageService(db_session, ai_service=FakeAIService())
@@ -354,7 +389,7 @@ def test_trip_message_service_keeps_existing_itinerary_when_ai_returns_none(
     original_itinerary = trip.itinerary_json
 
     class FakeAIService:
-        def continue_trip(self, history_messages, user_message, current_itinerary):
+        def continue_trip(self, history_messages, user_message, current_itinerary, **kwargs):
             return "assistant reply", None
 
     service = TripMessageService(db_session, ai_service=FakeAIService())
@@ -421,7 +456,7 @@ def test_trip_message_service_reinjects_sponsored_after_image_enrichment(
     db_session.refresh(trip)
 
     class FakeAIService:
-        def continue_trip(self, history_messages, user_message, current_itinerary):
+        def continue_trip(self, history_messages, user_message, current_itinerary, **kwargs):
             return "assistant reply", {
                 "days": [
                     {

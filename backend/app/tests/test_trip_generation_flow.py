@@ -42,6 +42,7 @@ def offline_enrichment(monkeypatch):
 def test_guest_trip_generation_persists_itinerary_and_initial_chat(
     db_session, monkeypatch, offline_enrichment
 ):
+    provider_context = {}
     ai_itinerary = {
         "summary": "A practical two day route through Bishkek's cultural highlights.",
         "days": [
@@ -50,13 +51,17 @@ def test_guest_trip_generation_persists_itinerary_and_initial_chat(
         ],
     }
 
-    monkeypatch.setattr(
-        "app.services.ai_service.AIService.generate_initial_trip",
-        lambda self, **kwargs: {
+    def generate_with_context(self, **kwargs):
+        provider_context.update(kwargs)
+        return {
             "title": "Bishkek Weekend",
             "itinerary": deepcopy(ai_itinerary),
             "message": "Your Bishkek itinerary is ready.",
-        },
+        }
+
+    monkeypatch.setattr(
+        "app.services.ai_service.AIService.generate_initial_trip",
+        generate_with_context,
     )
 
     trip = trip_service.generate_trip(
@@ -72,6 +77,11 @@ def test_guest_trip_generation_persists_itinerary_and_initial_chat(
     assert trip.id is not None
     assert trip.budget == "medium"
     assert trip.travel_style == "relaxed"
+    assert trip.country_code == "KG"
+    assert trip.destination_id == "kg"
+    assert trip.destination_name == "Kyrgyzstan"
+    assert provider_context["country_code"] == "KG"
+    assert provider_context["destination_id"] == "kg"
     assert trip.interests == ["culture", "food"]
     assert [day["location"] for day in trip.itinerary_json["days"]] == ["Ala-Too Square", "Osh Bazaar"]
     assert db_session.query(Trip).count() == 1
@@ -130,6 +140,9 @@ def test_guest_sync_assigns_only_unowned_trip(db_session):
         days=1,
         interests=[],
         travel_style="relaxed",
+        country_code="KG",
+        destination_id="kg",
+        destination_name="Kyrgyzstan",
         itinerary_json={"days": []},
     )
     db_session.add(guest_trip)
@@ -138,6 +151,9 @@ def test_guest_sync_assigns_only_unowned_trip(db_session):
     synced = trip_service.sync_guest_trip_to_user(db_session, guest_trip.id, owner.id)
 
     assert synced.user_id == owner.id
+    assert synced.country_code == "KG"
+    assert synced.destination_id == "kg"
+    assert synced.destination_name == "Kyrgyzstan"
     assert trip_service.sync_guest_trip_to_user(db_session, guest_trip.id, owner.id).id == guest_trip.id
     with pytest.raises(ValueError, match="Trip not found"):
         trip_service.sync_guest_trip_to_user(db_session, guest_trip.id, stranger.id)

@@ -153,6 +153,8 @@ class TripMessageService:
                 history_messages=history,
                 user_message=user_content,
                 current_itinerary=trip.itinerary_json,
+                country_code=trip.country_code,
+                destination_id=trip.destination_id,
             )
 
             assistant_message = self.repo.create_message(

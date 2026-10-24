@@ -25,24 +25,29 @@ class PromptBuilder:
         "Do not include markdown blocks or any other text outside the JSON."
     )
 
-    def _city_list_str(self) -> str:
-        return ", ".join(self.SUPPORTED_CITIES)
+    def _city_list_str(self, supported_cities: Sequence[str] | None = None) -> str:
+        return ", ".join(supported_cities or self.SUPPORTED_CITIES)
 
-    def _build_initial_contract(self) -> str:
+    def _build_initial_contract(
+        self,
+        supported_cities: Sequence[str] | None = None,
+    ) -> str:
+        cities = supported_cities or self.SUPPORTED_CITIES
+        example_city = cities[0] if cities else "the selected destination"
         return (
             "Respond ONLY with valid JSON matching this exact structure: "
             '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": ['
-            '{"day": 1, "title": "Day title", "city": "Bishkek", "location": "Specific Area / Landmark", '
-            '"routing_location": "Russian-friendly search query for 2GIS", '
+            f'{{"day": 1, "title": "Day title", "city": "{example_city}", "location": "Specific Area / Landmark", '
+            '"routing_location": "Searchable local-language map query", '
             '"activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}'
             ']}}. '
-            f'The city field MUST be exactly one of: {self._city_list_str()}. '
+            f'The city field MUST be exactly one of: {self._city_list_str(cities)}. '
             "Do not include markdown blocks or any other text outside the JSON."
         )
 
-    def build_system_prompt(self) -> str:
+    def build_system_prompt(self, country_name: str = "Kyrgyzstan") -> str:
         return (
-            "You are NomadAI, a Kyrgyzstan travel planning expert. "
+            f"You are NomadAI, a {country_name} travel planning expert. "
             "Be practical and concise. Always keep traveler constraints in mind. "
             "Always respond in pure JSON. No markdown blocks. "
             "Ensure the response strictly follows the JSON contract, including 'updated_itinerary' if required."
@@ -56,6 +61,9 @@ class PromptBuilder:
         budget: str | None = None,
         accommodation_type: str | None = None,
         user_prompt: str | None = None,
+        country_name: str = "Kyrgyzstan",
+        destination_name: str = "Kyrgyzstan",
+        supported_cities: Sequence[str] | None = None,
     ) -> str:
         if isinstance(interests, list):
             interests_text = ", ".join(interests)
@@ -74,7 +82,9 @@ class PromptBuilder:
             extra = f"\nAdditional user request:\n{user_prompt}\n"
 
         return (
-            "Create an initial Kyrgyzstan trip plan with these constraints:\n"
+            f"Create an initial trip plan for {destination_name}, {country_name} with these constraints:\n"
+            f"- Selected country: {country_name}. Keep every itinerary day within this country.\n"
+            f"- Selected destination: {destination_name}. Do not substitute a different country or destination.\n"
             f"- Budget: {budget_str}\n"
             f"- Days: {days}\n"
             f"- Interests: {interests_text}\n"
@@ -88,8 +98,8 @@ class PromptBuilder:
             "2. Activity Type: MUST be exactly one of: 'sightseeing', 'activity', 'meal'. Do NOT use 'departure', 'transport', 'shopping', 'culture', 'hotel'.\n"
             "3. Title: MUST be concrete and trip-specific.\n"
             "4. Summary: MUST mention the route or major destinations. Be practical and concise.\n"
-            "5. Routing Location: routing_location MUST be optimized for 2GIS search in Kyrgyzstan and may be in Russian (e.g., 'Площадь Ала-Тоо', 'Ошский рынок Бишкек').\n"
-            f"{self._build_initial_contract()}"
+            f"5. Routing Location: use a searchable local-language query suitable for maps in {country_name}.\n"
+            f"{self._build_initial_contract(supported_cities)}"
         )
 
     def build_continuation_prompt(
@@ -97,6 +107,10 @@ class PromptBuilder:
         user_message: str,
         current_itinerary: dict[str, Any] | None,
         change_intent: str = "generic_update",
+        country_code: str = "KG",
+        country_name: str = "Kyrgyzstan",
+        destination_name: str = "Kyrgyzstan",
+        supported_cities: Sequence[str] | None = None,
     ) -> str:
         itinerary_text = json.dumps(
             current_itinerary or {},
@@ -147,16 +161,18 @@ class PromptBuilder:
             "6. If any trip change is made, you MUST return the full updated itinerary.\n"
             "7. If NO itinerary change is needed, return 'updated_itinerary': null.\n"
             "8. Do not add hotels or recommended_places manually — the backend will enrich the itinerary automatically.\n"
-            f"9. The city field MUST be exactly one of: {self._city_list_str()}. "
-            "If a user requests a place that is not in this list (e.g. a specific gorge or village), "
-            "map it to the nearest supported city and describe the actual destination in the location field.\n"
-            "10. Preserve valid JSON structure exactly.\n\n"
+            f"9. The trip is scoped to {destination_name}, {country_name} ({country_code}). Keep all days in this country. "
+            "Do not change country or destination unless the traveler explicitly requests it and the destination is supported.\n"
+            f"10. The city field MUST be exactly one of: {self._city_list_str(supported_cities)}. "
+            "If the user requests a place outside the supported city list, use the closest supported city only when it is in the selected country and describe the requested place accurately.\n"
+            "11. Preserve valid JSON structure exactly.\n\n"
         )
 
         return (
             "Continue the travel planning conversation.\n"
             f"{editing_rules}"
             f"{intent_section}"
+            f"Selected trip destination: {destination_name}, {country_name} ({country_code}). Do not switch destination implicitly.\n"
             f"User request: {user_message}\n"
             f"Current itinerary JSON:\n{itinerary_text}\n"
             f"{self.CONTINUATION_CONTRACT}"
@@ -168,8 +184,14 @@ class PromptBuilder:
         user_message: str,
         current_itinerary: dict[str, Any] | None,
         change_intent: str = "generic_update",
+        country_code: str = "KG",
+        country_name: str = "Kyrgyzstan",
+        destination_name: str = "Kyrgyzstan",
+        supported_cities: Sequence[str] | None = None,
     ) -> list[dict[str, str]]:
-        messages: list[dict[str, str]] = [{"role": "system", "content": self.build_system_prompt()}]
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": self.build_system_prompt(country_name)}
+        ]
         history_payload: list[dict[str, str]] = []
 
         for item in history_messages:
@@ -199,6 +221,10 @@ class PromptBuilder:
                     user_message=user_message,
                     current_itinerary=current_itinerary,
                     change_intent=change_intent,
+                    country_code=country_code,
+                    country_name=country_name,
+                    destination_name=destination_name,
+                    supported_cities=supported_cities,
                 ),
             }
         )

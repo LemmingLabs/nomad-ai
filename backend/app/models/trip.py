@@ -20,6 +20,15 @@ class Trip(Base):
     days: Mapped[int] = mapped_column(nullable=False)
     interests: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     travel_style: Mapped[str] = mapped_column(String(100), nullable=False)
+    country_code: Mapped[str] = mapped_column(
+        String(2), nullable=False, default="KG", server_default="KG", index=True
+    )
+    destination_id: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="kg", server_default="kg", index=True
+    )
+    destination_name: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="Kyrgyzstan", server_default="Kyrgyzstan"
+    )
     itinerary_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
 
     created_at: Mapped[datetime] = mapped_column(

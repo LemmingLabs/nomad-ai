@@ -3,6 +3,11 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.integrations.groq_client import GroqClient
+from app.core.destination_registry import (
+    DEFAULT_COUNTRY_CODE,
+    DEFAULT_DESTINATION_ID,
+    resolve_destination,
+)
 from app.utils.prompt_builder import PromptBuilder
 
 
@@ -20,22 +25,26 @@ class AIService:
         history_messages: Sequence[Any],
         user_message: str,
         current_itinerary: dict[str, Any] | None,
+        country_code: str = DEFAULT_COUNTRY_CODE,
+        destination_id: str = DEFAULT_DESTINATION_ID,
     ) -> tuple[str, dict[str, Any] | None]:
         change_intent = self._detect_change_intent(user_message)
+        destination = resolve_destination(
+            country_code=country_code,
+            destination_id=destination_id,
+            require_enabled=False,
+        )
 
-        try:
-            messages = self.prompt_builder.build_chat_messages(
-                history_messages=history_messages,
-                user_message=user_message,
-                current_itinerary=current_itinerary,
-                change_intent=change_intent,
-            )
-        except TypeError:
-            messages = self.prompt_builder.build_chat_messages(
-                history_messages=history_messages,
-                user_message=user_message,
-                current_itinerary=current_itinerary,
-            )
+        messages = self.prompt_builder.build_chat_messages(
+            history_messages=history_messages,
+            user_message=user_message,
+            current_itinerary=current_itinerary,
+            change_intent=change_intent,
+            country_code=destination.country_code,
+            country_name=destination.country_name,
+            destination_name=destination.name,
+            supported_cities=destination.supported_cities,
+        )
 
         try:
             raw = self.groq_client.chat_json(messages, mode="continuation")
@@ -52,19 +61,28 @@ class AIService:
         travel_style: str,
         budget: str,
         prompt: str | None = None,
+        country_code: str = DEFAULT_COUNTRY_CODE,
+        destination_id: str = DEFAULT_DESTINATION_ID,
     ) -> dict[str, Any]:
+        destination = resolve_destination(
+            country_code=country_code,
+            destination_id=destination_id,
+        )
         prompt_text = self.prompt_builder.build_initial_generation_prompt(
             days=days,
             interests=interests,
             travel_style=travel_style,
             budget=budget,
             user_prompt=prompt,
+            country_name=destination.country_name,
+            destination_name=destination.name,
+            supported_cities=destination.supported_cities,
         )
         raw = self.groq_client.chat_json(
             [
                 {
                     "role": "system",
-                    "content": self.prompt_builder.build_system_prompt(),
+                    "content": self.prompt_builder.build_system_prompt(destination.country_name),
                 },
                 {"role": "user", "content": prompt_text},
             ],
