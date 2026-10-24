@@ -15,10 +15,10 @@
 ---
 
 # Screenshots
-![Home screen](docs/screenshots/HomeScreen.png)
-![Trip build screen](docs/screenshots/TripBuilder.png)
-![Generated trip](docs/screenshots/TripHome.png)
-![Generated trip showing sponsored company](docs/screenshots/SponsoredTrip.png)
+![Home screen](docs/assets/screenshots/HomeScreen.png)
+![Trip build screen](docs/assets/screenshots/TripBuilder.png)
+![Generated trip](docs/assets/screenshots/TripHome.png)
+![Generated trip showing sponsored company](docs/assets/screenshots/SponsoredTrip.png)
 </div>
 
 ---
@@ -299,11 +299,11 @@ npm run dev
 
 ## Development context
 
-AI coding agents should start with [AGENTS.md](AGENTS.md), then read the application-specific `AGENTS.md` file. The current implementation targets Kyrgyzstan. [Destination and route quality expansion](docs/EXPANSION_PLAN.md) records the planned multi-country work and route provenance requirements; those capabilities are not implemented yet.
+AI coding agents should start with [AGENTS.md](AGENTS.md), then read the application-specific `AGENTS.md` file. The current implementation targets Kyrgyzstan. The [documentation index](docs/README.md) links the planned multi-country expansion, route quality work, partner model, and external offers research; these capabilities are not implemented yet.
 
 ## Continuous integration
 
-Three GitHub Actions workflows check the backend, traveler frontend, and business panel independently. On PRs to `dev`, each workflow runs only when its application directory or its own workflow file changes. Merging the PR into `dev` does not rerun these workflows. The backend runs Ruff, Alembic, and pytest with branch coverage; each React app runs ESLint, Vitest with whole-source coverage, and a TypeScript/Vite build. Coverage gates preserve the current baseline while the remaining workflows receive tests. See [the restart audit](docs/RESTART_AUDIT.md) for measured gaps.
+Three GitHub Actions workflows check the backend, traveler frontend, and business panel independently. On PRs to `dev`, each workflow runs only when its application directory or its own workflow file changes. Merging the PR into `dev` does not rerun these workflows. The backend runs Ruff, Alembic, and pytest with branch coverage; each React app runs ESLint, Vitest with whole-source coverage, and a TypeScript/Vite build. Coverage gates preserve the current baseline while the remaining workflows receive tests. See [the restart audit](docs/operations/RESTART_AUDIT.md) for measured gaps.
 ---
 
 ## User Roles
@@ -343,7 +343,7 @@ Files are served directly by FastAPI via the `/media` static route.
 ---
 # Hackaton Certificate
 
-![Hackaton certificate](docs/NomadAICertificate.jpeg)
+![Hackaton certificate](docs/assets/NomadAICertificate.jpeg)
 ---
 
 Copyright © 2026 LemmingLabs. All rights reserved. Unauthorized copying, distribution, or use of this file and its contents, via any medium, is strictly prohibited.

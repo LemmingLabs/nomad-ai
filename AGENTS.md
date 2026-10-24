@@ -15,8 +15,9 @@ NomadAI is a travel planning workspace. A traveler gives constraints, receives a
 - `frontend/AGENTS.md`: traveler app architecture and boundaries.
 - `backend/AGENTS.md`: API, data, and itinerary pipeline.
 - `businessPanel/AGENTS.md`: business and admin panel.
-- `docs/EXPANSION_PLAN.md`: staged destination and route quality work.
-- `docs/RESTART_AUDIT.md`: verified startup state and known test or lint gaps.
+- `docs/README.md`: documentation index and structure.
+- `docs/roadmap/EXPANSION_PLAN.md`: staged destination and route quality work.
+- `docs/operations/RESTART_AUDIT.md`: verified startup state and known test or lint gaps.
 - `README.md`: product overview; some examples may reflect the original Kyrgyzstan scope. Check code before relying on an endpoint or data model claim.
 
 ## Working agreements

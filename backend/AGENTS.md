@@ -12,7 +12,7 @@ This is a FastAPI application with SQLAlchemy models and repositories, Alembic m
 
 ## Route quality
 
-Store source, license, geographic scope, update date, and verification status for curated route knowledge. Validate place coordinates, opening/seasonal constraints, travel times, and day pacing. Distinguish curated routes from AI suggestions. Never copy private guide itineraries or import scraped content without usage rights. See `../docs/EXPANSION_PLAN.md`.
+Store source, license, geographic scope, update date, and verification status for curated route knowledge. Validate place coordinates, opening/seasonal constraints, travel times, and day pacing. Distinguish curated routes from AI suggestions. Never copy private guide itineraries or import scraped content without usage rights. See `../docs/roadmap/EXPANSION_PLAN.md`, `../docs/architecture/ITINERARY_QUALITY.md`, and `../docs/research/DATA_SOURCES_AND_RIGHTS.md`.
 
 ## Local checks
 
