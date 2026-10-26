@@ -1,54 +1,60 @@
 # Flights and Stays: Price Offer Integration Plan
 
-**Status:** Research plan. The current application has no full search or booking of tickets/hotels with dates and prices. Hotel fields in the route should not be taken as such an integration.
+**Reviewed:** October 26, 2026. **Status:** provider research complete; no production provider is approved or connected. This is a technical review, not a substitute for signed partner terms or legal review.
 
-## Proposed User Scenario
+## Decision
 
-1. User specifies departure/destination cities/airports, dates or date flexibility, passengers, and budget.
-2. NomadAI gets offers from a contracted provider or affiliate API.
-3. User sees comparable options (price, duration/route, conditions), can go to partner site for booking (affiliate link) or book directly.
-4. Options are shown separately from the generated itinerary (or as suggestions) without breaking the itinerary structure.
+Keep travel offers out of implementation until NomadAI confirms the legal entity and markets it will serve, receives partner approval, and samples live production inventory for the chosen search scenarios. The current destination catalogue enables Kyrgyzstan (`KG`) only. The repository does not identify the company’s legal jurisdiction, user origin markets, preferred dates/passenger mix, provider accounts, or signed commercial terms, so production eligibility and local demand cannot be confirmed here.
 
-## What Exists Today vs What’s Needed
+The narrowest practical candidate is **accommodation search for a stay in Bishkek, with search, details, and redirect to Booking.com Demand API**, subject to managed-affiliate approval and a production sample. For flights, **Skyscanner Travel APIs** are a separate candidate, subject to partnership approval and route samples. Booking.com lists flights as “coming soon”; do not plan a single Booking.com connection for both domains. These are candidates only, not a provider decision to launch.
 
-**Today:**
-- Itinerary contains place/stay-related fields in structure, but no real price search.
-- Sponsored system exists for places, not for flights/hotels with live pricing.
+No representative provider search was run: the repository has no provider integration or test credentials, and partner sandbox access requires approved partner credentials. The provider documentation contains example/sandbox records, but those are not evidence of Kyrgyzstan inventory or production access. No credentials, personal data, or provider payloads were added to the repository.
 
-**Needed:**
-- Integration layer for flight/hotel providers (abstraction/interface).
-- Search request/response models, caching, rate limits.
-- Affiliate tracking if using partner programs.
-- UI components to display offers.
-- Clear separation: "offers" vs "itinerary".
+## Provider comparison
 
-## Candidate Approaches
+| Provider | Coverage and access | Prices, handoff, and operating terms | Pilot decision |
+|---|---|---|---|
+| [Booking.com Demand API](https://developers.booking.com/demand/docs/getting-started/overview) — stays | Requires Managed Affiliate Partner status, a contract, Partner Centre access, API token, and affiliate ID before trying the API. Its sandbox is only available after these steps. Not all Booking.com properties or prices are available through the API; the search results may differ from the consumer site. Public docs do not confirm property coverage or account eligibility for NomadAI’s market. | Accommodation search can return availability, price/currency, product policies and web/app redirect URLs. Search → availability can recheck a selected room before handoff. The partner agreement controls commission, allowed markets, rate limits, cache/retention, attribution, and support; public docs do not specify NomadAI’s rate or a market-specific quota. The Demand API overview lists flights as “coming soon”. | Best **stays-only** candidate for a read-only supplier handoff. Apply only after the company entity/market is confirmed; test live Bishkek property inventory, cancellation/payment terms, total charges, redirect, and commission reporting before choosing it. |
+| [Travelpayouts / Aviasales](https://support.travelpayouts.com/hc/en-us/articles/20384016664594-Brands-that-provide-access-to-APIs-and-data-feeds-for-Travelpayouts-partners) — flights and affiliate redirects | Partner registration and program connection expose selected tools. Real-time Aviasales Flight Search API access requires at least 50,000 confirmed monthly active users and program approval. The lower-barrier Data API serves cached price/search history rather than live inventory. The company’s current MAU and Travelpayouts account status are unknown. | Travelpayouts documents an API Search limit of 200 requests/hour per IP by default; the Data API cache reflects queries from the prior 2–7 days, so cached prices are not current offers. Published typical affiliate rates are 1.1–1.5% for flights and 4–5% for hotels, but actual program terms vary and must be checked in the account. Standard search forms/white labels can hand users off without NomadAI reproducing live offers. | **Do not use the Search API for this MVP unless 50,000 MAU and approval are evidenced.** Data API is suitable only for clearly labelled indicative inspiration, not current price offers. Consider a provider-hosted search/white-label if product accepts a fully external search-and-handoff experience. |
+| [Skyscanner Travel APIs](https://developers.skyscanner.net/docs/intro) — flights | API access requires an application reviewed by the Partnerships team. Documentation claims supply from 1,300+ partners and coverage across 52 markets and 30 languages, but that is not proof of a particular origin/destination pair. API quota is partner-specific and set with an account manager. No NomadAI partner account or approved market was found. | Flights Live Prices uses create/poll to return bookable partner offers and booking links. Prices and itineraries can change; links may show a different price or omit some agents. Skyscanner says API access requires searches to result in user bookings, requires deeplinks, and tracks affiliate traffic/commission through Impact after onboarding. Commission rate, eligible market, partner terms, and quota need confirmation with the account manager. Use live prices, not indicative cached prices, for an offer presented as current. | Best **flight-only** affiliate candidate for a later pilot if partner review confirms the company and selected routes. No search results, booking handoff, production terms, or commission terms have been confirmed for NomadAI. |
+| [Amadeus Self-Service APIs](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/faq/) — flights and hotel search | Developer signup offers test keys without prerequisites. Test uses limited data; production requires a contract and billing details, local legal compliance, and country/market eligibility for relevant booking capabilities. | Test has a limited monthly quota; production is pay-as-you-go with API-specific rates after its free quota. Amadeus says Self-Service does not pay booking commission. The flight catalogue omits American Airlines, Delta, British Airways, low-cost carriers, and negotiated fares; ticketing requires a consolidator contract. Hotel Search v3 returns real-time offers, but the reviewed docs do not establish a supplier affiliate deep link for NomadAI’s handoff-only flow; hotel-room markups are not supported. | Useful technical comparison and possible API candidate, but **not selected** for this MVP: no affiliate earnings, incomplete air content, local production eligibility unknown, and supplier redirect economics/terms unconfirmed. A sandbox alone would not settle those questions. |
+| Direct airline or property APIs | No target airline, hotel group, channel manager, or signed API relationship has been identified. Access, routes/properties, legal terms, and technical interfaces are supplier-specific. | Could support direct handoff and supplier-specific conditions, but each relationship needs separate onboarding and contract. No shared coverage, commission, rate limit, caching, or support model can be assumed. | Do not use as the first pilot unless a target supplier offers written production access and representative data. |
 
-- **Affiliate aggregators** (e.g. Aviasales/Travelpayouts, Skyscanner Travel APIs, Booking.com affiliate, etc.) — faster to start, commission-based, less control over booking.
-- **Direct provider APIs** — more control, contracts required, more complex.
-- **Hybrid** — different providers by region/country.
+### Evidence and unresolved provider questions
 
-**Requirement:** Research actual availability and terms for target countries before integration.
+- Booking.com’s current [Demand API prerequisites](https://developers.booking.com/demand/docs/getting-started/prerequisites) require managed-affiliate status and contract-backed Partner Centre access. Its [sandbox guide](https://developers.booking.com/demand/docs/getting-started/try-out-the-api) explicitly says sandbox data/scenarios can differ from production. The [accommodation search guide](https://developers.booking.com/demand/docs/accommodations/search-for-available-properties) documents available prices, conditions and redirect URLs, while warning that API inventory and prices may differ from the consumer site. Its [price display guide](https://developers.booking.com/demand/docs/accommodations/display-prices) requires clear tax/charge presentation.
+- Skyscanner’s [authentication guide](https://developers.skyscanner.net/docs/getting-started/authentication) requires partner application approval. Its [rate-limit guide](https://developers.skyscanner.net/docs/getting-started/rate-limits) makes quotas partner/key-specific. Its [affiliate tracking guide](https://developers.skyscanner.net/docs/flights-live-prices/tracking) documents commission tracking through Impact, and its [FAQ](https://developers.skyscanner.net/docs/faqs) warns that supplier prices and available itineraries can change.
+- Travelpayouts documents the Aviasales [Search API audience gate](https://support.travelpayouts.com/hc/en-us/articles/210995808-How-to-get-access-to-the-Aviasales-Search-API), [cached Data API](https://support.travelpayouts.com/hc/en-us/articles/203956163-Aviasales-Data-API), and [program-dependent commissions](https://support.travelpayouts.com/hc/en-us/articles/203955593-What-is-Travelpayouts-and-how-it-works). Its public rates are typical examples, not a quote or a confirmed NomadAI rate.
+- Amadeus’ [pricing documentation](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/pricing/) and [FAQ](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/faq/) distinguish limited test data from live production data and describe pay-as-you-go charges and dataset limitations. Its [hotel tutorial](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/resources/hotels/) documents time-sensitive room availability and prices.
 
-## Architecture Ideas
+No reviewed public provider documentation gives NomadAI’s signed commission percentage, production quota, all cache/retention rules, current Kyrgyzstan route/property results, or the legal entity’s eligibility. Those are partner-specific checks. Publicly published market counts must not be interpreted as coverage for a particular route.
 
-- `backend/app/integrations/flights/` and `.../stays/` with provider interface.
-- Service layer to normalize offers to common schema.
-- Caching by search params (short TTL).
-- Feature flag to enable/disable per environment.
-- Do not store sensitive payment data — redirect to partner.
+## Proposed sample matrix before any selection
 
-## Risks
+These are test cases to validate with product and provider accounts, not claims about user demand or inventory.
 
-- Legal/affiliate terms, price display requirements.
-- API costs/rate limits.
-- UX complexity (dates, passengers, baggage).
-- Mixing with AI itinerary could confuse users.
+| Search | Proposed inputs | Evidence required |
+|---|---|---|
+| Stay in Bishkek | Two adults, one room, two nights; one near-term date and one date several months out; display in the user-selected currency if supported. | Production results for multiple properties; total price including mandatory taxes/charges; room count, cancellation and payment terms; current availability recheck; supplier URL retaining partner attribution. |
+| Flight to Kyrgyzstan | Select origin airports from product analytics and confirmed target user markets; two adults; one-way and return date windows. | Production results per origin; carrier/stop/fare coverage; total price, currency, baggage and change/refund conditions; booking-agent link; live price recheck behavior and availability gaps. |
 
-## Next Steps
+Before calling the results comparable, use the same traveler count, dates, currency, stay length, room count, baggage needs, fare type, and mandatory charges. Call a price a discount only when the provider supplies a comparable reference price and terms. Otherwise show the total as returned, source, retrieval time, and any exclusions.
 
-1. Collect provider options for first target countries (after multi-country expansion start).
-2. Define minimal offer schema.
-3. Prototype with affiliate links (read-only).
-4. Add UI toggle/section separate from itinerary.
-5. Document status in this doc and update README.
+## Read-only MVP and freshness rules
+
+- Keep offers separate from AI itinerary JSON, hotel recommendations, sponsored places, and trip cost estimates. The bundled hotel catalogue is static recommendation data; it is not a current price offer.
+- Keep all provider credentials server-side. Never put them in frontend bundles, trip records, logs, or source control.
+- Return provider, `fetched_at`, currency, total price, availability state, material fare/room conditions, and supplier handoff URL. Do not call an item current after a provider error or expired result.
+- Revalidate availability/price before handoff where the provider supports it. If it cannot be revalidated, tell the traveler the supplier may change price or availability during handoff.
+- Do not cache or retain provider payloads until the signed provider terms establish what is allowed and for how long. Keep only the normalized fields and event data permitted by those terms.
+- Disabled feature, unsupported market, no results, provider failure, and stale response must each produce an explicit state. Never substitute seeded hotels or model-written prices as live offers.
+- MVP handoff stays external. NomadAI does not take payment, issue tickets, confirm hotel bookings, manage cancellations, or promise the cheapest market price.
+
+## Recommendation and gate for OFFERS-02
+
+1. Confirm the company’s contracting entity/jurisdiction and the initial user markets, origins, dates, passenger/guest scenarios, and target currencies with product/finance.
+2. Apply for Booking.com Demand API managed-affiliate access for the **Bishkek stays-only** pilot and for Skyscanner partner access only if validated flight-origin markets are in scope. Request written confirmation of eligibility, production rights, attribution/copy requirements, rates/commissions, quotas, refresh/cache/retention rules, support, correction/removal process, and deeplink behavior.
+3. Run the representative sample matrix against each approved sandbox and production account. Keep sandbox and production conclusions separate. Record actual response fields, booking conditions, route/property availability, and failed searches with retrieval timestamps.
+4. Product/engineering review that evidence and choose one provider path and market before OFFERS-02. If the contracting entity is ineligible, the provider declines access, or coverage/terms fail the sample, defer the feature and do not build an unconnected mock integration.
+
+**Current decision:** no provider is production-approved; **defer OFFERS-02** until the above gates are met. The Booking.com/Skyscanner options are recommendations for partner applications and evidence gathering, not authorization to enable live offers.
