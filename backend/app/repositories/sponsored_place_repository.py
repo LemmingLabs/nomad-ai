@@ -25,6 +25,15 @@ class SponsoredPlaceRepository:
         )
         return list(self.db.execute(statement).scalars().all())
 
+    def country_codes_for_business(self, business_id: int) -> list[str]:
+        statement = (
+            select(SponsoredPlace.country_code)
+            .where(SponsoredPlace.business_id == business_id)
+            .distinct()
+            .order_by(SponsoredPlace.country_code.asc())
+        )
+        return list(self.db.execute(statement).scalars().all())
+
     def get_for_business(self, business_id: int, place_id: int) -> SponsoredPlace | None:
         statement = (
             select(SponsoredPlace)
@@ -42,6 +51,8 @@ class SponsoredPlaceRepository:
         business_id: int,
         title: str,
         description: str,
+        country_code: str,
+        region: str | None,
         city: str,
         lat: float,
         lng: float,
@@ -56,6 +67,8 @@ class SponsoredPlaceRepository:
             business_id=business_id,
             title=title,
             description=description,
+            country_code=country_code,
+            region=region,
             city=city,
             lat=lat,
             lng=lng,

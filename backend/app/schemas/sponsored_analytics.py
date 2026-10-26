@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 
 
 class SponsoredAnalyticsBreakdown(BaseModel):
@@ -9,8 +10,10 @@ class SponsoredAnalyticsBreakdown(BaseModel):
 
 class SponsoredPlaceAnalyticsResponse(SponsoredAnalyticsBreakdown):
     sponsored_place_id: int
+    country_code: str
 
 
 class BusinessAnalyticsOverviewResponse(SponsoredAnalyticsBreakdown):
     business_id: int
+    country_codes: list[str] = Field(default_factory=list)
 

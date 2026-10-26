@@ -25,6 +25,8 @@ import { SectionCard } from '../../shared/ui/SectionCard'
 const emptyFormValues: SponsoredPlaceFormValues = {
   title: '',
   description: '',
+  country_code: 'KG',
+  region: '',
   city: '',
   category: '',
   address: '',

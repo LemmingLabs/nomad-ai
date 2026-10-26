@@ -762,6 +762,7 @@ def generate_trip(
         enriched_itinerary = SponsoredInjectionService(db).inject_sponsored_places(
             enriched_itinerary,
             trip_id=None,
+            country_code=destination.country_code,
         )
     except Exception as exc:
         logger.exception("Sponsored injection failed: %s", exc)

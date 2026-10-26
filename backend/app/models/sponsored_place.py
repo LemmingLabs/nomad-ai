@@ -19,6 +19,10 @@ class SponsoredPlace(Base):
 
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    country_code: Mapped[str] = mapped_column(
+        String(2), nullable=False, default="KG", server_default=text("'KG'"), index=True
+    )
+    region: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     city: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)

@@ -7,7 +7,9 @@ import type {
   SponsoredPlace,
   SponsoredPlaceFormValues,
   UpdateSponsoredPlacePayload,
+  EnabledDestination,
 } from './sponsoredPlaces.types'
+import { apiClient } from '../../../../shared/api/client'
 
 function emptyToNull(value: string): string | null {
   const trimmed = value.trim()
@@ -20,6 +22,8 @@ export function mapSponsoredPlaceToFormValues(
   return {
     title: place.title ?? '',
     description: place.description ?? '',
+    country_code: place.country_code ?? 'KG',
+    region: place.region ?? '',
     city: place.city ?? '',
     category: place.category ?? '',
     address: place.address ?? '',
@@ -37,6 +41,8 @@ export function mapFormValuesToCreatePayload(
   return {
     title: values.title.trim(),
     description: values.description.trim(),
+    country_code: values.country_code,
+    region: emptyToNull(values.region),
     city: values.city.trim(),
     category: values.category.trim(),
     address: values.address.trim(),
@@ -58,6 +64,16 @@ export function useSponsoredPlacesQuery() {
   return useQuery({
     queryKey: queryKeys.business.sponsoredPlaces,
     queryFn: () => sponsoredPlacesApi.getSponsoredPlaces(),
+  })
+}
+
+export function useEnabledDestinationsQuery() {
+  return useQuery({
+    queryKey: ['destinations', 'enabled'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<EnabledDestination[]>('/destinations')
+      return data
+    },
   })
 }
 

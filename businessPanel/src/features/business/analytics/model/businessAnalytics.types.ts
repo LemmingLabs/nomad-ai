@@ -2,6 +2,8 @@ export type AnalyticsMetrics = {
   impressions_count: number
   interactions_count: number
   interactions_by_type: Record<string, number>
+  country_codes?: string[]
+  country_code?: string
 }
 
 export type BusinessAnalyticsOverview = AnalyticsMetrics

@@ -35,7 +35,7 @@ def offline_enrichment(monkeypatch):
     )
     monkeypatch.setattr(
         "app.services.sponsored_injection_service.SponsoredInjectionService.inject_sponsored_places",
-        lambda self, itinerary, trip_id=None: itinerary,
+        lambda self, itinerary, trip_id=None, country_code="KG": itinerary,
     )
 
 

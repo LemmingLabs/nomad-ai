@@ -23,10 +23,14 @@ export function AdminAnalyticsOverviewCards({ metrics }: AdminAnalyticsOverviewC
   const ctr = calculateCTR(metrics.interactions_count, metrics.impressions_count)
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
       <StatCard label="Impressions" value={String(metrics.impressions_count)} />
       <StatCard label="Interactions" value={String(metrics.interactions_count)} />
       <StatCard label="CTR" value={formatCTR(ctr)} />
+      <StatCard
+        label="Markets"
+        value={metrics.country_codes?.join(', ') || metrics.country_code || '—'}
+      />
     </div>
   )
 }

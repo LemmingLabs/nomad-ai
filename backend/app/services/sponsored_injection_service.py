@@ -72,7 +72,12 @@ class SponsoredInjectionService:
     def __init__(self, db: Session):
         self.db = db
 
-    def inject_sponsored_places(self, itinerary_json: dict, trip_id: int | None = None) -> dict:
+    def inject_sponsored_places(
+        self,
+        itinerary_json: dict,
+        trip_id: int | None = None,
+        country_code: str = "KG",
+    ) -> dict:
         logger.info("[SPONSORED] Injecting into itinerary...")
         days = itinerary_json.get("days")
         if not isinstance(days, list):
@@ -122,9 +127,11 @@ class SponsoredInjectionService:
 
             candidate = self._pick_best_candidate(
                 city=city,
+                region=str(day.get("region") or "").strip() or None,
                 desired_categories=desired_categories,
                 coords=coords,
                 used_place_ids=used_place_ids,
+                country_code=country_code,
             )
             if candidate is None:
                 logger.info(
@@ -225,6 +232,8 @@ class SponsoredInjectionService:
         desired_categories: set[str] | None,
         coords: _Coords | None,
         used_place_ids: set[int],
+        country_code: str = "KG",
+        region: str | None = None,
     ) -> SponsoredPlace | None:
         city_norm = normalize_city(city)
         logger.info("[SPONSORED DEBUG] city raw=%s normalized=%s", city, city_norm)
@@ -236,6 +245,7 @@ class SponsoredInjectionService:
             select(SponsoredPlace)
             .where(SponsoredPlace.is_active.is_(True))
             .where(SponsoredPlace.is_approved.is_(True))
+            .where(SponsoredPlace.country_code == country_code.strip().upper())
             .options(
                 selectinload(SponsoredPlace.media),
             )
@@ -246,16 +256,42 @@ class SponsoredInjectionService:
         logger.info("[SPONSORED] candidates found: %s", len(all_candidates))
 
         candidates: list[SponsoredPlace] = []
+        region_norm = normalize_city(region or "")
         for place in all_candidates:
-            if self._city_matches(city_norm, place.city):
+            place_region_norm = normalize_city(place.region or "")
+            if region_norm and place_region_norm and region_norm != place_region_norm:
+                logger.info(
+                    "[SPONSORED] filtered out place_id=%s reason=region_mismatch day_region=%s place_region=%s",
+                    place.id,
+                    region_norm,
+                    place_region_norm,
+                )
+                continue
+
+            city_matches = self._city_matches(city_norm, place.city)
+            distance_km = (
+                self._haversine_km(coords.lat, coords.lng, place.lat, place.lng)
+                if coords is not None
+                else None
+            )
+            geographically_close = distance_km is not None and distance_km <= 50
+            region_matches = bool(
+                region_norm and place_region_norm and region_norm == place_region_norm
+            )
+            city_match_is_close = city_matches and (
+                distance_km is None or geographically_close or region_matches
+            )
+            if city_match_is_close or geographically_close or region_matches:
                 candidates.append(place)
                 continue
             logger.info(
-                "[SPONSORED] filtered out place_id=%s title=%s reason=city_mismatch day_city=%s place_city=%s",
+                "[SPONSORED] filtered out place_id=%s title=%s reason=location_mismatch day_city=%s place_city=%s day_region=%s place_region=%s",
                 place.id,
                 place.title,
                 city_norm,
                 place.city,
+                region_norm,
+                place_region_norm,
             )
         logger.info(
             "[SPONSORED DEBUG] city=%s matched %s/%s approved active candidates",

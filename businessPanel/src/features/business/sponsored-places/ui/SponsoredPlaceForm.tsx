@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import { env } from '../../../../shared/config/env'
+import { useEnabledDestinationsQuery } from '../model/sponsoredPlaces.hooks'
 import { sponsoredPlaceFormSchema } from '../model/sponsoredPlaces.schemas'
 import type {
   SponsoredPlaceFormValues,
   SponsoredPlaceLocationValue,
 } from '../model/sponsoredPlaces.types'
-import { formatKyrgyzPhoneInput } from '../model/sponsoredPlaces.utils'
+import { formatPhoneInput } from '../model/sponsoredPlaces.utils'
 import { SponsoredPlaceLocationPicker } from './SponsoredPlaceLocationPicker'
 
 type SponsoredPlaceFormProps = {
@@ -26,6 +27,11 @@ export function SponsoredPlaceForm({
   onCancel,
   onSubmit,
 }: SponsoredPlaceFormProps) {
+  const destinationsQuery = useEnabledDestinationsQuery()
+  const destinations = destinationsQuery.data ?? []
+  const initialDestination = destinations.find(
+    (destination) => destination.country_code === initialValues.country_code,
+  )
   const [cityWasEditedManually, setCityWasEditedManually] = useState(
     initialValues.city.trim() !== '',
   )
@@ -34,16 +40,23 @@ export function SponsoredPlaceForm({
     resolver: zodResolver(sponsoredPlaceFormSchema),
     defaultValues: {
       ...initialValues,
-      contact_phone: formatKyrgyzPhoneInput(initialValues.contact_phone),
+      contact_phone: formatPhoneInput(
+        initialValues.contact_phone,
+        initialDestination?.phone_calling_code ?? '996',
+      ),
     },
     mode: 'onSubmit',
   })
 
-  const [lat, lng, address, city] = useWatch({
+  const countryCode = useWatch({ control: form.control, name: 'country_code' })
+  const selectedDestination = destinations.find(
+    (destination) => destination.country_code === countryCode,
+  )
+  const [lat, lng, address, city, region] = useWatch({
     control: form.control,
-    name: ['lat', 'lng', 'address', 'city'],
+    name: ['lat', 'lng', 'address', 'city', 'region'],
   })
-  const watchedLocation: SponsoredPlaceLocationValue = { lat, lng, address, city }
+  const watchedLocation: SponsoredPlaceLocationValue = { lat, lng, address, city, region }
 
   const googleMapsConfigured = env.googleMapsApiKey !== ''
   const locationError =
@@ -57,12 +70,55 @@ export function SponsoredPlaceForm({
       shouldValidate: true,
     })
     form.setValue('city', location.city, { shouldDirty: true, shouldValidate: true })
+    form.setValue('region', location.region, { shouldDirty: true })
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-neutral-700">Country</label>
+        <select
+          className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
+          {...form.register('country_code', {
+            onChange: (event) => {
+              setCityWasEditedManually(false)
+              const destination = destinations.find(
+                (item) => item.country_code === event.target.value,
+              )
+              form.setValue('lat', '')
+              form.setValue('lng', '')
+              form.setValue('city', '')
+              form.setValue('region', '')
+              form.setValue('address', '')
+              if (destination) {
+                form.setValue(
+                  'contact_phone',
+                  formatPhoneInput(form.getValues('contact_phone'), destination.phone_calling_code),
+                )
+              }
+            },
+          })}
+          disabled={isSubmitting || destinationsQuery.isLoading || destinations.length === 0}
+        >
+          {destinations.map((destination) => (
+            <option key={destination.id} value={destination.country_code}>
+              {destination.country_name}
+            </option>
+          ))}
+        </select>
+        {destinationsQuery.isLoading ? (
+          <p className="mt-1 text-xs text-neutral-500">Loading enabled countries…</p>
+        ) : null}
+        {destinationsQuery.isError ? (
+          <p className="mt-1 text-sm text-red-600">Countries are unavailable. Try again before saving.</p>
+        ) : null}
+        {!destinationsQuery.isLoading && !destinationsQuery.isError && destinations.length === 0 ? (
+          <p className="mt-1 text-sm text-red-600">No countries are currently enabled.</p>
+        ) : null}
+      </div>
       <SponsoredPlaceLocationPicker
         value={watchedLocation}
+        destination={selectedDestination}
         disabled={isSubmitting}
         shouldAutofillCity={!cityWasEditedManually}
         onChange={handleLocationChange}
@@ -114,6 +170,14 @@ export function SponsoredPlaceForm({
           <p className="mt-1 text-xs text-neutral-500">
             Confirm the city manually if Google Places suggests the wrong region.
           </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700">Region / province</label>
+          <input
+            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
+            {...form.register('region')}
+            disabled={isSubmitting}
+          />
         </div>
       </div>
 
@@ -210,12 +274,17 @@ export function SponsoredPlaceForm({
               <input
                 value={field.value}
                 onChange={(event) =>
-                  field.onChange(formatKyrgyzPhoneInput(event.target.value))
+                  field.onChange(
+                    formatPhoneInput(
+                      event.target.value,
+                      selectedDestination?.phone_calling_code ?? '996',
+                    ),
+                  )
                 }
                 onBlur={field.onBlur}
                 name={field.name}
                 ref={field.ref}
-                placeholder="+996 700 123 456"
+                placeholder={`+${selectedDestination?.phone_calling_code ?? '996'}`}
                 className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
                 disabled={isSubmitting}
                 inputMode="numeric"
@@ -264,7 +333,12 @@ export function SponsoredPlaceForm({
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            destinationsQuery.isLoading ||
+            destinationsQuery.isError ||
+            destinations.length === 0
+          }
           className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? 'Saving...' : submitLabel}

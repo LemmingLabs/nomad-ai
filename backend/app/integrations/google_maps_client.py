@@ -20,6 +20,43 @@ class GoogleMapsClient:
             "X-Goog-FieldMask": field_mask,
         }
 
+    def reverse_geocode_country(self, lat: float, lng: float) -> str | None:
+        """Resolve the country containing coordinates for server-side validation."""
+        if not self.api_key:
+            raise RuntimeError("Google Maps API key is not configured")
+
+        try:
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(
+                    "https://maps.googleapis.com/maps/api/geocode/json",
+                    params={"latlng": f"{lat},{lng}", "key": self.api_key},
+                )
+            response.raise_for_status()
+            data = response.json()
+        except Exception as exc:
+            logger.warning("Google reverse geocoding failed: %s", exc)
+            raise RuntimeError("Could not validate the selected country") from exc
+
+        provider_status = data.get("status")
+        if provider_status == "ZERO_RESULTS":
+            return None
+        if provider_status != "OK":
+            raise RuntimeError(
+                f"Google reverse geocoding returned {provider_status or 'an unknown status'}"
+            )
+        results = data.get("results") or []
+        if not results:
+            return None
+
+        return next(
+            (
+                component.get("short_name", "").upper()
+                for component in (results[0].get("address_components") or [])
+                if "country" in (component.get("types") or [])
+            ),
+            None,
+        )
+
     async def search_place(
         self, query: str, lon: float, lat: float, country_code: str = "KG"
     ) -> list[dict]:

@@ -1,25 +1,27 @@
-export function formatKyrgyzPhoneInput(value: string): string {
+export function formatPhoneInput(value: string, callingCode: string): string {
   const digits = value.replace(/\D/g, '')
 
   if (digits === '') {
     return ''
   }
 
-  const normalized = digits.startsWith('996') ? digits.slice(3) : digits
-  const localDigits = normalized.slice(0, 9)
+  const normalized = digits.startsWith(callingCode)
+    ? digits.slice(callingCode.length)
+    : digits
+  const localDigits = normalized.slice(0, 15 - callingCode.length)
 
-  let formatted = '+996'
+  let formatted = `+${callingCode}`
 
   if (localDigits.length > 0) {
     formatted += ` ${localDigits.slice(0, 3)}`
   }
 
   if (localDigits.length > 3) {
-    formatted += ` ${localDigits.slice(3, 6)}`
-  }
-
-  if (localDigits.length > 6) {
-    formatted += ` ${localDigits.slice(6, 9)}`
+    if (localDigits.length <= 7) {
+      formatted += ` ${localDigits.slice(3)}`
+    } else {
+      formatted += ` ${localDigits.slice(3, 6)} ${localDigits.slice(6)}`
+    }
   }
 
   return formatted
@@ -46,6 +48,14 @@ export function isWithinKyrgyzstan(lat: number, lng: number) {
   )
 }
 
+export function isWithinBounds(
+  lat: number,
+  lng: number,
+  bounds: google.maps.LatLngBoundsLiteral,
+) {
+  return lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
+}
+
 export function extractCityFromAddressComponents(
   components?:
     | google.maps.GeocoderAddressComponent[]
@@ -70,6 +80,32 @@ export function extractCityFromAddressComponents(
   }
 
   return cityComponent.longText ?? ''
+}
+
+export function extractRegionFromAddressComponents(
+  components?:
+    | google.maps.GeocoderAddressComponent[]
+    | google.maps.places.AddressComponent[],
+) {
+  const component = components?.find((item) =>
+    item.types.includes('administrative_area_level_1'),
+  )
+  if (!component) return ''
+  return 'long_name' in component
+    ? component.long_name ?? ''
+    : component.longText ?? ''
+}
+
+export function extractCountryCodeFromAddressComponents(
+  components?:
+    | google.maps.GeocoderAddressComponent[]
+    | google.maps.places.AddressComponent[],
+) {
+  const component = components?.find((item) => item.types.includes('country'))
+  if (!component) return ''
+  return 'short_name' in component
+    ? component.short_name?.toUpperCase() ?? ''
+    : component.shortText?.toUpperCase() ?? ''
 }
 
 export const extractCityFromPlace = extractCityFromAddressComponents

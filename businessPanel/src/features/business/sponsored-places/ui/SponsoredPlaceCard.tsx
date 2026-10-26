@@ -23,6 +23,9 @@ export function SponsoredPlaceCard({
           <div className="mt-1 text-sm text-neutral-700">
             {place.city} • {place.category}
           </div>
+          <div className="mt-1 text-xs text-neutral-500">
+            {place.country_code}{place.region ? ` · ${place.region}` : ''}
+          </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
             <StatusBadge variant={place.is_approved ? 'success' : 'warning'}>

@@ -19,6 +19,7 @@ export function AdminSponsoredPlacesTable({
         <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
           <tr>
             <th className="px-4 py-3">Title</th>
+            <th className="px-4 py-3">Country / region</th>
             <th className="px-4 py-3">City</th>
             <th className="px-4 py-3">Category</th>
             <th className="px-4 py-3">Business ID</th>
@@ -43,6 +44,9 @@ export function AdminSponsoredPlacesTable({
                   <div className="truncate font-medium text-neutral-900" title={p.title}>
                     {p.title}
                   </div>
+                </td>
+                <td className="px-4 py-3 text-neutral-700">
+                  {p.country_code}{p.region ? ` · ${p.region}` : ''}
                 </td>
                 <td className="px-4 py-3 text-neutral-700">{p.city}</td>
                 <td className="px-4 py-3 text-neutral-700">{p.category}</td>

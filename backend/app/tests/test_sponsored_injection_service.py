@@ -1,4 +1,5 @@
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -29,7 +30,13 @@ def db_session():
         Base.metadata.drop_all(bind=engine)
 
 
-def _create_sponsored_place(db_session, *, city: str = "Bishkek", category: str = "Modern Canteen / Cafe") -> SponsoredPlace:
+def _create_sponsored_place(
+    db_session,
+    *,
+    city: str = "Bishkek",
+    category: str = "Modern Canteen / Cafe",
+    region: str | None = None,
+) -> SponsoredPlace:
     user = User(email="biz@example.com", password_hash="hashed")
     db_session.add(user)
     db_session.flush()
@@ -48,6 +55,7 @@ def _create_sponsored_place(db_session, *, city: str = "Bishkek", category: str 
         business_id=business.id,
         title="Cantin",
         description="Modern stylish canteen in the city center",
+        region=region,
         city=city,
         lat=42.8746,
         lng=74.5698,
@@ -102,6 +110,86 @@ def test_city_matching_handles_city_center_variants(db_session):
 
     assert service._city_matches(service._normalize_city("Bishkek city center"), place.city) is True
     assert service._city_matches(service._normalize_city("Bishkek, Kyrgyzstan"), place.city) is True
+
+
+def test_sponsored_injection_matches_country_before_same_named_city(db_session):
+    kg_place = _create_sponsored_place(db_session, city="Springfield")
+    other_country_place = SponsoredPlace(
+        business_id=kg_place.business_id,
+        title="Different market",
+        description="Same city name in another country",
+        country_code="US",
+        region="Illinois",
+        city="Springfield",
+        lat=39.8,
+        lng=-89.6,
+        address="Springfield, US",
+        category="restaurant",
+        is_approved=True,
+        is_active=True,
+    )
+    db_session.add(other_country_place)
+    db_session.commit()
+
+    itinerary = {
+        "days": [{
+            "day": 1,
+            "city": "Springfield",
+            "activities": [{"type": "meal", "description": "Lunch"}],
+        }]
+    }
+
+    result = SponsoredInjectionService(db_session).inject_sponsored_places(
+        itinerary, country_code="KG"
+    )
+
+    assert result["days"][0]["sponsored"]["place"]["id"] == kg_place.id
+
+
+def test_sponsored_injection_rejects_same_city_in_different_region(db_session):
+    _create_sponsored_place(db_session, city="Springfield", region="Illinois")
+    service = SponsoredInjectionService(db_session)
+
+    candidate = service._pick_best_candidate(
+        city="Springfield",
+        region="Oregon",
+        desired_categories={"restaurant"},
+        coords=None,
+        used_place_ids=set(),
+        country_code="KG",
+    )
+
+    assert candidate is None
+
+
+def test_sponsored_injection_uses_geographic_proximity_when_city_differs(db_session):
+    place = _create_sponsored_place(db_session, city="Nearby town")
+    service = SponsoredInjectionService(db_session)
+
+    candidate = service._pick_best_candidate(
+        city="Another town",
+        desired_categories={"restaurant"},
+        coords=service._extract_day_coords(
+            {"place_candidate": {"lat": 42.875, "lng": 74.571}}
+        ),
+        used_place_ids=set(),
+        country_code="KG",
+    )
+
+    assert candidate.id == place.id
+
+
+def test_sponsored_place_rejects_coordinates_from_another_country(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.sponsored_place_service.GoogleMapsClient.reverse_geocode_country",
+        lambda self, lat, lng: "US",
+    )
+    service = SponsoredPlaceService(db=object())
+
+    with pytest.raises(HTTPException) as error:
+        service._validate_country_location("KG", 39.8, -89.6)
+
+    assert error.value.status_code == 422
 
 
 def test_category_match_supports_canteen_and_cafe_aliases(db_session):
@@ -160,7 +248,11 @@ def test_inject_sponsored_place_uses_fallback_image_when_media_missing(db_sessio
     assert result["days"][0]["sponsored"]["place"]["images"] == [DEFAULT_SPONSORED_IMAGE]
 
 
-def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session):
+def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session, monkeypatch):
+    monkeypatch.setattr(
+        "app.services.sponsored_place_service.GoogleMapsClient.reverse_geocode_country",
+        lambda self, lat, lng: "KG",
+    )
     user = User(email="biz2@example.com", password_hash="hashed")
     db_session.add(user)
     db_session.flush()
@@ -192,4 +284,5 @@ def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session
     )
 
     assert place.city == "bishkek"
+    assert place.country_code == "KG"
     assert place.category == "modern canteen / cafe"

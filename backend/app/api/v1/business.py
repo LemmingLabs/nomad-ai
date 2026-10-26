@@ -196,7 +196,7 @@ def get_my_analytics_overview(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_business),
 ) -> BusinessAnalyticsOverviewResponse:
-    business_id, impressions, interactions, breakdown = SponsoredReportingService(db).business_overview_for_me(
+    business_id, impressions, interactions, breakdown, country_codes = SponsoredReportingService(db).business_overview_for_me(
         current_user
     )
     return BusinessAnalyticsOverviewResponse(
@@ -204,6 +204,7 @@ def get_my_analytics_overview(
         impressions_count=impressions,
         interactions_count=interactions,
         interactions_by_type=breakdown,
+        country_codes=country_codes,
     )
 
 
@@ -216,7 +217,7 @@ def get_my_sponsored_place_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_business),
 ) -> SponsoredPlaceAnalyticsResponse:
-    impressions, interactions, breakdown = SponsoredReportingService(db).sponsored_place_stats_for_me(
+    impressions, interactions, breakdown, country_code = SponsoredReportingService(db).sponsored_place_stats_for_me(
         current_user,
         place_id,
     )
@@ -225,4 +226,5 @@ def get_my_sponsored_place_analytics(
         impressions_count=impressions,
         interactions_count=interactions,
         interactions_by_type=breakdown,
+        country_code=country_code,
     )
