@@ -44,3 +44,30 @@ test('renders route evidence and place details for a multi-day itinerary', () =>
   expect(screen.getAllByText('Lake Promenade').length).toBeGreaterThan(0);
   expect(screen.getByRole('link', { name: /website/i }).getAttribute('href')).toBe('https://example.com/lake');
 });
+
+test('renders degraded generation state and missing timing for a legacy day', () => {
+  const itinerary: TripItinerary = {
+    summary: 'A short city break',
+    total_days: 1,
+    generation_status: { state: 'degraded', source: 'mock', reasons: ['provider_error'] },
+    quality_warnings: [{
+      code: 'activity_duration_unknown',
+      day: 1,
+      message: 'One or more activity durations are unknown for day 1.',
+    }],
+    days: [{
+      day: 1,
+      title: 'City day',
+      city: 'Bishkek',
+      location: 'Ala-Too Square',
+      activities: [{ description: 'Explore the square', type: 'sightseeing' }],
+    }],
+  };
+
+  render(<TripPreview itinerary={itinerary} />);
+
+  expect(screen.getByRole('status').textContent).toContain('This is a draft');
+  expect(screen.getByText('Flexible timing')).toBeTruthy();
+  expect(screen.getByText('Duration unknown')).toBeTruthy();
+  expect(screen.getByText('One or more activity durations are unknown for day 1.')).toBeTruthy();
+});

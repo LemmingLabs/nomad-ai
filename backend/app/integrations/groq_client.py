@@ -23,10 +23,11 @@ class GroqClient:
 
     def chat_json(self, messages: list[dict[str, str]], mode: str = "continuation") -> dict[str, Any]:
         if self.use_mock:
-            return self._mock_response(messages, mode)
+            return self._mark_initial_mock(messages, mode, "development_mock")
 
         if not self.api_key or Groq is None:
-            return self._mock_response(messages, mode)
+            reason = "provider_unconfigured" if not self.api_key else "provider_unavailable"
+            return self._mark_initial_mock(messages, mode, reason)
 
         try:
             client = Groq(api_key=self.api_key)
@@ -43,7 +44,19 @@ class GroqClient:
                 return {}
             return {"message": "Invalid JSON from AI", "updated_itinerary": None}
         except Exception:
-            return self._mock_response(messages, mode)
+            return self._mark_initial_mock(messages, mode, "provider_error")
+
+    def _mark_initial_mock(
+        self, messages: list[dict[str, str]], mode: str, reason: str
+    ) -> dict[str, Any]:
+        response = self._mock_response(messages, mode)
+        if mode == "initial":
+            response["_provider_status"] = {"source": "mock", "reason": reason}
+        elif reason != "development_mock":
+            response["message"] = (
+                "Mock response: provider unavailable; the saved itinerary was not changed."
+            )
+        return response
 
     def get_structured_output(self, messages: list[dict[str, str]]) -> dict[str, Any]:
         return self.chat_json(messages)

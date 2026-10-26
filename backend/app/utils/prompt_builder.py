@@ -39,7 +39,11 @@ class PromptBuilder:
             '{"title": "Short attractive trip title", "itinerary": {"summary": "Brief summary of the trip", "days": ['
             f'{{"day": 1, "title": "Day title", "city": "{example_city}", "location": "Specific Area / Landmark", '
             '"routing_location": "Searchable local-language map query", '
-            '"activities": [{"time": "Morning/Afternoon/Evening", "description": "...", "type": "sightseeing/activity/meal"}]}'
+            '"activities": [{"time": "Morning/Afternoon/Evening or null", '
+            '"time_window": "09:00-11:00 or null", "duration_minutes": 120 or null, '
+            '"description": "Specific suggested actions at this stop", '
+            '"practical_details": ["Optional planning note"], '
+            '"type": "sightseeing/activity/meal/transfer/rest/alternative"}]}'
             ']}}. '
             f'The city field MUST be exactly one of: {self._city_list_str(cities)}. '
             "Do not include markdown blocks or any other text outside the JSON."
@@ -95,10 +99,14 @@ class PromptBuilder:
             "Do NOT include hotels or recommended places - the backend will add them automatically.\n"
             "Rules for Generation:\n"
             "1. Location: MUST be a specific landmark, museum, park, bazaar, square, gorge, lakefront, mosque, cultural center, or known attraction. Do NOT use vague placeholders like 'City Center', 'Downtown'. location field MUST be in English for the UI.\n"
-            "2. Activity Type: MUST be exactly one of: 'sightseeing', 'activity', 'meal'. Do NOT use 'departure', 'transport', 'shopping', 'culture', 'hotel'.\n"
+            "2. Activity Type: use one of 'sightseeing', 'activity', 'meal', 'transfer', 'rest', or 'alternative'.\n"
             "3. Title: MUST be concrete and trip-specific.\n"
             "4. Summary: MUST mention the route or major destinations. Be practical and concise.\n"
             f"5. Routing Location: use a searchable local-language query suitable for maps in {country_name}.\n"
+            "6. Activities: describe concrete things the traveler can do at each stop, not only the place name. "
+            "Give a reasonable estimated duration in minutes when possible; otherwise set duration_minutes to null. "
+            "Use approximate time windows only, and use null when unknown. Put logistics in practical_details. "
+            "Do not invent opening hours, permits, prices, reservations, or confirmed transport. These are suggestions.\n"
             f"{self._build_initial_contract(supported_cities)}"
         )
 
@@ -161,11 +169,14 @@ class PromptBuilder:
             "6. If any trip change is made, you MUST return the full updated itinerary.\n"
             "7. If NO itinerary change is needed, return 'updated_itinerary': null.\n"
             "8. Do not add hotels or recommended_places manually — the backend will enrich the itinerary automatically.\n"
-            f"9. The trip is scoped to {destination_name}, {country_name} ({country_code}). Keep all days in this country. "
+            "9. Preserve activity duration_minutes, time_window, practical_details, and suggestion/source labels on unchanged days. "
+            "For changed activities, provide useful suggested actions and use null when timing is unknown. "
+            "Do not present generated access, opening, permit, or price details as verified.\n"
+            f"10. The trip is scoped to {destination_name}, {country_name} ({country_code}). Keep all days in this country. "
             "Do not change country or destination unless the traveler explicitly requests it and the destination is supported.\n"
-            f"10. The city field MUST be exactly one of: {self._city_list_str(supported_cities)}. "
+            f"11. The city field MUST be exactly one of: {self._city_list_str(supported_cities)}. "
             "If the user requests a place outside the supported city list, use the closest supported city only when it is in the selected country and describe the requested place accurately.\n"
-            "11. Preserve valid JSON structure exactly.\n\n"
+            "12. Preserve valid JSON structure exactly.\n\n"
         )
 
         return (

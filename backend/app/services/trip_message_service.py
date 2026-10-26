@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 
 from app.models.trip import Trip
 from app.models.trip_message import TripMessage
@@ -10,6 +11,7 @@ from fastapi import HTTPException
 from app.services.limit_service import LimitService
 from app.services.sponsored_injection_service import SponsoredInjectionService
 from app.services.usage_service import UsageService
+from app.services.itinerary_quality_service import validate_itinerary_quality
 
 
 logger = logging.getLogger(__name__)
@@ -36,9 +38,74 @@ class TripMessageService:
         updated_itinerary: dict,
     ) -> dict:
         merged = dict(current_itinerary) if current_itinerary else {}
-        merged.update(updated_itinerary)
+        provider_itinerary = {
+            key: value
+            for key, value in updated_itinerary.items()
+            if key not in {"generation_status", "quality_warnings", "route_status"}
+        }
+        old_days = merged.get("days")
+        new_days = provider_itinerary.get("days")
+        if isinstance(old_days, list) and isinstance(new_days, list):
+            merged_days = deepcopy(new_days)
+            location_fields = ("city", "location", "routing_location")
+            activity_detail_fields = (
+                "time_window",
+                "duration_minutes",
+                "duration_status",
+                "practical_details",
+                "content_status",
+            )
+            for index, new_day in enumerate(merged_days):
+                if (
+                    index >= len(old_days)
+                    or not isinstance(old_days[index], dict)
+                    or not isinstance(new_day, dict)
+                ):
+                    continue
+                old_day = old_days[index]
+                same_location = all(
+                    old_day.get(field) == new_day.get(field) for field in location_fields
+                )
+                if not same_location:
+                    continue
 
-        allowed_keys = {"summary", "days", "total_days", "interests", "travel_style"}
+                preserved_day = deepcopy(old_day)
+                preserved_day.update(new_day)
+                old_activities = old_day.get("activities")
+                new_activities = new_day.get("activities")
+                if isinstance(old_activities, list) and isinstance(new_activities, list):
+                    merged_activities = deepcopy(new_activities)
+                    for activity_index, activity in enumerate(merged_activities):
+                        if (
+                            activity_index >= len(old_activities)
+                            or not isinstance(old_activities[activity_index], dict)
+                            or not isinstance(activity, dict)
+                        ):
+                            continue
+                        old_activity = old_activities[activity_index]
+                        if any(
+                            old_activity.get(field) != activity.get(field)
+                            for field in ("time", "description", "type")
+                        ):
+                            continue
+                        for field in activity_detail_fields:
+                            if activity.get(field) is None and field in old_activity:
+                                activity[field] = old_activity[field]
+                    preserved_day["activities"] = merged_activities
+                merged_days[index] = preserved_day
+            provider_itinerary["days"] = merged_days
+        merged.update(provider_itinerary)
+
+        allowed_keys = {
+            "summary",
+            "days",
+            "total_days",
+            "interests",
+            "travel_style",
+            "generation_status",
+            "quality_warnings",
+            "route_status",
+        }
         merged = {k: v for k, v in merged.items() if k in allowed_keys}
 
         mapping = {
@@ -117,7 +184,7 @@ class TripMessageService:
         new_days = new_itinerary.get("days", []) if new_itinerary else []
         changed: set[int] = set()
 
-        LOC_FIELDS = {"location", "routing_location", "city", "title", "activities"}
+        LOC_FIELDS = {"location", "routing_location", "city"}
 
         for idx, new_day in enumerate(new_days):
             if not isinstance(new_day, dict):
@@ -132,6 +199,37 @@ class TripMessageService:
                     break
 
         return changed
+
+    @staticmethod
+    def _preserve_stale_routes(
+        itinerary: dict, old_itinerary: dict, changed_indexes: set[int]
+    ) -> bool:
+        """Keep an old route visible as stale when a refreshed route is unavailable."""
+        days = itinerary.get("days")
+        old_days = old_itinerary.get("days") if isinstance(old_itinerary, dict) else None
+        if not isinstance(days, list) or not isinstance(old_days, list):
+            return False
+
+        had_unavailable_route = False
+        for index in changed_indexes:
+            if index <= 0 or index >= len(days) or index >= len(old_days):
+                continue
+            day = days[index]
+            old_day = old_days[index]
+            if not isinstance(day, dict) or not isinstance(old_day, dict):
+                continue
+            route = day.get("route_from_previous")
+            if isinstance(route, dict) and route.get("status") == "available":
+                continue
+
+            had_unavailable_route = True
+            old_route = old_day.get("route_from_previous")
+            if isinstance(old_route, dict) and old_route.get("status", "available") == "available":
+                day["route_from_previous"] = {**old_route, "status": "stale"}
+
+        if had_unavailable_route:
+            itinerary["route_status"] = "unavailable"
+        return had_unavailable_route
 
     # ------------------------------------------------------------------
     # Public API
@@ -157,6 +255,18 @@ class TripMessageService:
                 destination_id=trip.destination_id,
             )
 
+            if updated_itinerary is not None and (
+                assistant_text.lower().startswith("mock response:")
+                or not isinstance(updated_itinerary.get("days"), list)
+                or not updated_itinerary.get("days")
+                or any(not isinstance(day, dict) for day in updated_itinerary.get("days", []))
+            ):
+                updated_itinerary = None
+                assistant_text = (
+                    "I couldn't update the itinerary because the planning service did not return a usable plan. "
+                    "Your saved itinerary is unchanged. Please try again later."
+                )
+
             assistant_message = self.repo.create_message(
                 trip_id=trip.id,
                 role="assistant",
@@ -177,14 +287,7 @@ class TripMessageService:
                 merged_itinerary.setdefault("total_days", trip.days)
 
                 # 2. Detect changes (pre-enrichment)
-                force_refresh = any(
-                    word in user_content.lower()
-                    for word in ["change", "replace", "another", "better", "different"]
-                )
                 location_changed_indexes = self._detect_location_changed_days(
-                    old_itinerary, merged_itinerary
-                )
-                semantic_changed_indexes = self._detect_changed_days(
                     old_itinerary, merged_itinerary
                 )
                 missing_place_candidate_indexes: set[int] = set()
@@ -198,10 +301,6 @@ class TripMessageService:
                             missing_place_candidate_indexes.add(idx)
 
                 place_candidate_refresh_indexes = location_changed_indexes | missing_place_candidate_indexes
-                if force_refresh:
-                    place_candidate_refresh_indexes |= semantic_changed_indexes
-
-                logger.info("[DEBUG] force_refresh=%s", force_refresh)
                 logger.info("[DEBUG] changed_days=%s", place_candidate_refresh_indexes)
                 logger.info("[CONTINUE] location_changed_indexes=%s", location_changed_indexes)
                 logger.info(
@@ -264,6 +363,7 @@ class TripMessageService:
                 location_changed_indexes = place_candidate_refresh_indexes
 
                 # 6. Routing enrichment – only when locations actually changed
+                enrichment_reasons: list[str] = []
                 if location_changed_indexes:
                     logger.info("[CONTINUE] re-running routing enrichment")
                     from app.utils.async_runner import run_async
@@ -278,6 +378,12 @@ class TripMessageService:
                         )
                     except Exception as exc:
                         print(f"Routing enrichment failed on update: {exc}")
+                        enriched_itinerary["route_status"] = "unavailable"
+                        enrichment_reasons.append("routing_refresh_failed")
+                    if self._preserve_stale_routes(
+                        enriched_itinerary, old_itinerary, location_changed_indexes
+                    ):
+                        enrichment_reasons.append("routing_refresh_unavailable")
                 else:
                     # Preserve existing route_from_previous values from old itinerary
                     old_days = old_itinerary.get("days", [])
@@ -326,6 +432,7 @@ class TripMessageService:
                             )
                 except Exception as exc:
                     print(f"Image enrichment failed on update: {exc}")
+                    enrichment_reasons.append("image_refresh_unavailable")
 
                 try:
                     enriched_itinerary = SponsoredInjectionService(self.db).inject_sponsored_places(
@@ -335,6 +442,36 @@ class TripMessageService:
                     )
                 except Exception as exc:
                     logger.exception("Sponsored injection failed on update: %s", exc)
+
+                if enrichment_reasons:
+                    generation = enriched_itinerary.get("generation_status") or {
+                        "state": "complete",
+                        "source": "ai",
+                        "reasons": [],
+                    }
+                    enriched_itinerary["generation_status"] = {
+                        "state": "degraded",
+                        "source": generation.get("source", "ai"),
+                        "reasons": list(
+                            dict.fromkeys(generation.get("reasons", []) + enrichment_reasons)
+                        ),
+                    }
+                elif enriched_itinerary.get("route_status") == "unavailable":
+                    generation = enriched_itinerary.get("generation_status") or {
+                        "state": "complete",
+                        "source": "ai",
+                        "reasons": [],
+                    }
+                    enriched_itinerary["generation_status"] = {
+                        "state": "degraded",
+                        "source": generation.get("source", "ai"),
+                        "reasons": list(
+                            dict.fromkeys(
+                                generation.get("reasons", []) + ["route_refresh_unavailable"]
+                            )
+                        ),
+                    }
+                validate_itinerary_quality(enriched_itinerary, trip.country_code)
 
                 trip.itinerary_json = enriched_itinerary
                 updated_itinerary = enriched_itinerary

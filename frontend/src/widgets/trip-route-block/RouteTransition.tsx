@@ -80,8 +80,9 @@ export function RouteTransition({ route }: RouteTransitionProps) {
         </div>
       ) : (
         <p className={styles.fallback}>
-          This leg is part of the journey, but detailed transfer metrics were not
-          available from routing.
+          {route.status === 'stale'
+            ? 'These transfer details come from before the last itinerary edit. Refresh or confirm this leg before relying on it.'
+            : 'This leg is part of the journey, but detailed transfer metrics were not available from routing.'}
         </p>
       )}
     </section>

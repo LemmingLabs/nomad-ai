@@ -108,6 +108,12 @@ class AIService:
             
         if not isinstance(itinerary.get("days"), list):
             raise ValueError("Initial AI generation failed: 'itinerary' must contain a 'days' list")
+        if len(itinerary["days"]) != days:
+            raise ValueError(
+                f"Initial AI generation returned {len(itinerary['days'])} days; expected {days}"
+            )
+        if not self._validate_itinerary(itinerary):
+            raise ValueError("Initial AI generation returned an invalid day structure")
         
         return raw
 
@@ -147,9 +153,22 @@ class AIService:
         for day in days:
             if not isinstance(day, dict):
                 return False
-            if "day" not in day or "title" not in day or "activities" not in day:
+            if (
+                "day" not in day
+                or "title" not in day
+                or "city" not in day
+                or "location" not in day
+                or "activities" not in day
+            ):
                 return False
             if not isinstance(day.get("activities"), list):
+                return False
+            if any(
+                not isinstance(activity, dict)
+                or not isinstance(activity.get("description"), str)
+                or not activity.get("description", "").strip()
+                for activity in day["activities"]
+            ):
                 return False
                 
         return True

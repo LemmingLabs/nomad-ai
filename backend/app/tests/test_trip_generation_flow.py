@@ -111,6 +111,10 @@ def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline
 
     assert len(trip.itinerary_json["days"]) == 1
     assert trip.itinerary_json["days"][0]["city"] == "Bishkek"
+    assert trip.itinerary_json["generation_status"]["state"] == "degraded"
+    assert trip.itinerary_json["generation_status"]["source"] == "mock"
+    assert "ai_generation_failed" in trip.itinerary_json["generation_status"]["reasons"]
+    assert trip.itinerary_json["days"][0]["activities"][0]["duration_status"] == "unknown"
     assert db_session.query(TripMessage).count() == 2
 
 

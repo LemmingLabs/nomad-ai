@@ -264,6 +264,18 @@ def test_groq_client_returns_mock_without_api_key():
     assert "updated_itinerary" in payload
 
 
+def test_groq_initial_mock_response_is_explicitly_marked():
+    client = GroqClient(api_key=None)
+
+    payload = client.chat_json([{"role": "user", "content": "- Days: 1"}], mode="initial")
+
+    assert payload["_provider_status"]["source"] == "mock"
+    assert payload["_provider_status"]["reason"] in {
+        "provider_unconfigured",
+        "provider_unavailable",
+    }
+
+
 def test_groq_client_returns_mock_when_upstream_raises(monkeypatch):
     class ExplodingGroq:
         def __init__(self, api_key):
@@ -324,6 +336,85 @@ def test_ai_service_normalizes_raw_json_string():
 
     assert message == "updated"
     assert itinerary == {"days": [1]}
+
+
+def test_chat_refresh_keeps_old_route_marked_stale_when_new_route_is_unavailable():
+    old_itinerary = {
+        "days": [
+            {"day": 1},
+            {
+                "day": 2,
+                "route_from_previous": {
+                    "origin": "Bishkek",
+                    "destination": "Karakol",
+                    "distance_km": 400,
+                    "duration_mins": 360,
+                    "transport_type": "driving",
+                    "status": "available",
+                },
+            },
+        ]
+    }
+    updated_itinerary = {
+        "days": [
+            {"day": 1},
+            {"day": 2, "route_from_previous": {"status": "unavailable"}},
+        ]
+    }
+
+    has_unavailable_route = TripMessageService._preserve_stale_routes(
+        updated_itinerary, old_itinerary, {1}
+    )
+
+    assert has_unavailable_route is True
+    assert updated_itinerary["days"][1]["route_from_previous"]["status"] == "stale"
+    assert updated_itinerary["route_status"] == "unavailable"
+
+
+def test_chat_merge_preserves_optional_details_and_route_for_unchanged_location(db_session):
+    service = TripMessageService(db_session)
+    current = {
+        "days": [{
+            "day": 1,
+            "city": "Bishkek",
+            "location": "Ala-Too Square",
+            "routing_location": "Ala-Too Square, Bishkek",
+            "title": "City day",
+            "activities": [{
+                "time": "Morning",
+                "time_window": "09:00-11:00",
+                "duration_minutes": 120,
+                "duration_status": "estimated",
+                "practical_details": ["Allow time for security"],
+                "description": "Walk around the square",
+                "type": "sightseeing",
+            }],
+            "images": {"hero": {"url": "/media/square.jpg"}},
+        }],
+    }
+    generated = {
+        "days": [{
+            "day": 1,
+            "city": "Bishkek",
+            "location": "Ala-Too Square",
+            "routing_location": "Ala-Too Square, Bishkek",
+            "title": "City day",
+            "activities": [{
+                "time": "Morning",
+                "description": "Walk around the square",
+                "type": "sightseeing",
+            }],
+        }],
+    }
+
+    merged = service._merge_itinerary(current, generated)
+
+    assert merged["days"][0]["activities"][0]["duration_minutes"] == 120
+    assert merged["days"][0]["activities"][0]["practical_details"] == [
+        "Allow time for security"
+    ]
+    assert merged["days"][0]["images"]["hero"]["url"] == "/media/square.jpg"
+    assert service._detect_location_changed_days(current, merged) == set()
 
 
 def test_ai_service_continue_trip_uses_prompt_builder_and_client():
@@ -397,6 +488,27 @@ def test_trip_message_service_keeps_existing_itinerary_when_ai_returns_none(
     db_session.refresh(trip)
 
     assert trip.itinerary_json == original_itinerary
+
+
+def test_trip_message_service_does_not_apply_provider_mock_update(db_session, trip):
+    original_itinerary = trip.itinerary_json.copy()
+
+    class FakeAIService:
+        def continue_trip(self, history_messages, user_message, current_itinerary, **kwargs):
+            return "Mock response: provider unavailable", {
+                "days": [{"day": 1, "title": "fabricated update"}],
+            }
+
+    service = TripMessageService(db_session, ai_service=FakeAIService())
+    assistant_message, updated_itinerary = service.continue_trip(
+        trip=trip,
+        user_content="change day one",
+    )
+    db_session.refresh(trip)
+
+    assert updated_itinerary is None
+    assert trip.itinerary_json == original_itinerary
+    assert "saved itinerary is unchanged" in assistant_message.content
 
 
 def test_trip_message_service_reinjects_sponsored_after_image_enrichment(

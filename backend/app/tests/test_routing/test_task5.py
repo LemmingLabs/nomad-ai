@@ -101,4 +101,4 @@ async def test_enrich_from_itinerary_json_returns_original_itinerary_on_internal
 
     result = await service.enrich_from_itinerary_json(itinerary)
 
-    assert result == original
+    assert result == {**original, "route_status": "unavailable"}

@@ -33,7 +33,10 @@ function getActivityIcon(type: string): LucideIcon {
   return Sparkles;
 }
 
-function getTimeBucket(time: string): { label: string; icon: LucideIcon } {
+function getTimeBucket(time?: string | null): { label: string; icon: LucideIcon } {
+  if (!time) {
+    return { label: 'Flexible timing', icon: Sparkles };
+  }
   const normalizedTime = time.toLowerCase();
 
   if (normalizedTime.includes('morning')) {
@@ -91,7 +94,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
           const Icon = getActivityIcon(activity.type);
           const timeBucket = getTimeBucket(activity.time);
           const TimeIcon = timeBucket.icon;
-          const activityKey = `${activity.time}-${activity.description}`;
+          const activityKey = `${activity.time ?? activity.time_window ?? 'flexible'}-${activity.description}`;
 
           return (
             <li key={activityKey} className={styles.item}>
@@ -104,9 +107,24 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
                     <TimeIcon size={14} />
                     {timeBucket.label}
                   </span>
-                  <span className={styles.time}>{activity.time}</span>
+                  {activity.time ? <span className={styles.time}>{activity.time}</span> : null}
+                  {activity.time_window ? (
+                    <span className={styles.time}>Approx. {activity.time_window}</span>
+                  ) : null}
+                  {activity.duration_minutes ? (
+                    <span className={styles.time}>Est. {activity.duration_minutes} min</span>
+                  ) : (
+                    <span className={styles.time}>Duration unknown</span>
+                  )}
                 </div>
                 <p className={styles.description}>{activity.description}</p>
+                {activity.practical_details?.length ? (
+                  <ul className={styles.details}>
+                    {activity.practical_details.map((detail, index) => (
+                      <li key={`${activityKey}-${index}`}>{detail}</li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             </li>
           );

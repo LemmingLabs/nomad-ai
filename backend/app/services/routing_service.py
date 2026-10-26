@@ -146,10 +146,17 @@ class RoutingService:
                     else None
                 )
 
+            itinerary_json["route_status"] = (
+                "unavailable"
+                if any(segment.status != "available" for segment in segments)
+                else "available"
+            )
+
             return itinerary_json
 
         except Exception:
             logger.exception("enrich_from_itinerary_json failed")
+            original_itinerary["route_status"] = "unavailable"
             return original_itinerary
 
     async def _resolve_point(self, location: str) -> dict | None:

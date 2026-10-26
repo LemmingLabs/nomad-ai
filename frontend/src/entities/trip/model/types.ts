@@ -14,7 +14,12 @@ export interface TripImages {
 }
 
 export interface TripActivity {
-  time: string;
+  time?: string | null;
+  time_window?: string | null;
+  duration_minutes?: number | null;
+  duration_status?: 'estimated' | 'unknown';
+  practical_details?: string[];
+  content_status?: string;
   description: string;
   type: string;
 }
@@ -89,7 +94,7 @@ export interface TripRoute {
   duration_mins: number;
   transport_type: string;
   estimated_cost?: number | null;
-  status?: 'available' | 'unavailable';
+  status?: 'available' | 'unavailable' | 'stale';
 }
 
 export interface TripPlaceResolution {
@@ -115,10 +120,17 @@ export interface TripDay {
 }
 
 export interface TripItinerary {
-  summary: string;
-  total_days: number;
+  summary?: string | null;
+  total_days?: number | null;
   interests?: string[];
   travel_style?: string;
+  generation_status?: {
+    state: 'complete' | 'degraded';
+    source: 'ai' | 'mock';
+    reasons?: string[];
+  };
+  quality_warnings?: Array<{ code: string; message: string; day?: number }>;
+  route_status?: 'available' | 'unavailable';
   days: TripDay[];
 }
 
