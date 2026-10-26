@@ -22,8 +22,17 @@ DEFAULT_CENTER_LAT = 42.8746
 
 
 class RoutingService:
-    def __init__(self, client: GoogleMapsClient  | None = None):
+    def __init__(
+        self,
+        client: GoogleMapsClient | None = None,
+        country_code: str = "KG",
+        center_latitude: float = DEFAULT_CENTER_LAT,
+        center_longitude: float = DEFAULT_CENTER_LON,
+    ):
         self.client = client or GoogleMapsClient()
+        self.country_code = country_code.strip().upper()
+        self.center_latitude = center_latitude
+        self.center_longitude = center_longitude
         self.cache = {}
 
 
@@ -145,13 +154,17 @@ class RoutingService:
 
     async def _resolve_point(self, location: str) -> dict | None:
         try:
-            alias_mapping = {
-                "ala-too square": "Ala-Too Square Bishkek",
-                "osh bazaar": "Osh Bazaar Bishkek",
-                "issyk-kul lake": "Issyk-Kul Lake Cholpon-Ata",
-                "jeti-oguz gorge": "Jeti-Oguz Gorge Karakol",
-                "ala-archa national park": "Ala-Archa National Park Bishkek",
-            }
+            alias_mapping = (
+                {
+                    "ala-too square": "Ala-Too Square Bishkek",
+                    "osh bazaar": "Osh Bazaar Bishkek",
+                    "issyk-kul lake": "Issyk-Kul Lake Cholpon-Ata",
+                    "jeti-oguz gorge": "Jeti-Oguz Gorge Karakol",
+                    "ala-archa national park": "Ala-Archa National Park Bishkek",
+                }
+                if self.country_code == "KG"
+                else {}
+            )
             
             search_query = location
             normalized_loc = location.strip().lower()
@@ -160,7 +173,7 @@ class RoutingService:
                     search_query = value
                     break
             
-            cache_key = search_query.lower()
+            cache_key = f"{self.country_code}:{search_query.lower()}"
             if cache_key in self.cache:
                 results = self.cache[cache_key]
             else:
@@ -169,8 +182,9 @@ class RoutingService:
                     try:
                         results = await self.client.search_place(
                             search_query,
-                            DEFAULT_CENTER_LON,
-                            DEFAULT_CENTER_LAT,
+                            self.center_longitude,
+                            self.center_latitude,
+                            country_code=self.country_code,
                         )
                         break
                     except Exception as e:
@@ -191,6 +205,8 @@ class RoutingService:
             def _score(item: dict) -> int:
                 # ❗ HARD FILTER: reject invalid coordinates immediately
                 if item.get("lat") is None or item.get("lon") is None:
+                    return -9999
+                if str(item.get("country_code") or "").upper() != self.country_code:
                     return -9999
 
                 score = 0
@@ -235,6 +251,7 @@ class RoutingService:
             valid_results = [
                 r for r in results
                 if r.get("lat") is not None and r.get("lon") is not None
+                and str(r.get("country_code") or "").upper() == self.country_code
             ]
 
             if not valid_results:
@@ -310,6 +327,7 @@ class RoutingService:
             duration_mins=duration_mins,
             estimated_cost=cost,
             transport_type=transport_type,
+            status="available",
         )
 
     def _fallback(self, origin: str, destination: str) -> RouteSegment:
@@ -320,4 +338,5 @@ class RoutingService:
             duration_mins=FALLBACK_DURATION_MINS,
             estimated_cost=FALLBACK_ESTIMATED_COST,
             transport_type=FALLBACK_TRANSPORT_TYPE,
+            status="unavailable",
         )

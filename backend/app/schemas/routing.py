@@ -10,6 +10,7 @@ class RouteSegment(BaseModel):
     duration_mins: int | None = None
     estimated_cost: float | None = Field(default=None, ge=0.0)
     transport_type: Literal["taxi", "driving", "walking", "unknown"]
+    status: Literal["available", "unavailable"] = "available"
 
     model_config = ConfigDict(from_attributes=True)
 

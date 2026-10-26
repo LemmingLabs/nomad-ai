@@ -177,7 +177,7 @@ class PlaceCandidateService:
     def __init__(self, api_key: str | None = None, timeout: float = 10.0):
         self.api_key = api_key or settings.GOOGLE_MAPS_API_KEY
         self.timeout = timeout
-        self._cache: dict[tuple[str, str, int], list[dict]] = {}
+        self._cache: dict[tuple[str, ...], list[dict]] = {}
 
     def get_candidates_for_city_and_interest(
         self,
@@ -190,6 +190,8 @@ class PlaceCandidateService:
         selected_interest_counts: Counter | None = None,
         previous_interest: str | None = None,
         previous_location: dict | None = None,
+        country_code: str = "KG",
+        country_name: str = "Kyrgyzstan",
     ) -> list[dict]:
         return self.get_candidates_for_day(
             city=city,
@@ -202,6 +204,8 @@ class PlaceCandidateService:
             selected_interest_counts=selected_interest_counts,
             previous_interest=previous_interest,
             previous_location=previous_location,
+            country_code=country_code,
+            country_name=country_name,
         )
 
     def get_candidates_for_day(
@@ -217,6 +221,8 @@ class PlaceCandidateService:
         selected_interest_counts: Counter | None = None,
         previous_interest: str | None = None,
         previous_location: dict | None = None,
+        country_code: str = "KG",
+        country_name: str = "Kyrgyzstan",
     ) -> list[dict]:
         normalized_city = self._normalize_text(city)
         if not normalized_city or not self.api_key:
@@ -234,7 +240,14 @@ class PlaceCandidateService:
         if not normalized_interests:
             normalized_interests = ["culture"]
 
+        normalized_country = str(country_code or "").strip().upper()
+        normalized_country_name = str(country_name or "").strip()
+        if len(normalized_country) != 2 or not normalized_country_name:
+            return []
+
         cache_key = (
+            normalized_country,
+            normalized_country_name.lower(),
             normalized_city.lower(),
             "|".join(sorted(normalized_interests)),
             max(limit, 10),
@@ -246,6 +259,8 @@ class PlaceCandidateService:
                 normalized_city,
                 normalized_interests,
                 max(limit, 10),
+                normalized_country,
+                normalized_country_name,
             )
             self._cache[cache_key] = [candidate.copy() for candidate in raw_candidates]
 
@@ -314,6 +329,8 @@ class PlaceCandidateService:
         city: str,
         interests: list[str],
         limit: int,
+        country_code: str = "KG",
+        country_name: str = "Kyrgyzstan",
     ) -> list[dict]:
         candidates_by_id: dict[str, dict] = {}
         seen_names: set[str] = set()
@@ -321,10 +338,16 @@ class PlaceCandidateService:
         target_count = max(limit, 10)
 
         for query_term in query_terms:
-            query = f"{query_term} in {city}"
-            places = self._text_search(query, page_size=min(max(limit, 5), 20))
+            query = f"{query_term} in {city}, {country_name}"
+            places = self._text_search(
+                query,
+                page_size=min(max(limit, 5), 20),
+                country_code=country_code,
+            )
             for place in places:
                 candidate = self._normalize_place(place, city)
+                if candidate.get("country_code") != country_code.upper():
+                    continue
                 place_id = candidate.get("place_id")
                 candidate_name = self._normalize_name(candidate.get("name"))
                 if not place_id or not self._passes_quality_filter(candidate):
@@ -342,17 +365,21 @@ class PlaceCandidateService:
 
         return list(candidates_by_id.values())
 
-    def _text_search(self, query: str, page_size: int = 10) -> list[dict]:
+    def _text_search(
+        self, query: str, page_size: int = 10, country_code: str = "KG"
+    ) -> list[dict]:
         payload = {
             "textQuery": query,
             "pageSize": page_size,
             "languageCode": "en",
+            "includedRegionCodes": [country_code.upper()],
         }
         field_mask = ",".join(
             [
                 "places.id",
                 "places.displayName",
                 "places.formattedAddress",
+                "places.addressComponents",
                 "places.location",
                 "places.rating",
                 "places.userRatingCount",
@@ -445,6 +472,14 @@ class PlaceCandidateService:
     def _normalize_place(self, place: dict[str, Any], city: str) -> dict:
         location = place.get("location") or {}
         display_name = place.get("displayName") or {}
+        country_code = next(
+            (
+                component.get("shortText", "").upper()
+                for component in (place.get("addressComponents") or [])
+                if "country" in (component.get("types") or [])
+            ),
+            None,
+        )
 
         return {
             "provider": "google_places",
@@ -452,6 +487,7 @@ class PlaceCandidateService:
             "name": display_name.get("text") if isinstance(display_name, dict) else None,
             "city": city,
             "formatted_address": place.get("formattedAddress"),
+            "country_code": country_code,
             "lat": location.get("latitude") if isinstance(location, dict) else None,
             "lng": location.get("longitude") if isinstance(location, dict) else None,
             "rating": place.get("rating"),
@@ -604,6 +640,8 @@ class PlaceCandidateService:
         return list(dict.fromkeys(terms))[:2]
 
     def _passes_quality_filter(self, candidate: dict) -> bool:
+        if candidate.get("lat") is None or candidate.get("lng") is None:
+            return False
         if self._has_bad_type(candidate):
             return False
 

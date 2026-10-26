@@ -24,6 +24,8 @@ class ImageEnrichmentService:
         itinerary_json: dict,
         changed_day_indexes: set[int] | None = None,
         force_refresh: bool = False,
+        country_name: str = "Kyrgyzstan",
+        country_code: str = "KG",
     ) -> dict:
         """
         Enrich days with hero images.
@@ -70,7 +72,9 @@ class ImageEnrichmentService:
                 day.pop("images", None)
 
                 # No count cap in selective mode — refresh every changed day
-                image_data = self._fetch_image_for_day(day, itinerary_json, used_photo_ids)
+                image_data = self._fetch_image_for_day(
+                    day, itinerary_json, used_photo_ids, country_name, country_code
+                )
                 if image_data:
                     day["images"] = {"hero": image_data, "gallery": []}
                     used_photo_ids.add(image_data["photo_id"])
@@ -83,7 +87,9 @@ class ImageEnrichmentService:
                 if full_run_count >= MAX_IMAGES_FULL_TRIP:
                     break
 
-                image_data = self._fetch_image_for_day(day, itinerary_json, used_photo_ids)
+                image_data = self._fetch_image_for_day(
+                    day, itinerary_json, used_photo_ids, country_name, country_code
+                )
                 if image_data:
                     day["images"] = {"hero": image_data, "gallery": []}
                     used_photo_ids.add(image_data["photo_id"])
@@ -91,24 +97,37 @@ class ImageEnrichmentService:
 
         return itinerary_json
 
-    def _fetch_image_for_day(self, day: dict, itinerary: dict, used_ids: set) -> dict | None:
-        queries = self._build_search_queries(day, itinerary)
+    def _fetch_image_for_day(
+        self,
+        day: dict,
+        itinerary: dict,
+        used_ids: set,
+        country_name: str = "Kyrgyzstan",
+        country_code: str = "KG",
+    ) -> dict | None:
+        queries = self._build_search_queries(day, itinerary, country_name, country_code)
         for q in queries:
             result = self.client.search_photo(q)
             if result and result["photo_id"] not in used_ids:
                 return result
         return None
 
-    def _build_search_queries(self, day: dict, itinerary: dict) -> list[str]:
+    def _build_search_queries(
+        self,
+        day: dict,
+        itinerary: dict,
+        country_name: str = "Kyrgyzstan",
+        country_code: str = "KG",
+    ) -> list[str]:
         queries = []
         routing_loc = day.get("routing_location")
         loc = day.get("location")
         city = day.get("city", "")
 
-        if loc and loc in PHOTO_QUERY_OVERRIDES:
+        if country_code.upper() == "KG" and loc and loc in PHOTO_QUERY_OVERRIDES:
             queries.append(PHOTO_QUERY_OVERRIDES[loc])
 
-        suffix = "Kyrgyzstan"
+        suffix = country_name
 
         if routing_loc:
             queries.append(f"{routing_loc} {city} {suffix}".strip())
@@ -130,7 +149,7 @@ class ImageEnrichmentService:
                 break
 
         if not theme_added:
-            queries.append(f"{city} {suffix}".strip() if city else "Kyrgyzstan nature")
+            queries.append(f"{city} {suffix}".strip() if city else f"{country_name} nature")
 
         clean_queries = []
         for q in queries:

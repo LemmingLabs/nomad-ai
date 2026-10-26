@@ -20,7 +20,9 @@ class GoogleMapsClient:
             "X-Goog-FieldMask": field_mask,
         }
 
-    async def search_place(self, query: str, lon: float, lat: float) -> list[dict]:
+    async def search_place(
+        self, query: str, lon: float, lat: float, country_code: str = "KG"
+    ) -> list[dict]:
         """
         Places API (New) — Text Search
         POST https://places.googleapis.com/v1/places:searchText
@@ -29,6 +31,7 @@ class GoogleMapsClient:
         payload = {
             "textQuery": query,
             "pageSize": 5,
+            "includedRegionCodes": [country_code.strip().upper()],
             "locationBias": {
                 "circle": {
                     "center": {"latitude": lat, "longitude": lon},
@@ -43,7 +46,7 @@ class GoogleMapsClient:
                     f"{PLACES_BASE_URL}/places:searchText",
                     json=payload,
                     headers=self._auth_headers(
-                        "places.id,places.displayName,places.formattedAddress,places.location"
+                        "places.id,places.displayName,places.formattedAddress,places.location,places.addressComponents"
                     ),
                 )
 
@@ -59,6 +62,14 @@ class GoogleMapsClient:
                     "address_name": place.get("formattedAddress"),
                     "lat": place.get("location", {}).get("latitude"),
                     "lon": place.get("location", {}).get("longitude"),
+                    "country_code": next(
+                        (
+                            component.get("shortText", "").upper()
+                            for component in (place.get("addressComponents") or [])
+                            if "country" in (component.get("types") or [])
+                        ),
+                        None,
+                    ),
                 }
                 for place in places
             ]
