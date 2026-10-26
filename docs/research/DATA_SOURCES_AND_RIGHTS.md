@@ -30,6 +30,16 @@ This is a coverage check only. It does not verify geometry end to end, route saf
 
 **No external source is approved for importing route/POI facts today.** Keep AI output and provider listings labelled as suggestions. For the first non-KG data pilot, investigate Almaty, Kazakhstan, but leave it disabled until the destination is approved and rights, operational coverage, and field accuracy are confirmed.
 
+### Provenance review workflow
+
+The application provides an admin-only source and fact register for future, individually reviewed content. Registering a source or claim does not publish it: both start pending. A source needs a documented rights basis, allowed use, attribution, geographic scope, freshness period, terms URL, and approval evidence before an admin can approve it. Editing approved source terms returns the source to pending review. Facts can be approved only against an approved source, within its country scope, with a source record ID or URL and a current check date.
+
+Approved facts appear only while both fact and source remain approved and the fact is fresh. Withdrawal, rejection, source withdrawal, or expiry removes a claim from traveler output. Fact changes are recorded in admin audit history and return approved claims to pending review. Traveler output carries source name, link, attribution, check date, and a `reviewed` status; this records the source review workflow and does not imply that a guide verified a route.
+
+Place facts use the provider and place ID (for example, `google_places:PLACE_ID`). Route facts use `COUNTRY:normalized-origin->normalized-destination`. No source records or factual claims were seeded or imported with this workflow. The source decisions above remain unchanged: no external source has approval for route or POI fact ingestion.
+
+Admins must record and review actual source terms and evidence before adding facts. Provider search results and model-generated itinerary text remain suggestions and are not converted into approved knowledge automatically.
+
 1. Ask the Visit Almaty storefront operator (ТОО «Turismo») and brand owner (ТОО «Бюро по туризму Алматы») to identify the NTA route dataset owner and provide source-by-source license or contract, commercial reuse, attribution, API/bulk access, caching, refresh, correction, and withdrawal terms. Request records for NTA-105, NTA-106, and NTA-217 as representative samples; ask the city Tourism Department or relevant park authority to validate operational facts separately.
 2. Ask qualified counsel to review ODbL application to the planned use of OSM paths/POIs in a commercial itinerary and the distinction between displayed maps, stored facts, and generated summaries.
 3. For any selected source, independently validate the sample's current access/seasonality/permit facts with the responsible park/operator or qualified local reviewer. Require review evidence before using a “reviewed” label.

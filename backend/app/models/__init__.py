@@ -13,6 +13,8 @@ from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlace
 from app.models.sponsored_impression import SponsoredImpression
 from app.models.sponsored_interaction import SponsoredInteraction, SponsoredInteractionType
 from app.models.partner_market import PartnerMarket
+from app.models.knowledge_source import KnowledgeSource
+from app.models.knowledge_fact import KnowledgeFact, KnowledgeFactAudit
 
 __all__ = [
     "User",
@@ -34,4 +36,7 @@ __all__ = [
     "SponsoredInteraction",
     "SponsoredInteractionType",
     "PartnerMarket",
+    "KnowledgeSource",
+    "KnowledgeFact",
+    "KnowledgeFactAudit",
 ]

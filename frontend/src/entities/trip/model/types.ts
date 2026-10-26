@@ -97,6 +97,17 @@ export interface TripRoute {
   status?: 'available' | 'unavailable' | 'stale';
 }
 
+export interface TripReviewedFact {
+  subject_type: 'place' | 'route';
+  fact_type: string;
+  value: string;
+  source_name: string;
+  source_url: string;
+  attribution_text: string;
+  checked_at: string;
+  verification_status: 'reviewed';
+}
+
 export interface TripPlaceResolution {
   status: 'resolved' | 'unresolved';
   provider: string;
@@ -117,6 +128,7 @@ export interface TripDay {
   route_from_previous?: TripRoute | null;
   images?: TripImages | null;
   sponsored?: SponsoredPlacePayload | null;
+  reviewed_facts?: TripReviewedFact[];
 }
 
 export interface TripItinerary {

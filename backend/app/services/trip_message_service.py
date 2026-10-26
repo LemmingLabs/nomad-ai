@@ -471,6 +471,11 @@ class TripMessageService:
                             )
                         ),
                     }
+                from app.services.knowledge_provenance_service import KnowledgeProvenanceService
+
+                enriched_itinerary = KnowledgeProvenanceService(
+                    self.db
+                ).attach_facts_to_itinerary(enriched_itinerary, trip.country_code)
                 validate_itinerary_quality(enriched_itinerary, trip.country_code)
 
                 trip.itinerary_json = enriched_itinerary

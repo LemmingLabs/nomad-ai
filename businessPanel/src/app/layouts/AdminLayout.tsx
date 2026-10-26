@@ -8,6 +8,7 @@ const adminNav = [
   { to: '/admin/users', label: 'Users' },
   { to: '/admin/businesses', label: 'Businesses' },
   { to: '/admin/subscription-plans', label: 'Subscription Plans' },
+  { to: '/admin/knowledge', label: 'Route Knowledge' },
   { to: '/admin/sponsored-moderation', label: 'Sponsored Moderation' },
   { to: '/admin/analytics', label: 'Analytics' },
 ]
