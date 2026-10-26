@@ -57,3 +57,30 @@ test('switches to stay search and reports the provider-unconfigured state', asyn
     rooms: 1,
   }))
 })
+
+test('shows clearly labeled demo examples without a supplier handoff', async () => {
+  const user = userEvent.setup()
+  vi.mocked(offersApi.search).mockResolvedValue({
+    state: 'demo',
+    message: 'Development demo only: example totals are not live prices, availability is not checked, and these results cannot be booked.',
+    offers: [{
+      id: 'demo-flight-1',
+      kind: 'flight',
+      title: 'Sample flight: ALA to Bishkek',
+      source: 'NomadAI demo fixture',
+      example_total: 250,
+      currency: 'USD',
+      conditions: 'Illustrative example only; no availability or booking link has been checked.',
+      handoff_url: null,
+    }],
+  })
+  renderPanel()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.click(screen.getByRole('button', { name: 'Search flights' }))
+
+  expect((await screen.findByText('DEVELOPMENT DEMO · NOT BOOKABLE')).textContent).toContain('DEVELOPMENT DEMO')
+  expect(screen.getByText('Sample flight: ALA to Bishkek')).toBeTruthy()
+  expect(screen.getByText(/Example total:/).textContent).toContain('$250.00')
+  expect(screen.getByText('NomadAI demo fixture · no supplier link')).toBeTruthy()
+})

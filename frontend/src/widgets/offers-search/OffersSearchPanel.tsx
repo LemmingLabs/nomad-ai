@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { offersApi, type OfferSearchRequest } from '../../entities/offers'
+import { offersApi, type OfferDemoItem, type OfferSearchRequest } from '../../entities/offers'
 import styles from './OffersSearchPanel.module.scss'
 
 type OffersSearchPanelProps = {
@@ -50,10 +50,14 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   const [isPending, setIsPending] = useState(false)
   const [unavailableMessage, setUnavailableMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [demoMessage, setDemoMessage] = useState('')
+  const [demoOffers, setDemoOffers] = useState<OfferDemoItem[]>([])
 
   const clearSearchState = () => {
     setUnavailableMessage('')
     setSuccessMessage('')
+    setDemoMessage('')
+    setDemoOffers([])
   }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -83,7 +87,12 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
     setIsPending(true)
     try {
       const response = await offersApi.search(request)
-      setSuccessMessage(`${response.message} No current prices are shown until an approved supplier is connected.`)
+      if (response.state === 'demo') {
+        setDemoMessage(response.message)
+        setDemoOffers(response.offers)
+      } else {
+        setSuccessMessage(`${response.message} No current prices are shown until an approved supplier is connected.`)
+      }
     } catch (error) {
       setUnavailableMessage(getUnavailableMessage(error))
     } finally {
@@ -101,7 +110,7 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
             Search is separate from your itinerary and never changes its estimates.
           </p>
         </div>
-        <span className={styles.readOnly}>External booking</span>
+        <span className={styles.readOnly}>{demoMessage ? 'No booking link' : 'External booking'}</span>
       </div>
 
       <div className={styles.tabs} role="tablist" aria-label="Offer type">
@@ -165,6 +174,29 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       ) : null}
       {successMessage ? (
         <p className={styles.notice} role="status">{successMessage}</p>
+      ) : null}
+      {demoMessage ? (
+        <div className={styles.demoNotice} role="status">
+          <strong>DEVELOPMENT DEMO · NOT BOOKABLE</strong>
+          <p>{demoMessage}</p>
+        </div>
+      ) : null}
+      {demoOffers.length > 0 ? (
+        <ul className={styles.demoOffers} aria-label="Demonstration offer examples">
+          {demoOffers.map((offer) => (
+            <li className={styles.demoOffer} key={offer.id}>
+              <div className={styles.demoOfferHeading}>
+                <strong>{offer.title}</strong>
+                <span>Example total: {new Intl.NumberFormat(undefined, {
+                  style: 'currency',
+                  currency: offer.currency,
+                }).format(offer.example_total)}</span>
+              </div>
+              <p>{offer.conditions}</p>
+              <small>{offer.source} · no supplier link</small>
+            </li>
+          ))}
+        </ul>
       ) : null}
       <p className={styles.footnote}>
         Prices and availability can change at the supplier. Booking remains external.

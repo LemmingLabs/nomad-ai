@@ -97,3 +97,29 @@ class OffersUnavailableResponse(BaseModel):
     state: Literal["unavailable"] = "unavailable"
     reason: Literal["feature_disabled", "provider_unconfigured"]
     message: str
+
+
+class OfferDemoItem(BaseModel):
+    id: str
+    kind: Literal["flight", "stay"]
+    title: str
+    source: Literal["NomadAI demo fixture"] = "NomadAI demo fixture"
+    example_total: float = Field(ge=0)
+    currency: Literal["USD"] = "USD"
+    conditions: str
+    handoff_url: None = None
+
+
+class OffersDemoResponse(BaseModel):
+    state: Literal["demo"] = "demo"
+    message: str = (
+        "Development demo only: example totals are not live prices, availability is not checked, "
+        "and these results cannot be booked."
+    )
+    offers: list[OfferDemoItem]
+
+
+OffersSearchResponse = Annotated[
+    OffersUnavailableResponse | OffersDemoResponse,
+    Field(discriminator="state"),
+]

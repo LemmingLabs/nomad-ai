@@ -25,3 +25,22 @@ export type OffersUnavailableResponse = {
   reason: 'feature_disabled' | 'provider_unconfigured'
   message: string
 }
+
+export type OfferDemoItem = {
+  id: string
+  kind: 'flight' | 'stay'
+  title: string
+  source: 'NomadAI demo fixture'
+  example_total: number
+  currency: 'USD'
+  conditions: string
+  handoff_url: null
+}
+
+export type OffersDemoResponse = {
+  state: 'demo'
+  message: string
+  offers: OfferDemoItem[]
+}
+
+export type OffersSearchResponse = OffersUnavailableResponse | OffersDemoResponse
