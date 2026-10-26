@@ -128,7 +128,7 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
             Search is separate from your itinerary and never changes its estimates.
           </p>
         </div>
-        <span className={styles.readOnly}>{demoMessage ? 'No booking link' : 'External booking'}</span>
+        <span className={styles.readOnly}>{demoMessage ? 'No booking link' : 'Read-only'}</span>
       </div>
 
       <div className={styles.tabs} role="tablist" aria-label="Offer type">
@@ -233,7 +233,9 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
         </ul>
       ) : null}
       <p className={styles.footnote}>
-        Prices and availability can change at the supplier. Booking remains external.
+        {demoMessage
+          ? 'Development examples cannot be booked; live offers require an approved supplier.'
+          : 'Live offers are shown only after an approved supplier is connected. Any booking will be completed on the supplier’s site.'}
       </p>
     </section>
   )
