@@ -1,0 +1,131 @@
+@use '../../app/styles/variables' as *;
+@use '../../app/styles/mixins' as *;
+
+.panel {
+  @include flex-col;
+  gap: $space-4;
+  margin: 0 $space-8 $space-5;
+  padding: $space-5;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.header {
+  @include flex-between;
+  align-items: flex-start;
+  gap: $space-4;
+
+  h3 {
+    margin: $space-1 0;
+    color: $color-text;
+    font-size: $text-lg;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: $color-accent-hover;
+  font-size: $text-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.description,
+.footnote {
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.readOnly {
+  flex: 0 0 auto;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+  color: #115e59;
+  background: #ccfbf1;
+  font-size: $text-xs;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: $space-2;
+  border-bottom: 1px solid $color-border;
+
+  button {
+    padding: $space-2 $space-3;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    color: $color-text-muted;
+    background: transparent;
+    cursor: pointer;
+    font-size: $text-sm;
+  }
+
+  button[aria-selected='true'] {
+    border-bottom-color: $color-accent;
+    color: $color-accent-hover;
+    font-weight: 700;
+  }
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: $space-3;
+  align-items: end;
+
+  label {
+    @include flex-col;
+    gap: $space-1;
+    color: $color-text-muted;
+    font-size: $text-xs;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    min-height: 42px;
+    padding: $space-2 $space-3;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    color: $color-text;
+    background: #fff;
+    font: inherit;
+    font-size: $text-sm;
+  }
+}
+
+.submit {
+  min-height: 42px;
+  padding: $space-2 $space-4;
+  border: 0;
+  border-radius: $radius-md;
+  color: #fff;
+  background: $color-accent;
+  cursor: pointer;
+  font-size: $text-sm;
+  font-weight: 700;
+
+  &:disabled { opacity: 0.6; cursor: wait; }
+}
+
+.notice {
+  margin: 0;
+  padding: $space-3 $space-4;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  border-radius: $radius-lg;
+  color: #854d0e;
+  background: rgba(254, 243, 199, 0.65);
+  font-size: $text-sm;
+  line-height: 1.5;
+}
+
+@include max-md {
+  .panel { margin: 0 $space-4 $space-4; padding: $space-4; }
+  .header { flex-direction: column; }
+}

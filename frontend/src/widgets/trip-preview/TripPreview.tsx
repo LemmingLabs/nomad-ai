@@ -4,6 +4,7 @@ import type { TripItinerary } from '../../entities/trip';
 import { TripDayCard } from '../trip-day-card';
 import { TripHeader } from '../trip-header';
 import { RouteTransition } from '../trip-route-block';
+import { OffersSearchPanel } from '../offers-search/OffersSearchPanel';
 import styles from './TripPreview.module.scss';
 
 interface TripPreviewProps {
@@ -11,6 +12,7 @@ interface TripPreviewProps {
   tripId?: number;
   tripTitle?: string;
   destinationName?: string;
+  destinationCountryCode?: string;
   budget?: string;
   actions?: ReactNode;
 }
@@ -20,6 +22,7 @@ export function TripPreview({
   tripId,
   tripTitle,
   destinationName,
+  destinationCountryCode,
   budget,
   actions,
 }: TripPreviewProps) {
@@ -63,6 +66,10 @@ export function TripPreview({
           <p className={styles.warning}>Route details could not be refreshed for this itinerary.</p>
         ) : null}
       </div>
+      <OffersSearchPanel
+        countryCode={destinationCountryCode}
+        destinationCity={itinerary.days[0]?.city ?? ''}
+      />
       <div className={styles.journey}>
         {itinerary.days.map((day) => (
           <Fragment key={day.day}>

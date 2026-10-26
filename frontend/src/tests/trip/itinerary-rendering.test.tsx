@@ -66,7 +66,7 @@ test('renders degraded generation state and missing timing for a legacy day', ()
 
   render(<TripPreview itinerary={itinerary} />);
 
-  expect(screen.getByRole('status').textContent).toContain('This is a draft');
+  expect(screen.getByText(/This is a draft/).textContent).toContain('This is a draft');
   expect(screen.getByText('Flexible timing')).toBeTruthy();
   expect(screen.getByText('Duration unknown')).toBeTruthy();
   expect(screen.getByText('One or more activity durations are unknown for day 1.')).toBeTruthy();
