@@ -10,6 +10,7 @@ import {
 import { ActivityTimeline } from './ActivityTimeline';
 import { DayHero } from './DayHero';
 import { PlaceCandidateCard } from './PlaceCandidateCard';
+import { ReviewedFacts } from './ReviewedFacts';
 import { QuickFacts } from './QuickFacts';
 import styles from './TripDayCard.module.scss';
 
@@ -39,6 +40,7 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
           ) : null}
 
           <PlaceCandidateCard day={day} />
+          <ReviewedFacts facts={day.reviewed_facts} />
 
           <div className={styles.metaGrid}>
             <section className={styles.panel}>
