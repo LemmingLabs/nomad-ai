@@ -24,6 +24,7 @@ export function mapSponsoredPlaceToFormValues(
     description: place.description ?? '',
     country_code: place.country_code ?? 'KG',
     region: place.region ?? '',
+    operating_language: place.operating_language ?? 'en',
     city: place.city ?? '',
     category: place.category ?? '',
     address: place.address ?? '',
@@ -43,6 +44,7 @@ export function mapFormValuesToCreatePayload(
     description: values.description.trim(),
     country_code: values.country_code,
     region: emptyToNull(values.region),
+    operating_language: values.operating_language,
     city: values.city.trim(),
     category: values.category.trim(),
     address: values.address.trim(),
@@ -71,7 +73,7 @@ export function useEnabledDestinationsQuery() {
   return useQuery({
     queryKey: ['destinations', 'enabled'],
     queryFn: async () => {
-      const { data } = await apiClient.get<EnabledDestination[]>('/destinations')
+      const { data } = await apiClient.get<EnabledDestination[]>('/partner-markets')
       return data
     },
   })

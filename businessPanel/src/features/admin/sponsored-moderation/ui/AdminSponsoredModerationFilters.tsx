@@ -20,13 +20,22 @@ export function AdminSponsoredModerationFilters({
 }: AdminSponsoredModerationFiltersProps) {
   return (
     <div className="flex flex-wrap gap-2">
+      <label className="sr-only" htmlFor="moderation-country">Filter by country code</label>
+      <input
+        id="moderation-country"
+        value={value.country_code ?? ''}
+        onChange={(event) => onChange({ ...value, country_code: event.target.value.toUpperCase() || undefined })}
+        placeholder="Country code (for example KG)"
+        maxLength={2}
+        className="rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm"
+      />
       {presets.map((p) => {
         const isActive = value.preset === p.value
         return (
           <button
             key={p.value}
             type="button"
-            onClick={() => onChange({ preset: p.value })}
+            onClick={() => onChange({ ...value, preset: p.value })}
             className={[
               'rounded-md border px-3 py-1.5 text-sm font-medium',
               isActive

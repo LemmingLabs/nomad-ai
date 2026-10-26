@@ -21,6 +21,8 @@ export function AdminSponsoredPlacesTable({
             <th className="px-4 py-3">Title</th>
             <th className="px-4 py-3">Country / region</th>
             <th className="px-4 py-3">City</th>
+            <th className="px-4 py-3">Language</th>
+            <th className="px-4 py-3">Location check</th>
             <th className="px-4 py-3">Category</th>
             <th className="px-4 py-3">Business ID</th>
             <th className="px-4 py-3">Approval</th>
@@ -49,6 +51,12 @@ export function AdminSponsoredPlacesTable({
                   {p.country_code}{p.region ? ` · ${p.region}` : ''}
                 </td>
                 <td className="px-4 py-3 text-neutral-700">{p.city}</td>
+                <td className="px-4 py-3 text-neutral-700">{p.operating_language.toUpperCase()}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge variant={p.location_verified ? 'success' : 'warning'}>
+                    {p.location_verified ? 'Verified' : 'Unverified'}
+                  </StatusBadge>
+                </td>
                 <td className="px-4 py-3 text-neutral-700">{p.category}</td>
                 <td className="px-4 py-3 text-neutral-700">{p.business_id}</td>
                 <td className="px-4 py-3">

@@ -19,7 +19,7 @@ export const queryKeys = {
     },
     sponsoredModeration: {
       root: ['admin', 'sponsoredModeration'] as const,
-      list: (preset: string) => ['admin', 'sponsoredModeration', 'list', preset] as const,
+      list: (preset: string, countryCode = '') => ['admin', 'sponsoredModeration', 'list', preset, countryCode] as const,
       details: (placeId: number) =>
         ['admin', 'sponsoredModeration', 'details', placeId] as const,
     },

@@ -10,6 +10,7 @@ class SponsoredPlaceCreateRequest(BaseModel):
     description: str = Field(min_length=1)
     country_code: str = Field(default="KG", min_length=2, max_length=2)
     region: str | None = Field(default=None, max_length=120)
+    operating_language: str = Field(default="en", min_length=2, max_length=12)
     city: str = Field(min_length=1, max_length=100)
     lat: float
     lng: float
@@ -26,6 +27,7 @@ class SponsoredPlaceUpdateRequest(BaseModel):
     description: str | None = None
     country_code: str | None = Field(default=None, min_length=2, max_length=2)
     region: str | None = Field(default=None, max_length=120)
+    operating_language: str | None = Field(default=None, min_length=2, max_length=12)
     city: str | None = Field(default=None, min_length=1, max_length=100)
     lat: float | None = None
     lng: float | None = None
@@ -47,6 +49,8 @@ class SponsoredPlaceResponse(BaseModel):
     description: str
     country_code: str
     region: str | None
+    operating_language: str
+    location_verified: bool
     city: str
     lat: float
     lng: float

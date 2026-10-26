@@ -12,6 +12,7 @@ from app.models.sponsored_place import SponsoredPlace
 from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlaceMediaType
 from app.models.sponsored_impression import SponsoredImpression
 from app.models.sponsored_interaction import SponsoredInteraction, SponsoredInteractionType
+from app.models.partner_market import PartnerMarket
 
 __all__ = [
     "User",
@@ -32,4 +33,5 @@ __all__ = [
     "SponsoredImpression",
     "SponsoredInteraction",
     "SponsoredInteractionType",
+    "PartnerMarket",
 ]

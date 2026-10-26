@@ -5,6 +5,8 @@ export type AdminSponsoredPlace = {
   description: string
   country_code: string
   region: string | null
+  operating_language: string
+  location_verified: boolean
   city: string
   lat: number
   lng: number
@@ -24,5 +26,6 @@ export type ModerationAction = 'approve' | 'reject' | 'activate' | 'deactivate'
 
 export type AdminSponsoredPlaceListFilters = {
   preset: 'all' | 'pending' | 'approved' | 'inactive'
+  country_code?: string
 }
 
