@@ -1,10 +1,17 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { offersApi, type OfferDemoItem, type OfferSearchRequest } from '../../entities/offers'
 import styles from './OffersSearchPanel.module.scss'
 
 type OffersSearchPanelProps = {
   countryCode?: string
   destinationCity?: string
+}
+
+type AirportReference = {
+  iata: string
+  name: string
+  city: string
+  country_code: string
 }
 
 function dateInputValue(date: Date): string {
@@ -37,6 +44,8 @@ function getUnavailableMessage(error: unknown): string {
 }
 
 export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersSearchPanelProps) {
+  const airportListId = useId()
+  const [airportSuggestions, setAirportSuggestions] = useState<AirportReference[]>([])
   const [kind, setKind] = useState<'flight' | 'stay'>('flight')
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState(destinationCity)
@@ -52,6 +61,15 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   const [successMessage, setSuccessMessage] = useState('')
   const [demoMessage, setDemoMessage] = useState('')
   const [demoOffers, setDemoOffers] = useState<OfferDemoItem[]>([])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    let isCurrent = true
+    void import('../../entities/offers/model/airportReference.json').then(({ default: reference }) => {
+      if (isCurrent) setAirportSuggestions(reference.airports)
+    })
+    return () => { isCurrent = false }
+  }, [])
 
   const clearSearchState = () => {
     setUnavailableMessage('')
@@ -129,10 +147,10 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           {kind === 'flight' ? (
             <>
               <label>Origin airport or city
-                <input required minLength={2} maxLength={120} value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="e.g. Almaty or ALA" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="e.g. Almaty or ALA" />
               </label>
               <label>Arrival airport or city
-                <input required minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination city or airport" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination city or airport" />
               </label>
               <label>Departure
                 <input required type="date" min={futureDate(0)} value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} />
@@ -143,6 +161,22 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
               <label>Passengers
                 <input required type="number" min={1} max={9} value={passengers} onChange={(event) => setPassengers(Number(event.target.value))} />
               </label>
+              {import.meta.env.DEV && airportSuggestions.length > 0 ? (
+                <>
+                  <datalist id={airportListId}>
+                    {airportSuggestions.map((airport) => (
+                      <option
+                        key={airport.iata}
+                        value={`${airport.iata} — ${airport.city}`}
+                        label={`${airport.name} · ${airport.country_code}`}
+                      />
+                    ))}
+                  </datalist>
+                  <p className={styles.referenceNote}>
+                    Development airport suggestions from OurAirports; schedules and prices are not checked.
+                  </p>
+                </>
+              ) : null}
             </>
           ) : (
             <>

@@ -84,3 +84,10 @@ test('shows clearly labeled demo examples without a supplier handoff', async () 
   expect(screen.getByText(/Example total:/).textContent).toContain('$250.00')
   expect(screen.getByText('NomadAI demo fixture · no supplier link')).toBeTruthy()
 })
+
+test('loads local OurAirports suggestions in the development environment', async () => {
+  renderPanel()
+
+  expect(await screen.findByText(/Development airport suggestions from OurAirports/)).toBeTruthy()
+  expect(document.querySelector('datalist option[value="ALA — Almaty"]')).toBeTruthy()
+})
