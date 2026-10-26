@@ -24,7 +24,7 @@ test('submits flight search inputs and displays disabled provider response witho
   })
   renderPanel()
 
-  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA — Almaty')
   await user.click(screen.getByRole('button', { name: 'Search flights' }))
 
   expect((await screen.findByRole('status')).textContent).toContain('Flight and stay offers are not available yet.')
