@@ -58,3 +58,5 @@ Before calling the results comparable, use the same traveler count, dates, curre
 4. Product/engineering review that evidence and choose one provider path and market before OFFERS-02. If the contracting entity is ineligible, the provider declines access, or coverage/terms fail the sample, defer the feature and do not build an unconnected mock integration.
 
 **Current decision:** no provider is production-approved; **defer OFFERS-02** until the above gates are met. The Booking.com/Skyscanner options are recommendations for partner applications and evidence gathering, not authorization to enable live offers.
+
+The API currently has a provider-independent search contract guarded by `OFFERS_ENABLED=false`. It returns an explicit unavailable response and makes no provider calls. This disabled boundary is preparatory only: it does not provide offers, select a provider, or change the approval gate above.
