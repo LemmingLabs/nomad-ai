@@ -85,9 +85,12 @@ function LocationPickerInner({
 
   useEffect(() => {
     if (position || !map || !destination) return
-    map.panTo(center)
+    map.panTo({
+      lat: destination.center_latitude,
+      lng: destination.center_longitude,
+    })
     map.setZoom(defaultZoom)
-  }, [center.lat, center.lng, destination?.country_code, map, position])
+  }, [destination, map, position])
 
   useEffect(() => {
     if (
