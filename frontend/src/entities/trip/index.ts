@@ -11,6 +11,7 @@ export type {
   SponsoredPlace,
   SponsoredPlacePayload,
   TripRoute,
+  TripReviewedFact,
   TripImage,
   TripImages,
 } from './model/types';

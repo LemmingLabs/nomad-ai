@@ -49,6 +49,17 @@ class TripActivityResponse(BaseModel):
         return normalized
 
 
+class ReviewedFactResponse(BaseModel):
+    subject_type: Literal["place", "route"]
+    fact_type: str
+    value: str
+    source_name: str
+    source_url: str
+    attribution_text: str
+    checked_at: str
+    verification_status: Literal["reviewed"]
+
+
 class TripDayResponse(BaseModel):
     day: int = 1
     title: str = ""
@@ -56,6 +67,7 @@ class TripDayResponse(BaseModel):
     location: str = "Unknown location"
     routing_location: str | None = None
     activities: list[TripActivityResponse] = Field(default_factory=list)
+    reviewed_facts: list[ReviewedFactResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="allow")
 

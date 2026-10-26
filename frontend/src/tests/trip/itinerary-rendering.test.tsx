@@ -71,3 +71,33 @@ test('renders degraded generation state and missing timing for a legacy day', ()
   expect(screen.getByText('Duration unknown')).toBeTruthy();
   expect(screen.getByText('One or more activity durations are unknown for day 1.')).toBeTruthy();
 });
+
+test('renders source attribution for fact-level reviewed information', () => {
+  const itinerary: TripItinerary = {
+    days: [{
+      day: 1,
+      title: 'Trail day',
+      city: 'Karakol',
+      location: 'Ala-Kul trail',
+      activities: [],
+      reviewed_facts: [{
+        subject_type: 'route',
+        fact_type: 'permit_required',
+        value: 'A permit is required for this route.',
+        source_name: 'Park authority',
+        source_url: 'https://example.com/permits',
+        attribution_text: 'Source: Park authority',
+        checked_at: '2026-10-20T10:00:00Z',
+        verification_status: 'reviewed',
+      }],
+    }],
+  };
+
+  render(<TripPreview itinerary={itinerary} />);
+
+  expect(screen.getByRole('region', { name: 'Source-reviewed facts' })).toBeTruthy();
+  expect(screen.getByText('A permit is required for this route.')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Source: Park authority' }).getAttribute('href'))
+    .toBe('https://example.com/permits');
+  expect(screen.getByText(/Checked/)).toBeTruthy();
+});

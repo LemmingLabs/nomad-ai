@@ -838,6 +838,11 @@ def generate_trip(
         for activity in activities:
             if isinstance(activity, dict):
                 activity["content_status"] = content_status
+    from app.services.knowledge_provenance_service import KnowledgeProvenanceService
+
+    enriched_itinerary = KnowledgeProvenanceService(db).attach_facts_to_itinerary(
+        enriched_itinerary, destination.country_code
+    )
     validate_itinerary_quality(enriched_itinerary, destination.country_code)
     cleaned_itinerary = enriched_itinerary
 
