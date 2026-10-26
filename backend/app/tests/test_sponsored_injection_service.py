@@ -147,7 +147,7 @@ def test_sponsored_injection_matches_country_before_same_named_city(db_session):
 
 
 def test_sponsored_injection_rejects_same_city_in_different_region(db_session):
-    place = _create_sponsored_place(db_session, city="Springfield", region="Illinois")
+    _create_sponsored_place(db_session, city="Springfield", region="Illinois")
     service = SponsoredInjectionService(db_session)
 
     candidate = service._pick_best_candidate(
