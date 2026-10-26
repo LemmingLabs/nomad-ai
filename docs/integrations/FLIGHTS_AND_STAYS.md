@@ -8,6 +8,10 @@ Keep travel offers out of implementation until NomadAI confirms the legal entity
 
 The narrowest practical candidate is **accommodation search for a stay in Bishkek, with search, details, and redirect to Booking.com Demand API**, subject to managed-affiliate approval and a production sample. For flights, **Skyscanner Travel APIs** are a separate candidate, subject to partnership approval and route samples. Booking.com lists flights as “coming soon”; do not plan a single Booking.com connection for both domains. These are candidates only, not a provider decision to launch.
 
+### Public entity identity lead (unconfirmed)
+
+Public brand pages connect Lemming Labs with ATBOSH Media Ltd: the [Lemming Labs site](https://lemminglabs.com/) calls it “A division of ATBOSH Media Ltd.” and also says it is “becoming part” of ATBOSH, while describing “Lemming Labs Limited”; the [ATBOSH Media site](https://atbosh.com/) describes ATBOSH as based in Cleveland, Ohio and lists Lemming Labs as an affiliation. This is inconsistent transition wording and does not establish which entity owns or operates NomadAI, which entity would sign a travel-provider agreement, or either entity’s formal jurisdiction and status. Treat ATBOSH Media Ltd only as a lead for product/finance to verify against incorporation and partner-contract documents. Do not use it as evidence of provider eligibility.
+
 No representative provider search was run: the repository has no provider integration or test credentials, and partner sandbox access requires approved partner credentials. The provider documentation contains example/sandbox records, but those are not evidence of Kyrgyzstan inventory or production access. No credentials, personal data, or provider payloads were added to the repository.
 
 ## Provider comparison
@@ -27,7 +31,7 @@ No representative provider search was run: the repository has no provider integr
 - Travelpayouts documents the Aviasales [Search API audience gate](https://support.travelpayouts.com/hc/en-us/articles/210995808-How-to-get-access-to-the-Aviasales-Search-API), [cached Data API](https://support.travelpayouts.com/hc/en-us/articles/203956163-Aviasales-Data-API), and [program-dependent commissions](https://support.travelpayouts.com/hc/en-us/articles/203955593-What-is-Travelpayouts-and-how-it-works). Its public rates are typical examples, not a quote or a confirmed NomadAI rate.
 - Amadeus’ [pricing documentation](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/pricing/) and [FAQ](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/faq/) distinguish limited test data from live production data and describe pay-as-you-go charges and dataset limitations. Its [hotel tutorial](https://admin.developers.amadeus.com/self-service/apis-docs/guides/developer-guides/resources/hotels/) documents time-sensitive room availability and prices.
 
-No reviewed public provider documentation gives NomadAI’s signed commission percentage, production quota, all cache/retention rules, current Kyrgyzstan route/property results, or the legal entity’s eligibility. Those are partner-specific checks. Publicly published market counts must not be interpreted as coverage for a particular route.
+No reviewed public provider documentation gives NomadAI’s signed commission percentage, production quota, all cache/retention rules, current Kyrgyzstan route/property results, or the legal entity’s eligibility. The public brand pages provide an unconfirmed ATBOSH Media Ltd lead only; product/finance must confirm NomadAI’s operating and contracting entity, formal jurisdiction, authority to contract, and target user/origin markets. Those are partner-specific checks. Publicly published market counts must not be interpreted as coverage for a particular route.
 
 ## Proposed sample matrix before any selection
 
