@@ -25,10 +25,11 @@ export function BusinessAnalyticsOverviewCards({
   const ctr = calculateCTR(overview.interactions_count, overview.impressions_count)
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
       <StatCard label="Impressions" value={String(overview.impressions_count)} />
       <StatCard label="Interactions" value={String(overview.interactions_count)} />
       <StatCard label="CTR" value={formatCTR(ctr)} />
+      <StatCard label="Markets" value={overview.country_codes?.join(', ') || '—'} />
     </div>
   )
 }

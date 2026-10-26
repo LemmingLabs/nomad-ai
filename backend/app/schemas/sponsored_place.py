@@ -8,6 +8,8 @@ from app.schemas.sponsored_place_media import SponsoredPlaceMediaResponse
 class SponsoredPlaceCreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     description: str = Field(min_length=1)
+    country_code: str = Field(default="KG", min_length=2, max_length=2)
+    region: str | None = Field(default=None, max_length=120)
     city: str = Field(min_length=1, max_length=100)
     lat: float
     lng: float
@@ -22,6 +24,8 @@ class SponsoredPlaceCreateRequest(BaseModel):
 class SponsoredPlaceUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
+    country_code: str | None = Field(default=None, min_length=2, max_length=2)
+    region: str | None = Field(default=None, max_length=120)
     city: str | None = Field(default=None, min_length=1, max_length=100)
     lat: float | None = None
     lng: float | None = None
@@ -41,6 +45,8 @@ class SponsoredPlaceResponse(BaseModel):
     business_id: int
     title: str
     description: str
+    country_code: str
+    region: str | None
     city: str
     lat: float
     lng: float

@@ -48,6 +48,8 @@ export function AdminSponsoredPlaceDetailsCard({
 
       <Row label="ID" value={String(place.id)} />
       <Row label="Business ID" value={String(place.business_id)} />
+      <Row label="Country" value={place.country_code} />
+      <Row label="Region / province" value={place.region ?? '—'} />
       <Row label="City" value={place.city} />
       <Row label="Category" value={place.category} />
       <Row label="Address" value={place.address} />

@@ -331,6 +331,7 @@ class TripMessageService:
                     enriched_itinerary = SponsoredInjectionService(self.db).inject_sponsored_places(
                         enriched_itinerary,
                         trip_id=trip.id,
+                        country_code=destination.country_code,
                     )
                 except Exception as exc:
                     logger.exception("Sponsored injection failed on update: %s", exc)

@@ -5,6 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BusinessSponsoredPlacesPage } from '../../src/pages/business/BusinessSponsoredPlacesPage'
 import { sponsoredPlacesApi } from '../../src/features/business/sponsored-places/api/sponsoredPlaces.api'
 
+const { getDestinations } = vi.hoisted(() => ({ getDestinations: vi.fn() }))
+
+vi.mock('../../src/shared/api/client', () => ({
+  apiClient: { get: getDestinations },
+}))
 vi.mock('../../src/features/business/sponsored-places/api/sponsoredPlaces.api', () => ({
   sponsoredPlacesApi: {
     getSponsoredPlaces: vi.fn(),
@@ -15,9 +20,9 @@ vi.mock('../../src/features/business/sponsored-places/api/sponsoredPlaces.api', 
 }))
 vi.mock('../../src/features/business/sponsored-places/ui/SponsoredPlaceLocationPicker', () => ({
   SponsoredPlaceLocationPicker: ({ onChange }: {
-    onChange: (location: { lat: string; lng: string; address: string; city: string }) => void
+    onChange: (location: { lat: string; lng: string; address: string; city: string; region: string }) => void
   }) => <button type="button" onClick={() => onChange({
-    lat: '42.8746', lng: '74.5698', address: 'Ala-Too Square', city: 'Bishkek',
+    lat: '42.8746', lng: '74.5698', address: 'Ala-Too Square', city: 'Bishkek', region: '',
   })}>Select Bishkek</button>,
 }))
 
@@ -25,6 +30,12 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
 })
+
+const enabledDestinations = [{
+  id: 'kg', country_code: 'KG', country_name: 'Kyrgyzstan', name: 'Kyrgyzstan',
+  enabled: true, center_latitude: 42.8746, center_longitude: 74.5698,
+  bounds: { north: 43.3, south: 39.1, east: 80.4, west: 69.2 }, phone_calling_code: '996',
+}]
 
 const place = {
   id: 17, business_id: 3, title: 'City Walk', description: 'Guided route', city: 'Bishkek',
@@ -34,6 +45,7 @@ const place = {
 
 test('creates a sponsored place with map coordinates and refreshes the list', async () => {
   const user = userEvent.setup()
+  getDestinations.mockResolvedValue({ data: enabledDestinations })
   let places = [] as typeof place[]
   vi.mocked(sponsoredPlacesApi.getSponsoredPlaces).mockImplementation(async () => places)
   vi.mocked(sponsoredPlacesApi.createSponsoredPlace).mockImplementation(async () => {
@@ -69,6 +81,7 @@ test('creates a sponsored place with map coordinates and refreshes the list', as
 
 test('edits a place and asks for confirmation before deactivation', async () => {
   const user = userEvent.setup()
+  getDestinations.mockResolvedValue({ data: enabledDestinations })
   vi.mocked(sponsoredPlacesApi.getSponsoredPlaces).mockResolvedValue([place])
   vi.mocked(sponsoredPlacesApi.updateSponsoredPlace).mockResolvedValue(place)
   vi.mocked(sponsoredPlacesApi.deleteSponsoredPlace).mockResolvedValue(undefined)

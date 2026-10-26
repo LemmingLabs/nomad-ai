@@ -10,20 +10,23 @@ import {
 } from '@vis.gl/react-google-maps'
 
 import { env } from '../../../../shared/config/env'
-import type { SponsoredPlaceLocationValue } from '../model/sponsoredPlaces.types'
+import type {
+  EnabledDestination,
+  SponsoredPlaceLocationValue,
+} from '../model/sponsoredPlaces.types'
 import {
-  BISHKEK_CENTER,
+  extractCountryCodeFromAddressComponents,
   extractCityFromAddressComponents,
-  isWithinKyrgyzstan,
-  KYRGYZSTAN_BOUNDS,
+  extractRegionFromAddressComponents,
+  isWithinBounds,
 } from '../model/sponsoredPlaces.utils'
 
-const defaultCenter = BISHKEK_CENTER
 const defaultZoom = 7
 const selectedZoom = 15
 
 type SponsoredPlaceLocationPickerProps = {
   value: SponsoredPlaceLocationValue
+  destination?: EnabledDestination
   disabled?: boolean
   shouldAutofillCity?: boolean
   onChange: (value: SponsoredPlaceLocationValue) => void
@@ -47,6 +50,7 @@ function getPosition(value: SponsoredPlaceLocationValue) {
 
 function LocationPickerInner({
   value,
+  destination,
   disabled,
   shouldAutofillCity = true,
   onChange,
@@ -63,6 +67,9 @@ function LocationPickerInner({
   const [isMapReady, setIsMapReady] = useState(false)
 
   const position = useMemo(() => getPosition(value), [value])
+  const center = destination
+    ? { lat: destination.center_latitude, lng: destination.center_longitude }
+    : { lat: 42.8746, lng: 74.5698 }
 
   useEffect(() => {
     if (autocompleteRef.current) {
@@ -77,8 +84,15 @@ function LocationPickerInner({
   }, [position, map])
 
   useEffect(() => {
+    if (position || !map || !destination) return
+    map.panTo(center)
+    map.setZoom(defaultZoom)
+  }, [center.lat, center.lng, destination?.country_code, map, position])
+
+  useEffect(() => {
     if (
       !placesLibrary ||
+      !destination ||
       !autocompleteContainerRef.current ||
       autocompleteRef.current
     ) {
@@ -88,12 +102,12 @@ function LocationPickerInner({
     const autocompleteContainer = autocompleteContainerRef.current
     try {
       const autocomplete = new google.maps.places.PlaceAutocompleteElement({
-        includedRegionCodes: ['kg'],
-        locationRestriction: KYRGYZSTAN_BOUNDS,
-        requestedRegion: 'kg',
+        includedRegionCodes: [destination.country_code.toLowerCase()],
+        locationRestriction: destination.bounds,
+        requestedRegion: destination.country_code.toLowerCase(),
         value: value.address,
       })
-      autocomplete.placeholder = 'Search address in Kyrgyzstan'
+      autocomplete.placeholder = `Search address in ${destination.country_name}`
 
       autocompleteRef.current = autocomplete
       autocompleteContainer.replaceChildren(autocomplete)
@@ -114,9 +128,15 @@ function LocationPickerInner({
 
         const lat = location.lat()
         const lng = location.lng()
+        const selectedCountryCode = extractCountryCodeFromAddressComponents(
+          place.addressComponents,
+        )
 
-        if (!isWithinKyrgyzstan(lat, lng)) {
-          setPickerError('Please select a location in Kyrgyzstan.')
+        if (
+          selectedCountryCode !== destination.country_code ||
+          !isWithinBounds(lat, lng, destination.bounds)
+        ) {
+          setPickerError(`Please select a location in ${destination.country_name}.`)
           return
         }
 
@@ -128,6 +148,7 @@ function LocationPickerInner({
             shouldAutofillCity && value.city.trim() === ''
               ? extractCityFromAddressComponents(place.addressComponents)
               : value.city,
+          region: extractRegionFromAddressComponents(place.addressComponents),
         })
 
         map?.panTo({ lat, lng })
@@ -150,7 +171,7 @@ function LocationPickerInner({
       autocompleteRef.current = null
       return () => cancelAnimationFrame(errorFrame)
     }
-  }, [map, onChange, placesLibrary, shouldAutofillCity, value.address, value.city])
+  }, [destination, map, onChange, placesLibrary, shouldAutofillCity, value.address, value.city])
 
   const handleMapClick = async (event: MapMouseEvent) => {
     const latLng = event.detail.latLng
@@ -159,19 +180,12 @@ function LocationPickerInner({
     const lat = latLng.lat
     const lng = latLng.lng
 
-    if (!isWithinKyrgyzstan(lat, lng)) {
-      setPickerError('Please select a location in Kyrgyzstan.')
+    if (!destination || !isWithinBounds(lat, lng, destination.bounds)) {
+      setPickerError(`Please select a location in ${destination?.country_name ?? 'the selected country'}.`)
       return
     }
 
     setIsResolvingAddress(true)
-    onChange({
-      lat: String(lat),
-      lng: String(lng),
-      address: value.address,
-      city: value.city,
-    })
-
     map?.panTo({ lat, lng })
     map?.setZoom(selectedZoom)
 
@@ -182,6 +196,13 @@ function LocationPickerInner({
       })
 
       const result = response.results?.[0]
+      if (
+        extractCountryCodeFromAddressComponents(result?.address_components) !==
+        destination.country_code
+      ) {
+        setPickerError(`Please select a location in ${destination.country_name}.`)
+        return
+      }
       const extractedCity = extractCityFromAddressComponents(
         result?.address_components,
       )
@@ -191,6 +212,8 @@ function LocationPickerInner({
         lng: String(lng),
         address: result?.formatted_address ?? value.address,
         city: extractedCity || value.city,
+        region:
+          extractRegionFromAddressComponents(result?.address_components) || value.region,
       })
 
       setPickerError(null)
@@ -219,7 +242,9 @@ function LocationPickerInner({
           <p className="text-xs text-red-600">{searchInitError}</p>
         ) : null}
         <p className="text-xs text-neutral-500">
-          Search a place, then click the map to fine-tune the exact point.
+          {destination
+            ? `Search a place in ${destination.country_name}, then click the map to fine-tune the point.`
+            : 'Select a country to load its location picker.'}
         </p>
       </div>
 
@@ -232,16 +257,15 @@ function LocationPickerInner({
         <Map
           mapId={env.googleMapsMapId}
           style={{ width: '100%', height: 320 }}
-          defaultCenter={position ?? defaultCenter}
+          defaultCenter={position ?? center}
           defaultZoom={position ? selectedZoom : defaultZoom}
           draggable
           minZoom={6}
           gestureHandling="greedy"
           disableDefaultUI={false}
-          restriction={{
-            latLngBounds: KYRGYZSTAN_BOUNDS,
-            strictBounds: false,
-          }}
+          restriction={destination
+            ? { latLngBounds: destination.bounds, strictBounds: true }
+            : undefined}
           onClick={handleMapClick}
           onTilesLoaded={() => setIsMapReady(true)}
         >

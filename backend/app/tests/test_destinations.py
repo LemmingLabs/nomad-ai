@@ -14,6 +14,10 @@ def test_destination_catalog_lists_only_enabled_destinations():
         "country_name": "Kyrgyzstan",
         "name": "Kyrgyzstan",
         "enabled": True,
+        "center_latitude": 42.8746,
+        "center_longitude": 74.5698,
+        "bounds": {"north": 43.3, "south": 39.1, "east": 80.4, "west": 69.2},
+        "phone_calling_code": "996",
     }]
 
 

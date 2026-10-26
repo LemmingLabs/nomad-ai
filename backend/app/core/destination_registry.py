@@ -13,6 +13,8 @@ class Destination:
     supported_cities: tuple[str, ...]
     center_latitude: float
     center_longitude: float
+    bounds: tuple[float, float, float, float]
+    phone_calling_code: str
 
 
 DESTINATIONS: tuple[Destination, ...] = (
@@ -37,6 +39,8 @@ DESTINATIONS: tuple[Destination, ...] = (
         ),
         center_latitude=42.8746,
         center_longitude=74.5698,
+        bounds=(43.3, 39.1, 80.4, 69.2),
+        phone_calling_code="996",
     ),
 )
 

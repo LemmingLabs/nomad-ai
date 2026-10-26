@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const kyrgyzPhoneRegex = /^\+996\s\d{3}\s\d{3}\s\d{3}$/
+const internationalPhoneRegex = /^\+\d{1,3}(?:\s\d{2,4}){1,4}$/
 
 const emptyOrUrl = z
   .string()
@@ -12,8 +12,8 @@ const emptyOrUrl = z
 const emptyOrPhone = z
   .string()
   .trim()
-  .refine((value) => value === '' || kyrgyzPhoneRegex.test(value), {
-    message: 'Phone must be in format +996 XXX XXX XXX',
+  .refine((value) => value === '' || internationalPhoneRegex.test(value), {
+    message: 'Enter a phone number with the selected country calling code',
   })
 
 const locationNumberString = () =>
@@ -25,6 +25,8 @@ const locationNumberString = () =>
     })
 
 export const sponsoredPlaceFormSchema = z.object({
+  country_code: z.string().length(2),
+  region: z.string().trim(),
   title: z.string().trim().min(1, 'Title is required'),
   description: z.string().trim().min(1, 'Description is required'),
   city: z.string().trim().min(1, 'City is required'),

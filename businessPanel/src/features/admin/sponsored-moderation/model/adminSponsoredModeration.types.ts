@@ -3,6 +3,8 @@ export type AdminSponsoredPlace = {
   business_id: number
   title: string
   description: string
+  country_code: string
+  region: string | null
   city: string
   lat: number
   lng: number

@@ -14,7 +14,9 @@ class SponsoredReportingService:
         self.place_repo = SponsoredPlaceRepository(db)
         self.analytics_repo = SponsoredAnalyticsRepository(db)
 
-    def business_overview_for_me(self, current_user: User) -> tuple[int, int, int, dict[str, int]]:
+    def business_overview_for_me(
+        self, current_user: User
+    ) -> tuple[int, int, int, dict[str, int], list[str]]:
         business = self.business_repo.get_by_owner_id(current_user.id)
         if business is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business profile not found")
@@ -22,9 +24,12 @@ class SponsoredReportingService:
         impressions = self.analytics_repo.count_impressions_for_business(business.id)
         interactions = self.analytics_repo.count_interactions_for_business(business.id)
         breakdown = self.analytics_repo.interactions_breakdown_for_business(business.id)
-        return business.id, impressions, interactions, breakdown
+        country_codes = self.place_repo.country_codes_for_business(business.id)
+        return business.id, impressions, interactions, breakdown, country_codes
 
-    def sponsored_place_stats_for_me(self, current_user: User, sponsored_place_id: int) -> tuple[int, int, dict[str, int]]:
+    def sponsored_place_stats_for_me(
+        self, current_user: User, sponsored_place_id: int
+    ) -> tuple[int, int, dict[str, int], str]:
         business = self.business_repo.get_by_owner_id(current_user.id)
         if business is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business profile not found")
@@ -36,9 +41,11 @@ class SponsoredReportingService:
         impressions = self.analytics_repo.count_impressions_for_place(place.id)
         interactions = self.analytics_repo.count_interactions_for_place(place.id)
         breakdown = self.analytics_repo.interactions_breakdown_for_place(place.id)
-        return impressions, interactions, breakdown
+        return impressions, interactions, breakdown, place.country_code
 
-    def admin_business_stats(self, business_id: int) -> tuple[int, int, dict[str, int]]:
+    def admin_business_stats(
+        self, business_id: int
+    ) -> tuple[int, int, dict[str, int], list[str]]:
         business = self.business_repo.get_by_id(business_id)
         if business is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Business not found")
@@ -46,9 +53,12 @@ class SponsoredReportingService:
         impressions = self.analytics_repo.count_impressions_for_business(business.id)
         interactions = self.analytics_repo.count_interactions_for_business(business.id)
         breakdown = self.analytics_repo.interactions_breakdown_for_business(business.id)
-        return impressions, interactions, breakdown
+        country_codes = self.place_repo.country_codes_for_business(business.id)
+        return impressions, interactions, breakdown, country_codes
 
-    def admin_place_stats(self, sponsored_place_id: int) -> tuple[int, int, dict[str, int]]:
+    def admin_place_stats(
+        self, sponsored_place_id: int
+    ) -> tuple[int, int, dict[str, int], str]:
         place = self.place_repo.get_by_id(sponsored_place_id)
         if place is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsored place not found")
@@ -56,4 +66,4 @@ class SponsoredReportingService:
         impressions = self.analytics_repo.count_impressions_for_place(place.id)
         interactions = self.analytics_repo.count_interactions_for_place(place.id)
         breakdown = self.analytics_repo.interactions_breakdown_for_place(place.id)
-        return impressions, interactions, breakdown
+        return impressions, interactions, breakdown, place.country_code

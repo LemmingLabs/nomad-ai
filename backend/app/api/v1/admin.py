@@ -115,12 +115,13 @@ def admin_business_analytics(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> BusinessAnalyticsOverviewResponse:
-    impressions, interactions, breakdown = SponsoredReportingService(db).admin_business_stats(business_id)
+    impressions, interactions, breakdown, country_codes = SponsoredReportingService(db).admin_business_stats(business_id)
     return BusinessAnalyticsOverviewResponse(
         business_id=business_id,
         impressions_count=impressions,
         interactions_count=interactions,
         interactions_by_type=breakdown,
+        country_codes=country_codes,
     )
 
 
@@ -130,12 +131,13 @@ def admin_sponsored_place_analytics(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> SponsoredPlaceAnalyticsResponse:
-    impressions, interactions, breakdown = SponsoredReportingService(db).admin_place_stats(place_id)
+    impressions, interactions, breakdown, country_code = SponsoredReportingService(db).admin_place_stats(place_id)
     return SponsoredPlaceAnalyticsResponse(
         sponsored_place_id=place_id,
         impressions_count=impressions,
         interactions_count=interactions,
         interactions_by_type=breakdown,
+        country_code=country_code,
     )
 
 
