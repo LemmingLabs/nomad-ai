@@ -36,15 +36,33 @@ export function TripPreview({
   return (
     <div className={styles.preview}>
       <TripHeader
-        title={tripTitle ?? itinerary.summary}
+        title={tripTitle ?? itinerary.summary ?? 'Your itinerary'}
         destinationName={destinationName}
         totalDays={itinerary.total_days || itinerary.days.length}
-        summary={itinerary.summary}
+        summary={itinerary.summary ?? ''}
         budget={budget}
         travelStyle={itinerary.travel_style}
         interests={itinerary.interests}
         actions={actions}
       />
+      <div className={styles.guidance}>
+        {itinerary.generation_status?.state === 'degraded' ? (
+          <p className={styles.degradedNotice} role="status">
+            This is a draft because AI or route data was unavailable. Review the warnings and confirm logistics before relying on it.
+          </p>
+        ) : null}
+        <p className={styles.suggestionNotice}>
+          Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open.
+        </p>
+        {itinerary.quality_warnings?.map((warning, index) => (
+          <p className={styles.warning} key={`${warning.code}-${warning.day ?? index}`}>
+            {warning.message}
+          </p>
+        ))}
+        {itinerary.route_status === 'unavailable' ? (
+          <p className={styles.warning}>Route details could not be refreshed for this itinerary.</p>
+        ) : null}
+      </div>
       <div className={styles.journey}>
         {itinerary.days.map((day) => (
           <Fragment key={day.day}>

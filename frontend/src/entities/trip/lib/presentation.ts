@@ -114,6 +114,10 @@ export function isRouteAvailable(route?: TripRoute | null): boolean {
     return false;
   }
 
+  if (route.status === 'unavailable' || route.status === 'stale') {
+    return false;
+  }
+
   return !(
     route.transport_type === 'unknown' ||
     (route.distance_km === 0 && route.duration_mins === 0)

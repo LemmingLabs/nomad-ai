@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.schemas.trip_message import TripMessageListResponse
+from app.schemas.itinerary import TripItineraryResponse
 from app.core.destination_registry import (
     DEFAULT_COUNTRY_CODE,
     DEFAULT_DESTINATION_ID,
@@ -44,7 +45,7 @@ class TripResponse(BaseModel):
     country_code: str
     destination_id: str
     destination_name: str
-    itinerary_json: dict
+    itinerary_json: TripItineraryResponse
     created_at: datetime
     updated_at: datetime
 

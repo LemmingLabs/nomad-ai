@@ -107,6 +107,14 @@
   line-height: 1.65;
 }
 
+.details {
+  margin: $space-3 0 0;
+  padding-left: $space-5;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.55;
+}
+
 .emptyState {
   padding: $space-5;
   border-radius: $radius-2xl;

@@ -106,7 +106,7 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
                 </div>
                 <div className={styles.infoItem}>
                   <dt>Planned moments</dt>
-                  <dd>{day.activities.length} curated stops</dd>
+                  <dd>{day.activities.length} planned activities</dd>
                 </div>
                 <div className={styles.infoItem}>
                   <dt>Travel focus</dt>

@@ -17,6 +17,34 @@
   padding: $space-6 $space-8 $space-12;
 }
 
+.guidance {
+  @include flex-col;
+  gap: $space-2;
+  padding: 0 $space-8;
+}
+
+.suggestionNotice,
+.degradedNotice,
+.warning {
+  margin: 0;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  font-size: $text-sm;
+  line-height: 1.5;
+}
+
+.suggestionNotice {
+  color: $color-text-muted;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.degradedNotice,
+.warning {
+  color: #854d0e;
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  background: rgba(254, 243, 199, 0.65);
+}
+
 .empty {
   @include flex-col;
   @include flex-center;
@@ -35,5 +63,9 @@
 @include max-md {
   .journey {
     padding: $space-5 $space-4 $space-10;
+  }
+
+  .guidance {
+    padding: 0 $space-4;
   }
 }

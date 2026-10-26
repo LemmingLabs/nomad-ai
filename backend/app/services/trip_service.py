@@ -21,6 +21,7 @@ from app.core.destination_registry import (
 from app.services.limit_service import LimitService
 from app.services.place_candidate_service import get_place_candidate_service
 from app.services.usage_service import UsageService
+from app.services.itinerary_quality_service import validate_itinerary_quality
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,13 @@ def _build_initial_assistant_message(
     days: int,
     travel_style: str,
 ) -> str:
+    generation_status = (itinerary_json or {}).get("generation_status") or {}
+    if generation_status.get("state") == "degraded":
+        return (
+            "Some planning services did not complete. I saved a clearly marked draft so you can review it; "
+            "its timing or route details may be incomplete."
+        )
+
     text = (assistant_text or "").strip()
     if text:
         return text
@@ -171,7 +179,10 @@ def normalize_generated_itinerary(
     if not isinstance(itinerary, dict):
         return itinerary, title or f"{days}-Day Trip"
 
-    valid_types = {"sightseeing", "activity", "meal"}
+    for metadata_key in ("generation_status", "quality_warnings", "route_status"):
+        itinerary.pop(metadata_key, None)
+
+    valid_types = {"sightseeing", "activity", "meal", "transfer", "rest", "alternative"}
     days_list = itinerary.get("days", [])
     seen_cities = []
 
@@ -189,6 +200,21 @@ def normalize_generated_itinerary(
                             act_type = str(act.get("type", "")).lower().strip()
                             if act_type not in valid_types:
                                 act["type"] = "activity"
+                            duration = act.get("duration_minutes")
+                            if not isinstance(duration, int) or isinstance(duration, bool) or duration <= 0:
+                                act["duration_minutes"] = None
+                                act["duration_status"] = "unknown"
+                            else:
+                                act["duration_status"] = "estimated"
+                            if not isinstance(act.get("time_window"), str):
+                                act["time_window"] = None
+                            practical_details = act.get("practical_details")
+                            act["practical_details"] = (
+                                [str(detail) for detail in practical_details if detail]
+                                if isinstance(practical_details, list)
+                                else []
+                            )
+                            act.setdefault("content_status", "ai_suggestion")
 
                 vague_locations = [
                     "city center", "downtown", "old town", "local area", 
@@ -666,6 +692,8 @@ def generate_trip(
     title = None
     itinerary = None
     assistant_text = None
+    generation_status = {"state": "complete", "source": "ai", "reasons": []}
+    generation_reasons: list[str] = []
     
     try:
         ai_result = ai_service.generate_initial_trip(
@@ -678,6 +706,13 @@ def generate_trip(
             destination_id=destination.id,
         )
         if isinstance(ai_result, dict):
+            provider_status = ai_result.get("_provider_status")
+            if isinstance(provider_status, dict) and provider_status.get("source") == "mock":
+                generation_status = {
+                    "state": "degraded",
+                    "source": "mock",
+                    "reasons": [str(provider_status.get("reason") or "provider_unavailable")],
+                }
             title = ai_result.get("title")
             candidate_itinerary = ai_result.get("itinerary")
             if isinstance(candidate_itinerary, dict) and "days" in candidate_itinerary:
@@ -691,9 +726,19 @@ def generate_trip(
                 assistant_text = candidate_message.strip()
     except Exception as exc:
         print(f"AI initial generation failed: {exc}")
+        generation_status = {
+            "state": "degraded",
+            "source": "mock",
+            "reasons": ["ai_generation_failed"],
+        }
 
     if not itinerary:
         itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+        generation_status = {
+            "state": "degraded",
+            "source": "mock",
+            "reasons": ["ai_generation_failed"],
+        }
 
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
@@ -724,6 +769,7 @@ def generate_trip(
         )
     except Exception as exc:
         print(f"Place candidate enrichment failed: {exc}")
+        generation_reasons.append("place_enrichment_unavailable")
 
     catalog_service = CatalogService(db)
     enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(
@@ -746,6 +792,10 @@ def generate_trip(
         )
     except Exception as exc:
         print(f"Routing enrichment failed: {exc}")
+        enriched_itinerary["route_status"] = "unavailable"
+        generation_reasons.append("routing_unavailable")
+    if enriched_itinerary.get("route_status") == "unavailable":
+        generation_reasons.append("route_metrics_unavailable")
 
     from app.services.image_enrichment_service import ImageEnrichmentService
     try:
@@ -756,6 +806,7 @@ def generate_trip(
         )
     except Exception as exc:
         print(f"Image enrichment failed: {exc}")
+        generation_reasons.append("image_enrichment_unavailable")
 
     from app.services.sponsored_injection_service import SponsoredInjectionService
     try:
@@ -765,7 +816,28 @@ def generate_trip(
         )
     except Exception as exc:
         logger.exception("Sponsored injection failed: %s", exc)
+        generation_reasons.append("sponsored_enrichment_unavailable")
 
+    if generation_reasons:
+        generation_status = {
+            "state": "degraded",
+            "source": generation_status["source"],
+            "reasons": list(dict.fromkeys(generation_status["reasons"] + generation_reasons)),
+        }
+    enriched_itinerary["generation_status"] = generation_status
+    content_status = (
+        "mock_suggestion" if generation_status["source"] == "mock" else "ai_suggestion"
+    )
+    for day in enriched_itinerary.get("days", []):
+        if not isinstance(day, dict):
+            continue
+        activities = day.get("activities")
+        if not isinstance(activities, list):
+            continue
+        for activity in activities:
+            if isinstance(activity, dict):
+                activity["content_status"] = content_status
+    validate_itinerary_quality(enriched_itinerary, destination.country_code)
     cleaned_itinerary = enriched_itinerary
 
     trip_data = {
