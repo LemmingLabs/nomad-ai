@@ -44,14 +44,16 @@ class OffersSearchService:
     def _demo_response(request: OfferSearchRequest) -> OffersDemoResponse:
         if request.kind == "flight":
             route = f"{request.origin} to {request.destination}"
+            passenger_label = "passenger" if request.passengers == 1 else "passengers"
             offers = [
                 OfferDemoItem(
                     id="demo-flight-1",
                     kind="flight",
                     title=f"Sample flight: {route}",
-                    example_total=250,
+                    example_total=250 * request.passengers,
                     conditions=(
-                        "Illustrative example only; no airline schedule, baggage rules, "
+                        f"Illustrative total for {request.passengers} {passenger_label}; "
+                        "no airline schedule, baggage rules, "
                         "availability, or booking link has been checked."
                     ),
                 ),
@@ -59,34 +61,40 @@ class OffersSearchService:
                     id="demo-flight-2",
                     kind="flight",
                     title=f"Alternative sample flight: {route}",
-                    example_total=420,
+                    example_total=420 * request.passengers,
                     conditions=(
-                        "Illustrative example only; no airline schedule, baggage rules, "
+                        f"Illustrative total for {request.passengers} {passenger_label}; "
+                        "no airline schedule, baggage rules, "
                         "availability, or booking link has been checked."
                     ),
                 ),
             ]
         else:
             nights = (request.check_out - request.check_in).days
+            room_label = "room" if request.rooms == 1 else "rooms"
+            night_label = "night" if nights == 1 else "nights"
+            adult_label = "adult" if request.adults == 1 else "adults"
             offers = [
                 OfferDemoItem(
                     id="demo-stay-1",
                     kind="stay",
                     title=f"Sample stay in {request.destination_city}",
-                    example_total=120 * nights,
+                    example_total=120 * nights * request.rooms,
                     conditions=(
-                        f"Illustrative example for {nights} night(s); taxes, room terms, "
-                        "availability, and a booking link have not been checked."
+                        f"Illustrative total for {request.rooms} {room_label} and {nights} {night_label} "
+                        f"({request.adults} {adult_label}); taxes, room terms, availability, "
+                        "and a booking link have not been checked."
                     ),
                 ),
                 OfferDemoItem(
                     id="demo-stay-2",
                     kind="stay",
                     title=f"Alternative sample stay in {request.destination_city}",
-                    example_total=180 * nights,
+                    example_total=180 * nights * request.rooms,
                     conditions=(
-                        f"Illustrative example for {nights} night(s); taxes, room terms, "
-                        "availability, and a booking link have not been checked."
+                        f"Illustrative total for {request.rooms} {room_label} and {nights} {night_label} "
+                        f"({request.adults} {adult_label}); taxes, room terms, availability, "
+                        "and a booking link have not been checked."
                     ),
                 ),
             ]

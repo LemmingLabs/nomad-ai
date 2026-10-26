@@ -103,7 +103,7 @@ async def test_development_demo_builds_stay_examples_from_requested_city_and_nig
     assert isinstance(result, OffersDemoResponse)
     assert [offer.example_total for offer in result.offers] == [240, 360]
     assert all("Bishkek" in offer.title for offer in result.offers)
-    assert all("2 night(s)" in offer.conditions for offer in result.offers)
+    assert all("2 nights" in offer.conditions for offer in result.offers)
 
 
 def test_demo_mode_cannot_run_outside_development_or_with_live_enabled():
