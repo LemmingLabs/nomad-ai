@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str | None = None
     PEXELS_API_KEY: str | None = None
     GOOGLE_MAPS_API_KEY: str | None
+    OFFERS_ENABLED: bool = False
 
     ADMIN_EMAIL: str | None = None
     ADMIN_PASSWORD: str | None = None
