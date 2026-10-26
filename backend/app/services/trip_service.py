@@ -160,8 +160,14 @@ def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> 
     }
 
 
-def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int, travel_style: str) -> tuple[dict, str]:
-    """Post-process generated itinerary to ensure concrete locations, activities, and metadata."""
+def normalize_generated_itinerary(
+    itinerary: dict,
+    title: str | None,
+    days: int,
+    travel_style: str,
+    country_name: str = "Kyrgyzstan",
+) -> tuple[dict, str]:
+    """Normalize itinerary metadata without inventing replacement locations."""
     if not isinstance(itinerary, dict):
         return itinerary, title or f"{days}-Day Trip"
 
@@ -195,36 +201,25 @@ def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int,
                 is_vague = any(v in loc_val for v in vague_locations)
 
                 if is_vague or not loc_val:
-                    mapped_loc = day.get("location", "Unknown Location")
-                    city_lower = city_val.lower()
-                    if city_lower == "bishkek":
-                        mapped_loc = "Ala-Too Square"
-                    elif city_lower == "karakol":
-                        mapped_loc = "Dungan Mosque"
-                    elif city_lower == "cholpon-ata":
-                        mapped_loc = "Rukh Ordo Cultural Center"
-                    elif city_lower == "osh":
-                        mapped_loc = "Osh Bazaar"
-                    
-                    day["location"] = mapped_loc
+                    day["location"] = day.get("location") or "Unknown Location"
 
                 if not day.get("routing_location"):
-                    mapped = day.get("location", "")
-                    if city_val.lower() not in mapped.lower():
-                        mapped = f"{mapped} {city_val}"
-                    day["routing_location"] = mapped
+                    routing_location = day.get("location", "")
+                    if city_val and city_val.lower() not in routing_location.lower():
+                        routing_location = f"{routing_location} {city_val}".strip()
+                    day["routing_location"] = routing_location
 
     generic_titles = [
-        "scenic kyrgyzstan getaway", "discover kyrgyzstan", 
-        "trip to kyrgyzstan", "kyrgyzstan trip", "kyrgyzstan adventure", 
-        "explore kyrgyzstan"
+        f"scenic {country_name.lower()} getaway", f"discover {country_name.lower()}",
+        f"trip to {country_name.lower()}", f"{country_name.lower()} trip",
+        f"{country_name.lower()} adventure", f"explore {country_name.lower()}"
     ]
     final_title = title or ""
     if not final_title or str(final_title).lower().strip() in generic_titles:
-        final_title = f"{days}-Day {travel_style.title()} Trip in Kyrgyzstan"
+        final_title = f"{days}-Day {travel_style.title()} Trip in {country_name}"
 
     generic_summaries = [
-        "discover the beauty of kyrgyzstan", "an unforgettable journey", 
+        f"discover the beauty of {country_name.lower()}", "an unforgettable journey",
         "a scenic trip", "explore the best of", "amazing trip", "enjoy a trip",
         "beautiful trip"
     ]
@@ -232,14 +227,16 @@ def normalize_generated_itinerary(itinerary: dict, title: str | None, days: int,
     is_generic_summary = any(g in summary.lower() for g in generic_summaries)
 
     if not summary or is_generic_summary or len(summary) < 20 or len(str(summary).split()) < 5:
-        cities_str = " and ".join(seen_cities[:2]) if seen_cities else "Kyrgyzstan"
+        cities_str = " and ".join(seen_cities[:2]) if seen_cities else country_name
         itinerary["summary"] = f"A {days}-day {travel_style.lower()} trip through {cities_str} with nature, local food, and cultural highlights."
 
     return itinerary, final_title
 
 
-def _normalize_city_name(city_raw: str) -> str:
+def _normalize_city_name(city_raw: str, country_code: str = DEFAULT_COUNTRY_CODE) -> str:
     """Map nearby destinations to the closest supported city for downstream services."""
+    if country_code.strip().upper() != "KG":
+        return city_raw
     mapping = {
         "ala-archa": "Bishkek",
         "chuy": "Bishkek",
@@ -325,6 +322,8 @@ def enrich_itinerary_with_place_candidates(
     interests: list[str],
     travel_style: str,
     prompt: str | None = None,
+    country_code: str = DEFAULT_COUNTRY_CODE,
+    country_name: str = "Kyrgyzstan",
 ) -> dict:
     """Replace AI-invented day locations with real Google Places candidates."""
     if not isinstance(itinerary, dict) or not isinstance(itinerary.get("days"), list):
@@ -344,8 +343,16 @@ def enrich_itinerary_with_place_candidates(
 
         city = str(day.get("city") or "").strip()
         if not city:
-            city = "Bishkek"
-            day["city"] = city
+            if country_code.upper() == "KG":
+                city = "Bishkek"
+                day["city"] = city
+            else:
+                day["place_resolution"] = {
+                    "status": "unresolved",
+                    "provider": "google_places",
+                    "country_code": country_code.upper(),
+                }
+                continue
 
         interest = _day_interest(day, index, interests)
         candidates = place_candidate_service.get_candidates_for_day(
@@ -360,6 +367,8 @@ def enrich_itinerary_with_place_candidates(
             selected_interest_counts=selected_interest_counts,
             previous_interest=previous_interest,
             previous_location=previous_location,
+            country_code=country_code,
+            country_name=country_name,
         )
         if not candidates:
             logger.info(
@@ -368,6 +377,12 @@ def enrich_itinerary_with_place_candidates(
                 city,
                 interest,
             )
+            day.pop("place_candidate", None)
+            day["place_resolution"] = {
+                "status": "unresolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
             _ensure_day_routing_location(day)
             previous_interest = interest
             continue
@@ -408,7 +423,17 @@ def enrich_itinerary_with_place_candidates(
             day["location"] = place_name
             day["routing_location"] = _build_routing_location(day, selected, city)
             day["place_candidate"] = selected
+            day["place_resolution"] = {
+                "status": "resolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
         else:
+            day["place_resolution"] = {
+                "status": "unresolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
             _ensure_day_routing_location(day)
 
         if selected.get("lat") is not None and selected.get("lng") is not None:
@@ -427,6 +452,8 @@ def enrich_selected_days_with_place_candidates(
     interests: list[str],
     travel_style: str,
     prompt: str | None = None,
+    country_code: str = DEFAULT_COUNTRY_CODE,
+    country_name: str = "Kyrgyzstan",
 ) -> dict:
     """Re-enrich only selected days with Google Places candidates."""
     if not changed_day_indexes:
@@ -480,8 +507,17 @@ def enrich_selected_days_with_place_candidates(
 
         city = str(day.get("city") or "").strip()
         if not city:
-            city = "Bishkek"
-            day["city"] = city
+            if country_code.upper() == "KG":
+                city = "Bishkek"
+                day["city"] = city
+            else:
+                day.pop("place_candidate", None)
+                day["place_resolution"] = {
+                    "status": "unresolved",
+                    "provider": "google_places",
+                    "country_code": country_code.upper(),
+                }
+                continue
 
         interest = _day_interest(day, index, interests)
 
@@ -509,6 +545,8 @@ def enrich_selected_days_with_place_candidates(
             selected_interest_counts=selected_interest_counts,
             previous_interest=previous_interest,
             previous_location=previous_location,
+            country_code=country_code,
+            country_name=country_name,
         )
 
         if not candidates:
@@ -519,6 +557,11 @@ def enrich_selected_days_with_place_candidates(
                 interest,
             )
             day.pop("place_candidate", None)
+            day["place_resolution"] = {
+                "status": "unresolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
             _ensure_day_routing_location(day)
             previous_interest = interest
             continue
@@ -559,12 +602,22 @@ def enrich_selected_days_with_place_candidates(
             day["location"] = place_name
             day["routing_location"] = _build_routing_location(day, selected, city)
             day["place_candidate"] = selected
+            day["place_resolution"] = {
+                "status": "resolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
             logger.info(
                 "[CONTINUE] re-enriched place candidate for day=%s",
                 day.get("day") or index + 1,
             )
         else:
             day.pop("place_candidate", None)
+            day["place_resolution"] = {
+                "status": "unresolved",
+                "provider": "google_places",
+                "country_code": country_code.upper(),
+            }
             _ensure_day_routing_location(day)
 
         if selected.get("lat") is not None and selected.get("lng") is not None:
@@ -645,12 +698,20 @@ def generate_trip(
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
 
-    itinerary, title = normalize_generated_itinerary(itinerary, title, days, normalized_travel_style)
+    itinerary, title = normalize_generated_itinerary(
+        itinerary,
+        title,
+        days,
+        normalized_travel_style,
+        country_name=destination.country_name,
+    )
 
     if "days" in itinerary and isinstance(itinerary["days"], list):
         for day in itinerary["days"]:
             if isinstance(day, dict):
-                day["city"] = _normalize_city_name(day.get("city", ""))
+                day["city"] = _normalize_city_name(
+                    day.get("city", ""), country_code=destination.country_code
+                )
 
     try:
         itinerary = enrich_itinerary_with_place_candidates(
@@ -658,23 +719,41 @@ def generate_trip(
             normalized_interests,
             normalized_travel_style,
             normalized_prompt,
+            country_code=destination.country_code,
+            country_name=destination.country_name,
         )
     except Exception as exc:
         print(f"Place candidate enrichment failed: {exc}")
 
     catalog_service = CatalogService(db)
-    enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(itinerary, normalized_budget)
+    enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(
+        itinerary,
+        normalized_budget,
+        country_code=destination.country_code,
+    )
 
     from app.utils.async_runner import run_async
     from app.services.routing_service import RoutingService
     try:
-        enriched_itinerary = run_async(RoutingService().enrich_from_itinerary_json(enriched_itinerary))
+        enriched_itinerary = run_async(
+            RoutingService(
+                country_code=destination.country_code,
+                center_latitude=destination.center_latitude,
+                center_longitude=destination.center_longitude,
+            ).enrich_from_itinerary_json(
+                enriched_itinerary
+            )
+        )
     except Exception as exc:
         print(f"Routing enrichment failed: {exc}")
 
     from app.services.image_enrichment_service import ImageEnrichmentService
     try:
-        enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(enriched_itinerary)
+        enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(
+            enriched_itinerary,
+            country_name=destination.country_name,
+            country_code=destination.country_code,
+        )
     except Exception as exc:
         print(f"Image enrichment failed: {exc}")
 

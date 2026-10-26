@@ -15,11 +15,11 @@ def offline_enrichment(monkeypatch):
     monkeypatch.setattr(
         trip_service,
         "enrich_itinerary_with_place_candidates",
-        lambda itinerary, *_: itinerary,
+        lambda itinerary, *_, **kwargs: itinerary,
     )
     monkeypatch.setattr(
         "app.services.catalog_service.CatalogService.enrich_itinerary_with_catalog",
-        lambda self, itinerary, budget: itinerary,
+        lambda self, itinerary, budget, **kwargs: itinerary,
     )
 
     async def leave_routes_unchanged(self, itinerary):
@@ -31,7 +31,7 @@ def offline_enrichment(monkeypatch):
     )
     monkeypatch.setattr(
         "app.services.image_enrichment_service.ImageEnrichmentService.enrich_trip_with_images",
-        lambda self, itinerary: itinerary,
+        lambda self, itinerary, **kwargs: itinerary,
     )
     monkeypatch.setattr(
         "app.services.sponsored_injection_service.SponsoredInjectionService.inject_sponsored_places",
@@ -112,6 +112,20 @@ def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline
     assert len(trip.itinerary_json["days"]) == 1
     assert trip.itinerary_json["days"][0]["city"] == "Bishkek"
     assert db_session.query(TripMessage).count() == 2
+
+
+def test_itinerary_normalization_does_not_invent_replacement_locations():
+    itinerary = {
+        "summary": "A scenic trip",
+        "days": [{"day": 1, "city": "Bishkek", "location": "city center"}],
+    }
+
+    normalized, title = trip_service.normalize_generated_itinerary(
+        itinerary, None, 1, "relaxed"
+    )
+
+    assert normalized["days"][0]["location"] == "city center"
+    assert title == "1-Day Relaxed Trip in Kyrgyzstan"
 
 
 def test_generation_rejects_invalid_constraints_before_provider_call(db_session, monkeypatch):

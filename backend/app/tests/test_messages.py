@@ -473,7 +473,7 @@ def test_trip_message_service_reinjects_sponsored_after_image_enrichment(
         def __init__(self, db):
             self.db = db
 
-        def enrich_itinerary_with_catalog(self, itinerary, budget):
+        def enrich_itinerary_with_catalog(self, itinerary, budget, **kwargs):
             return itinerary
 
     monkeypatch.setattr("app.services.trip_message_service.CatalogService", FakeCatalogService)

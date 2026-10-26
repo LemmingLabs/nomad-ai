@@ -229,6 +229,12 @@ class TripMessageService:
                     from app.services.trip_service import (
                         enrich_selected_days_with_place_candidates,
                     )
+                    from app.core.destination_registry import resolve_destination
+
+                    destination = resolve_destination(
+                        country_code=trip.country_code,
+                        destination_id=trip.destination_id,
+                    )
 
                     merged_itinerary = enrich_selected_days_with_place_candidates(
                         merged_itinerary,
@@ -236,13 +242,22 @@ class TripMessageService:
                         interests=list(merged_itinerary.get("interests") or trip.interests or []),
                         travel_style=str(merged_itinerary.get("travel_style") or trip.travel_style),
                         prompt=None,
+                        country_code=destination.country_code,
+                        country_name=destination.country_name,
                     )
 
                 # 5. Catalog enrichment (always, same as before)
                 catalog_service = CatalogService(self.db)
+                from app.core.destination_registry import resolve_destination
+
+                destination = resolve_destination(
+                    country_code=trip.country_code,
+                    destination_id=trip.destination_id,
+                )
                 enriched_itinerary = catalog_service.enrich_itinerary_with_catalog(
                     merged_itinerary,
                     trip.budget,
+                    country_code=destination.country_code,
                 )
 
                 # After place candidate refresh, routing/images must refresh for the same set
@@ -255,7 +270,11 @@ class TripMessageService:
                     from app.services.routing_service import RoutingService
                     try:
                         enriched_itinerary = run_async(
-                            RoutingService().enrich_from_itinerary_json(enriched_itinerary)
+                            RoutingService(
+                                country_code=destination.country_code,
+                                center_latitude=destination.center_latitude,
+                                center_longitude=destination.center_longitude,
+                            ).enrich_from_itinerary_json(enriched_itinerary)
                         )
                     except Exception as exc:
                         print(f"Routing enrichment failed on update: {exc}")
@@ -280,6 +299,8 @@ class TripMessageService:
                         enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(
                             enriched_itinerary,
                             changed_day_indexes=location_changed_indexes,
+                            country_name=destination.country_name,
+                            country_code=destination.country_code,
                         )
                     else:
                         # No location changes → carry over existing images, fill missing only
@@ -300,6 +321,8 @@ class TripMessageService:
                             enriched_itinerary = ImageEnrichmentService().enrich_trip_with_images(
                                 enriched_itinerary,
                                 changed_day_indexes=missing_indexes,
+                                country_name=destination.country_name,
+                                country_code=destination.country_code,
                             )
                 except Exception as exc:
                     print(f"Image enrichment failed on update: {exc}")

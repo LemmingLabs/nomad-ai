@@ -24,6 +24,7 @@ export interface TripPlaceCandidate {
   place_id?: string;
   name?: string | null;
   city?: string | null;
+  country_code?: string | null;
   formatted_address?: string | null;
   lat?: number | null;
   lng?: number | null;
@@ -88,6 +89,13 @@ export interface TripRoute {
   duration_mins: number;
   transport_type: string;
   estimated_cost?: number | null;
+  status?: 'available' | 'unavailable';
+}
+
+export interface TripPlaceResolution {
+  status: 'resolved' | 'unresolved';
+  provider: string;
+  country_code: string;
 }
 
 export interface TripDay {
@@ -100,6 +108,7 @@ export interface TripDay {
   hotel?: TripHotel | null;
   recommended_places?: TripPlace[];
   place_candidate?: TripPlaceCandidate | null;
+  place_resolution?: TripPlaceResolution | null;
   route_from_previous?: TripRoute | null;
   images?: TripImages | null;
   sponsored?: SponsoredPlacePayload | null;

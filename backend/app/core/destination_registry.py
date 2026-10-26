@@ -11,6 +11,8 @@ class Destination:
     name: str
     enabled: bool
     supported_cities: tuple[str, ...]
+    center_latitude: float
+    center_longitude: float
 
 
 DESTINATIONS: tuple[Destination, ...] = (
@@ -33,6 +35,8 @@ DESTINATIONS: tuple[Destination, ...] = (
             "Tamga",
             "Barskoon",
         ),
+        center_latitude=42.8746,
+        center_longitude=74.5698,
     ),
 )
 

@@ -111,9 +111,16 @@ class CatalogService:
             "image_url": place.image_url,
         }
 
-    def enrich_itinerary_with_catalog(self, itinerary: dict, budget: str) -> dict:
+    def enrich_itinerary_with_catalog(
+        self, itinerary: dict, budget: str, country_code: str = "KG"
+    ) -> dict:
         if not itinerary or "days" not in itinerary:
             return itinerary
+        # The bundled hotel/place catalog contains Kyrgyzstan records only.
+        # Until records carry an explicit country code, never attach them to
+        # itineraries for another country based on a matching city name.
+        if country_code.strip().upper() != "KG":
+            return copy.deepcopy(itinerary)
 
         normalized_budget = self.normalize_budget(budget)
         enriched_itinerary = copy.deepcopy(itinerary)

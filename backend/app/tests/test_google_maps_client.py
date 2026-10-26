@@ -27,6 +27,7 @@ async def test_search_place_parses_google_place_response():
             "displayName": {"text": "Osh Bazaar"},
             "formattedAddress": "Bishkek, Kyrgyzstan",
             "location": {"latitude": 42.87, "longitude": 74.58},
+            "addressComponents": [{"shortText": "KG", "types": ["country"]}],
         }]
     }
     context, client = _mock_http_client(response)
@@ -40,8 +41,10 @@ async def test_search_place_parses_google_place_response():
         "address_name": "Bishkek, Kyrgyzstan",
         "lat": 42.87,
         "lon": 74.58,
+        "country_code": "KG",
     }]
     client.post.assert_awaited_once()
+    assert client.post.await_args.kwargs["json"]["includedRegionCodes"] == ["KG"]
 
 
 @pytest.mark.asyncio

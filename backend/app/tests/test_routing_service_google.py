@@ -26,8 +26,8 @@ async def test_enrich_itinerary_falls_back_when_geocoding_misses_a_stop():
 async def test_enrich_itinerary_does_not_charge_for_walking():
     client = AsyncMock()
     client.search_place.side_effect = [
-        [{"name": "A", "lat": 42.87, "lon": 74.56}],
-        [{"name": "B", "lat": 42.88, "lon": 74.57}],
+        [{"name": "A", "lat": 42.87, "lon": 74.56, "country_code": "KG"}],
+        [{"name": "B", "lat": 42.88, "lon": 74.57, "country_code": "KG"}],
     ]
     client.get_route_info.return_value = {"distance_m": 700, "duration_s": 660}
     service = RoutingService(client=client)
