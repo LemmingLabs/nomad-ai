@@ -6,7 +6,7 @@ import type { AdminSponsoredPlaceListFilters } from './adminSponsoredModeration.
 
 export function useAdminSponsoredPlacesQuery(filters: AdminSponsoredPlaceListFilters) {
   return useQuery({
-    queryKey: queryKeys.admin.sponsoredModeration.list(filters.preset),
+    queryKey: queryKeys.admin.sponsoredModeration.list(filters.preset, filters.country_code),
     queryFn: () => adminSponsoredModerationApi.getAdminSponsoredPlaces(filters),
   })
 }

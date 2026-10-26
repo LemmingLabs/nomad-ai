@@ -7,6 +7,8 @@ export type SponsoredPlace = {
   description: string
   country_code: string
   region: string | null
+  operating_language: string
+  location_verified: boolean
   city: string
   lat: number
   lng: number
@@ -26,6 +28,7 @@ export type CreateSponsoredPlacePayload = {
   description: string
   country_code: string
   region: string | null
+  operating_language: string
   city: string
   lat: number
   lng: number
@@ -43,6 +46,7 @@ export type SponsoredPlaceFormValues = {
   description: string
   country_code: string
   region: string
+  operating_language: string
   city: string
   category: string
   address: string
@@ -62,13 +66,15 @@ export type SponsoredPlaceLocationValue = {
 }
 
 export type EnabledDestination = {
-  id: string
   country_code: string
   country_name: string
-  name: string
-  enabled: boolean
   center_latitude: number
   center_longitude: number
   bounds: { north: number; south: number; east: number; west: number }
   phone_calling_code: string
+  readiness_status: 'pilot' | 'open'
+  submissions_enabled: boolean
+  operating_languages: string[]
+  required_business_fields: string[]
+  onboarding_guidance: string
 }

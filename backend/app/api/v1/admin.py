@@ -42,6 +42,7 @@ def list_sponsored_places(
     pending: bool | None = None,
     approved: bool | None = None,
     active: bool | None = None,
+    country_code: str | None = None,
     limit: int = 50,
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -53,6 +54,7 @@ def list_sponsored_places(
     places = AdminModerationService(db).list_sponsored_places(
         is_approved=is_approved,
         is_active=active,
+        country_code=country_code,
         limit=limit,
         offset=offset,
     )

@@ -50,6 +50,8 @@ export function AdminSponsoredPlaceDetailsCard({
       <Row label="Business ID" value={String(place.business_id)} />
       <Row label="Country" value={place.country_code} />
       <Row label="Region / province" value={place.region ?? '—'} />
+      <Row label="Operating language" value={place.operating_language.toUpperCase()} />
+      <Row label="Location verification" value={place.location_verified ? 'Verified by country lookup' : 'Not yet verified'} />
       <Row label="City" value={place.city} />
       <Row label="Category" value={place.category} />
       <Row label="Address" value={place.address} />

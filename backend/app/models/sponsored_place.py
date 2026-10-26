@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, Text, func, text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -23,6 +23,12 @@ class SponsoredPlace(Base):
         String(2), nullable=False, default="KG", server_default=text("'KG'"), index=True
     )
     region: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    operating_language: Mapped[str] = mapped_column(
+        String(12), nullable=False, default="en", server_default=text("'en'")
+    )
+    location_verified: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
     city: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)

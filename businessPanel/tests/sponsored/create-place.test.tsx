@@ -35,10 +35,13 @@ const enabledDestinations = [{
   id: 'kg', country_code: 'KG', country_name: 'Kyrgyzstan', name: 'Kyrgyzstan',
   enabled: true, center_latitude: 42.8746, center_longitude: 74.5698,
   bounds: { north: 43.3, south: 39.1, east: 80.4, west: 69.2 }, phone_calling_code: '996',
+  readiness_status: 'open', submissions_enabled: true, operating_languages: ['en'],
+  required_business_fields: ['name'], onboarding_guidance: 'Provide a verified business location.',
 }]
 
 const place = {
   id: 17, business_id: 3, title: 'City Walk', description: 'Guided route', city: 'Bishkek',
+  country_code: 'KG', region: null, operating_language: 'en', location_verified: true,
   category: 'culture', address: 'Ala-Too Square', lat: 42.8746, lng: 74.5698,
   contact_phone: null, website_url: null, cta_text: null, is_active: true, is_approved: false,
 }

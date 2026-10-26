@@ -9,7 +9,6 @@ import type {
   SponsoredPlaceFormValues,
   SponsoredPlaceLocationValue,
 } from '../model/sponsoredPlaces.types'
-import { formatPhoneInput } from '../model/sponsoredPlaces.utils'
 import { SponsoredPlaceLocationPicker } from './SponsoredPlaceLocationPicker'
 
 type SponsoredPlaceFormProps = {
@@ -29,9 +28,6 @@ export function SponsoredPlaceForm({
 }: SponsoredPlaceFormProps) {
   const destinationsQuery = useEnabledDestinationsQuery()
   const destinations = destinationsQuery.data ?? []
-  const initialDestination = destinations.find(
-    (destination) => destination.country_code === initialValues.country_code,
-  )
   const [cityWasEditedManually, setCityWasEditedManually] = useState(
     initialValues.city.trim() !== '',
   )
@@ -40,10 +36,7 @@ export function SponsoredPlaceForm({
     resolver: zodResolver(sponsoredPlaceFormSchema),
     defaultValues: {
       ...initialValues,
-      contact_phone: formatPhoneInput(
-        initialValues.contact_phone,
-        initialDestination?.phone_calling_code ?? '996',
-      ),
+      contact_phone: initialValues.contact_phone,
     },
     mode: 'onSubmit',
   })
@@ -57,6 +50,20 @@ export function SponsoredPlaceForm({
     name: ['lat', 'lng', 'address', 'city', 'region'],
   })
   const watchedLocation: SponsoredPlaceLocationValue = { lat, lng, address, city, region }
+
+  const handleSubmit = form.handleSubmit(async (values) => {
+    let valid = true
+    const requiredFields = selectedDestination?.required_business_fields ?? []
+    if (requiredFields.includes('contact_phone') && !values.contact_phone.trim()) {
+      form.setError('contact_phone', { message: 'Phone is required in this market' })
+      valid = false
+    }
+    if (requiredFields.includes('website_url') && !values.website_url.trim()) {
+      form.setError('website_url', { message: 'Website is required in this market' })
+      valid = false
+    }
+    if (valid) await onSubmit(values)
+  })
 
   const googleMapsConfigured = env.googleMapsApiKey !== ''
   const locationError =
@@ -74,34 +81,25 @@ export function SponsoredPlaceForm({
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-neutral-700">Country</label>
         <select
           className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
           {...form.register('country_code', {
-            onChange: (event) => {
+            onChange: () => {
               setCityWasEditedManually(false)
-              const destination = destinations.find(
-                (item) => item.country_code === event.target.value,
-              )
               form.setValue('lat', '')
               form.setValue('lng', '')
               form.setValue('city', '')
               form.setValue('region', '')
               form.setValue('address', '')
-              if (destination) {
-                form.setValue(
-                  'contact_phone',
-                  formatPhoneInput(form.getValues('contact_phone'), destination.phone_calling_code),
-                )
-              }
             },
           })}
           disabled={isSubmitting || destinationsQuery.isLoading || destinations.length === 0}
         >
           {destinations.map((destination) => (
-            <option key={destination.id} value={destination.country_code}>
+            <option key={destination.country_code} value={destination.country_code}>
               {destination.country_name}
             </option>
           ))}
@@ -123,6 +121,9 @@ export function SponsoredPlaceForm({
         shouldAutofillCity={!cityWasEditedManually}
         onChange={handleLocationChange}
       />
+      {selectedDestination?.onboarding_guidance ? (
+        <p className="text-xs text-neutral-600">{selectedDestination.onboarding_guidance}</p>
+      ) : null}
       {locationError ? (
         <p className="text-sm text-red-600">{locationError as string}</p>
       ) : null}
@@ -178,6 +179,21 @@ export function SponsoredPlaceForm({
             {...form.register('region')}
             disabled={isSubmitting}
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700">Operating language</label>
+          <select
+            className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm"
+            {...form.register('operating_language')}
+            disabled={isSubmitting || !selectedDestination}
+          >
+            {(selectedDestination?.operating_languages ?? ['en']).map((language) => (
+              <option key={language} value={language}>{language.toUpperCase()}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-neutral-500">
+            Choose a language your team can support for this location.
+          </p>
         </div>
       </div>
 
@@ -265,7 +281,7 @@ export function SponsoredPlaceForm({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
           <label className="block text-sm font-medium text-neutral-700">
-            Contact phone
+            Contact phone{selectedDestination?.required_business_fields.includes('contact_phone') ? ' *' : ''}
           </label>
           <Controller
             control={form.control}
@@ -273,21 +289,13 @@ export function SponsoredPlaceForm({
             render={({ field }) => (
               <input
                 value={field.value}
-                onChange={(event) =>
-                  field.onChange(
-                    formatPhoneInput(
-                      event.target.value,
-                      selectedDestination?.phone_calling_code ?? '996',
-                    ),
-                  )
-                }
+                onChange={field.onChange}
                 onBlur={field.onBlur}
                 name={field.name}
                 ref={field.ref}
-                placeholder={`+${selectedDestination?.phone_calling_code ?? '996'}`}
+                placeholder="Phone number"
                 className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"
                 disabled={isSubmitting}
-                inputMode="numeric"
               />
             )}
           />
@@ -296,11 +304,14 @@ export function SponsoredPlaceForm({
               {form.formState.errors.contact_phone.message}
             </p>
           ) : null}
+          <p className="mt-1 text-xs text-neutral-500">
+            Use the format your team can receive in this market.
+          </p>
         </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-neutral-700">
-            Website URL
+            Website URL{selectedDestination?.required_business_fields.includes('website_url') ? ' *' : ''}
           </label>
           <input
             className="mt-1 w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-400"

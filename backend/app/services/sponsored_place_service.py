@@ -1,13 +1,13 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.destination_registry import list_destinations
 from app.integrations.google_maps_client import GoogleMapsClient
 from app.models.sponsored_place import SponsoredPlace
 from app.models.user import User
 from app.repositories.business_repository import BusinessRepository
 from app.repositories.sponsored_place_repository import SponsoredPlaceRepository
 from app.services.sponsored_injection_service import normalize_category, normalize_city
+from app.services.partner_market_service import PartnerMarketService
 
 
 class SponsoredPlaceService:
@@ -41,9 +41,16 @@ class SponsoredPlaceService:
         payload = self._normalize_payload(payload)
         payload.setdefault("country_code", "KG")
         payload.setdefault("region", None)
+        payload.setdefault("operating_language", "en")
+        market = PartnerMarketService(self.db).require_open_market(payload["country_code"])
+        business = self.business_repo.get_by_id(business_id)
+        PartnerMarketService.validate_required_business_fields(market, business, payload)
+        if payload.get("operating_language") not in market.operating_languages:
+            raise HTTPException(status_code=422, detail="Choose an operating language enabled for this market")
         payload["country_code"] = self._validate_country_location(
             payload["country_code"], payload["lat"], payload["lng"]
         )
+        payload["location_verified"] = True
         return self.place_repo.create_for_business(business_id=business_id, **payload)
 
     def update_my_place(self, current_user: User, place_id: int, **updates) -> SponsoredPlace:
@@ -53,13 +60,31 @@ class SponsoredPlaceService:
         # Business cannot approve via this endpoint
         updates.pop("is_approved", None)
         updates = self._normalize_payload(updates)
+        country_code = updates.get("country_code", place.country_code)
+        market = PartnerMarketService(self.db).get(country_code)
+        if market is None:
+            raise HTTPException(status_code=422, detail="Partner market is not configured")
+        if (
+            country_code != place.country_code
+            and not PartnerMarketService.submissions_enabled(market)
+        ):
+            raise HTTPException(status_code=422, detail="Partner submissions are not open in this market")
+        language = updates.get("operating_language", place.operating_language)
+        if language not in market.operating_languages:
+            raise HTTPException(status_code=422, detail="Choose an operating language enabled for this market")
+        current_fields = {
+            "contact_phone": place.contact_phone,
+            "website_url": place.website_url,
+        }
+        current_fields.update(updates)
+        PartnerMarketService.validate_required_business_fields(market, place.business, current_fields)
         if {"country_code", "lat", "lng"} & updates.keys():
-            country_code = updates.get("country_code", place.country_code)
             lat = updates.get("lat", place.lat)
             lng = updates.get("lng", place.lng)
             updates["country_code"] = self._validate_country_location(
                 country_code, lat, lng
             )
+            updates["location_verified"] = True
         return self.place_repo.update(place, **updates)
 
     def deactivate_my_place(self, current_user: User, place_id: int) -> SponsoredPlace:
@@ -82,13 +107,10 @@ class SponsoredPlaceService:
         self, country_code: str, lat: float, lng: float
     ) -> str:
         normalized_country = str(country_code or "").strip().upper()
-        if not any(
-            destination.country_code == normalized_country
-            for destination in list_destinations(enabled_only=True)
-        ):
+        if PartnerMarketService(self.db).get(normalized_country) is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Country '{normalized_country}' is not currently enabled",
+                detail=f"Country '{normalized_country}' is not currently configured for partners",
             )
 
         try:

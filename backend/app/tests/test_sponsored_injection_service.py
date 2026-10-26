@@ -7,10 +7,12 @@ from sqlalchemy.pool import StaticPool
 from app.models.base import Base
 from app.models.business import Business
 from app.models.sponsored_place import SponsoredPlace
+from app.models.partner_market import PartnerMarket
 from app.models.sponsored_place_media import SponsoredPlaceMedia, SponsoredPlaceMediaType
 from app.models.user import User
 from app.services.sponsored_injection_service import DEFAULT_SPONSORED_IMAGE, SponsoredInjectionService
 from app.services.sponsored_place_service import SponsoredPlaceService
+from app.repositories.sponsored_place_repository import SponsoredPlaceRepository
 
 
 @pytest.fixture
@@ -146,6 +148,27 @@ def test_sponsored_injection_matches_country_before_same_named_city(db_session):
     assert result["days"][0]["sponsored"]["place"]["id"] == kg_place.id
 
 
+def test_admin_sponsored_place_country_filter_is_scoped(db_session):
+    kg_place = _create_sponsored_place(db_session)
+    other_market_place = SponsoredPlace(
+        business_id=kg_place.business_id,
+        title="Other market",
+        description="A place in another market",
+        country_code="US",
+        city="Springfield",
+        lat=39.8,
+        lng=-89.6,
+        address="Springfield, US",
+        category="restaurant",
+    )
+    db_session.add(other_market_place)
+    db_session.commit()
+
+    places = SponsoredPlaceRepository(db_session).list_all(country_code="us")
+
+    assert [place.id for place in places] == [other_market_place.id]
+
+
 def test_sponsored_injection_rejects_same_city_in_different_region(db_session):
     _create_sponsored_place(db_session, city="Springfield", region="Illinois")
     service = SponsoredInjectionService(db_session)
@@ -184,7 +207,22 @@ def test_sponsored_place_rejects_coordinates_from_another_country(monkeypatch):
         "app.services.sponsored_place_service.GoogleMapsClient.reverse_geocode_country",
         lambda self, lat, lng: "US",
     )
-    service = SponsoredPlaceService(db=object())
+    class StubDB:
+        @staticmethod
+        def get(_model, country_code):
+            return PartnerMarket(
+                country_code=country_code,
+                country_name="Kyrgyzstan",
+                readiness_status="open",
+                operating_languages=["en"],
+                required_business_fields=[],
+                onboarding_guidance="",
+                admin_guidance="",
+                operational_checklist={},
+                is_legacy_baseline=True,
+            )
+
+    service = SponsoredPlaceService(db=StubDB())
 
     with pytest.raises(HTTPException) as error:
         service._validate_country_location("KG", 39.8, -89.6)
@@ -265,6 +303,17 @@ def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session
         website_url="https://example.com",
     )
     db_session.add(business)
+    db_session.add(PartnerMarket(
+        country_code="KG",
+        country_name="Kyrgyzstan",
+        readiness_status="open",
+        operating_languages=["en"],
+        required_business_fields=["name"],
+        onboarding_guidance="",
+        admin_guidance="",
+        operational_checklist={},
+        is_legacy_baseline=True,
+    ))
     db_session.commit()
     db_session.refresh(user)
 
@@ -286,3 +335,5 @@ def test_sponsored_place_service_normalizes_city_and_category_on_save(db_session
     assert place.city == "bishkek"
     assert place.country_code == "KG"
     assert place.category == "modern canteen / cafe"
+    assert place.operating_language == "en"
+    assert place.location_verified is True

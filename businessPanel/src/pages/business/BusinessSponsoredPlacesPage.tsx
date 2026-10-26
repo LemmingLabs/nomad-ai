@@ -27,6 +27,7 @@ const emptyFormValues: SponsoredPlaceFormValues = {
   description: '',
   country_code: 'KG',
   region: '',
+  operating_language: 'en',
   city: '',
   category: '',
   address: '',

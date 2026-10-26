@@ -53,6 +53,8 @@ class SponsoredPlaceRepository:
         description: str,
         country_code: str,
         region: str | None,
+        operating_language: str,
+        location_verified: bool,
         city: str,
         lat: float,
         lng: float,
@@ -69,6 +71,8 @@ class SponsoredPlaceRepository:
             description=description,
             country_code=country_code,
             region=region,
+            operating_language=operating_language,
+            location_verified=location_verified,
             city=city,
             lat=lat,
             lng=lng,
@@ -98,6 +102,7 @@ class SponsoredPlaceRepository:
         *,
         is_approved: bool | None = None,
         is_active: bool | None = None,
+        country_code: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[SponsoredPlace]:
@@ -110,5 +115,7 @@ class SponsoredPlaceRepository:
             statement = statement.where(SponsoredPlace.is_approved.is_(is_approved))
         if is_active is not None:
             statement = statement.where(SponsoredPlace.is_active.is_(is_active))
+        if country_code:
+            statement = statement.where(SponsoredPlace.country_code == country_code.strip().upper())
         statement = statement.limit(limit).offset(offset)
         return list(self.db.execute(statement).scalars().all())

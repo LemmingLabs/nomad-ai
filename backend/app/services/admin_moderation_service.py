@@ -27,12 +27,14 @@ class AdminModerationService:
         *,
         is_approved: bool | None = None,
         is_active: bool | None = None,
+        country_code: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[SponsoredPlace]:
         return self.place_repo.list_all(
             is_approved=is_approved,
             is_active=is_active,
+            country_code=country_code,
             limit=limit,
             offset=offset,
         )

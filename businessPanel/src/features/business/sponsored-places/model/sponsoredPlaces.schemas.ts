@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-const internationalPhoneRegex = /^\+\d{1,3}(?:\s\d{2,4}){1,4}$/
-
 const emptyOrUrl = z
   .string()
   .trim()
@@ -12,8 +10,9 @@ const emptyOrUrl = z
 const emptyOrPhone = z
   .string()
   .trim()
-  .refine((value) => value === '' || internationalPhoneRegex.test(value), {
-    message: 'Enter a phone number with the selected country calling code',
+  .max(50)
+  .refine((value) => value === '' || (/^[+\d\s().-]+$/.test(value) && (value.match(/\d/g)?.length ?? 0) >= 5), {
+    message: 'Enter a phone number using the format your team answers',
   })
 
 const locationNumberString = () =>
@@ -27,6 +26,7 @@ const locationNumberString = () =>
 export const sponsoredPlaceFormSchema = z.object({
   country_code: z.string().length(2),
   region: z.string().trim(),
+  operating_language: z.string().trim().min(2).max(12),
   title: z.string().trim().min(1, 'Title is required'),
   description: z.string().trim().min(1, 'Description is required'),
   city: z.string().trim().min(1, 'City is required'),
