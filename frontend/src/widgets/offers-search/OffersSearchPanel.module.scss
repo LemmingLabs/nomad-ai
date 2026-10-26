@@ -41,6 +41,14 @@
   line-height: 1.45;
 }
 
+.referenceNote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-xs;
+  line-height: 1.4;
+}
+
 .readOnly {
   flex: 0 0 auto;
   padding: $space-1 $space-2;
