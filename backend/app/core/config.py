@@ -1,9 +1,13 @@
+from typing import Literal
+
 from pydantic import field_validator
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     APP_NAME: str
+    APP_ENV: Literal["development", "test", "production"] = "production"
     DEBUG: bool = False
 
     POSTGRES_DB: str
@@ -22,6 +26,7 @@ class Settings(BaseSettings):
     PEXELS_API_KEY: str | None = None
     GOOGLE_MAPS_API_KEY: str | None
     OFFERS_ENABLED: bool = False
+    OFFERS_DEMO_MODE: bool = False
 
     ADMIN_EMAIL: str | None = None
     ADMIN_PASSWORD: str | None = None
@@ -39,6 +44,14 @@ class Settings(BaseSettings):
         if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
             return False
         return value
+
+    @model_validator(mode="after")
+    def validate_offers_mode(self):
+        if self.OFFERS_DEMO_MODE and self.APP_ENV != "development":
+            raise ValueError("OFFERS_DEMO_MODE is allowed only when APP_ENV=development")
+        if self.OFFERS_DEMO_MODE and self.OFFERS_ENABLED:
+            raise ValueError("OFFERS_DEMO_MODE and OFFERS_ENABLED cannot both be enabled")
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

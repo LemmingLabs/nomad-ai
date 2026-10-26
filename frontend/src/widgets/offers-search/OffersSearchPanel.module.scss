@@ -125,7 +125,48 @@
   line-height: 1.5;
 }
 
+.demoNotice {
+  padding: $space-3 $space-4;
+  border: 2px solid #b45309;
+  border-radius: $radius-lg;
+  color: #78350f;
+  background: #fffbeb;
+  font-size: $text-sm;
+
+  strong { letter-spacing: 0.04em; }
+  p { margin: $space-1 0 0; line-height: 1.5; }
+}
+
+.demoOffers {
+  display: grid;
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demoOffer {
+  padding: $space-4;
+  border: 1px dashed #d97706;
+  border-radius: $radius-lg;
+  background: #fff;
+
+  p { margin: $space-2 0; color: $color-text-muted; font-size: $text-sm; line-height: 1.45; }
+  small { color: #92400e; font-size: $text-xs; font-weight: 600; }
+}
+
+.demoOfferHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: $space-3;
+  color: $color-text;
+  font-size: $text-sm;
+
+  span { flex: 0 0 auto; font-weight: 700; }
+}
+
 @include max-md {
   .panel { margin: 0 $space-4 $space-4; padding: $space-4; }
   .header { flex-direction: column; }
+  .demoOfferHeading { flex-direction: column; }
 }
