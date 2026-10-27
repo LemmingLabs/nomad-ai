@@ -16,8 +16,8 @@ void test('accepts a valid trip generation request', () => {
   expect(generateTripSchema.safeParse(validTrip).success).toBe(true);
 });
 
-void test('rejects an empty interest list', () => {
-  expect(generateTripSchema.safeParse({ ...validTrip, interests: ' , ' }).success).toBe(false);
+void test('accepts a trip without optional interests', () => {
+  expect(generateTripSchema.safeParse({ ...validTrip, interests: '' }).success).toBe(true);
 });
 
 void test('rejects a trip longer than the supported limit', () => {

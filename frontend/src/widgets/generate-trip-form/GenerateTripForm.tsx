@@ -78,12 +78,13 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
       destination_id: '',
       budget: 'medium',
       days: 5,
-      interests: 'nature, culture',
+      interests: '',
       travel_style: 'relaxed',
       prompt: '',
     },
   });
   const [customInterest, setCustomInterest] = useState('');
+  const [optionalPreferencesOpen, setOptionalPreferencesOpen] = useState(false);
   const budget = useWatch({ control, name: 'budget' });
   const days = useWatch({ control, name: 'days' });
   const interests = parseInterests(useWatch({ control, name: 'interests' }));
@@ -132,8 +133,7 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
         </span>
         <h2 className={styles.title}>Build your next itinerary</h2>
         <p className={styles.subtitle}>
-          Pick the vibe, budget, and interests. We&apos;ll turn it into a travel plan
-          that feels tailored from the first draft.
+          Choose a destination, trip length, and budget preference. Add interests or a trip brief if you want more detail.
         </p>
       </div>
 
@@ -264,144 +264,158 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
           {errors.days?.message && <p className={styles.error}>{errors.days.message}</p>}
         </Card>
 
-        <Card className={styles.section} padding="lg">
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle} id="interests-label">Interests</h3>
-            <p className={styles.sectionHint} id="interests-hint">Start with suggested themes and add your own.</p>
-          </div>
+        <details
+          className={styles.optionalPreferences}
+          open={optionalPreferencesOpen || Boolean(errors.prompt)}
+          onToggle={(event) => setOptionalPreferencesOpen(event.currentTarget.open)}
+        >
+          <summary className={styles.optionalSummary}>
+            <span className={styles.optionalTitle}>Personalize your trip <span>(optional)</span></span>
+            <span className={styles.optionalHint}>
+              Interests and a trip brief are optional. Travel style defaults to relaxed.
+            </span>
+          </summary>
+          <div className={styles.optionalFields}>
+          <Card className={styles.section} padding="lg">
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle} id="interests-label">Interests <span>(optional)</span></h3>
+              <p className={styles.sectionHint} id="interests-hint">Choose suggested themes or add your own. Leave them blank for general suggestions.</p>
+            </div>
 
-          <div
-            className={styles.chipGroup}
-            role="group"
-            aria-labelledby="interests-label"
-            aria-describedby={errors.interests ? 'interests-hint interests-error' : 'interests-hint'}
-          >
-            {suggestedInterests.map((interest) => {
-              const isSelected = interests.includes(interest);
+            <div
+              className={styles.chipGroup}
+              role="group"
+              aria-labelledby="interests-label"
+              aria-describedby={errors.interests ? 'interests-hint interests-error' : 'interests-hint'}
+            >
+              {suggestedInterests.map((interest) => {
+                const isSelected = interests.includes(interest);
 
-              return (
-                <button
-                  key={interest}
-                  type="button"
-                  className={styles.chip}
-                  data-active={isSelected}
-                  aria-pressed={isSelected}
-                  onClick={() =>
-                    updateInterests(
-                      isSelected
-                        ? interests.filter((selectedInterest) => selectedInterest !== interest)
-                        : [...interests, interest],
-                    )
-                  }
-                >
-                  {isSelected && <Check size={14} aria-hidden="true" />}
-                  {interest}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={styles.customInterest}>
-            <Input
-              label="Add custom interest"
-              placeholder="stargazing, road trips, cafes..."
-              value={customInterest}
-              onChange={(event) => setCustomInterest(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  addCustomInterest();
-                }
-              }}
-            />
-            <Button type="button" variant="secondary" onClick={addCustomInterest}>
-              Add
-            </Button>
-          </div>
-
-          {interests.length > 0 && (
-            <div className={styles.selectedChips}>
-              {interests.map((interest) => (
-                <span key={interest} className={styles.selectedChip}>
-                  {interest}
+                return (
                   <button
+                    key={interest}
                     type="button"
-                    className={styles.selectedChipRemove}
+                    className={styles.chip}
+                    data-active={isSelected}
+                    aria-pressed={isSelected}
                     onClick={() =>
                       updateInterests(
-                        interests.filter((selectedInterest) => selectedInterest !== interest),
+                        isSelected
+                          ? interests.filter((selectedInterest) => selectedInterest !== interest)
+                          : [...interests, interest],
                       )
                     }
-                    aria-label={`Remove ${interest}`}
                   >
-                    <X size={14} />
+                    {isSelected && <Check size={14} aria-hidden="true" />}
+                    {interest}
                   </button>
-                </span>
+                );
+              })}
+            </div>
+
+            <div className={styles.customInterest}>
+              <Input
+                label="Add custom interest"
+                placeholder="stargazing, road trips, cafes..."
+                value={customInterest}
+                onChange={(event) => setCustomInterest(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addCustomInterest();
+                  }
+                }}
+              />
+              <Button type="button" variant="secondary" onClick={addCustomInterest}>
+                Add
+              </Button>
+            </div>
+
+            {interests.length > 0 && (
+              <div className={styles.selectedChips}>
+                {interests.map((interest) => (
+                  <span key={interest} className={styles.selectedChip}>
+                    {interest}
+                    <button
+                      type="button"
+                      className={styles.selectedChipRemove}
+                      onClick={() =>
+                        updateInterests(
+                          interests.filter((selectedInterest) => selectedInterest !== interest),
+                        )
+                      }
+                      aria-label={`Remove ${interest}`}
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {errors.interests?.message && (
+              <p className={styles.error} id="interests-error" role="alert">
+                {errors.interests.message}
+              </p>
+            )}
+          </Card>
+
+          <Card className={styles.section} padding="lg">
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle} id="travel-style-label">
+                Travel style
+              </h3>
+              <p className={styles.sectionHint} id="travel-style-hint">
+                Guide the tone of the itinerary with one selection.
+              </p>
+            </div>
+            <div
+              className={styles.chipGroup}
+              role="radiogroup"
+              aria-labelledby="travel-style-label"
+              aria-describedby={errors.travel_style ? 'travel-style-hint travel-style-error' : 'travel-style-hint'}
+            >
+              {travelStyleOptions.map((option) => (
+                <label
+                  key={option}
+                  className={styles.chipOption}
+                  data-active={travelStyle === option}
+                >
+                  <input
+                    className={styles.choiceInput}
+                    type="radio"
+                    value={option}
+                    {...register('travel_style')}
+                  />
+                  {travelStyle === option && <Check size={14} aria-hidden="true" />}
+                  <span>{option}</span>
+                </label>
               ))}
             </div>
-          )}
-          {errors.interests?.message && (
-            <p className={styles.error} id="interests-error" role="alert">
-              {errors.interests.message}
-            </p>
-          )}
-        </Card>
+            {errors.travel_style?.message && (
+              <p className={styles.error} id="travel-style-error" role="alert">
+                {errors.travel_style.message}
+              </p>
+            )}
+          </Card>
 
-        <Card className={styles.section} padding="lg">
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle} id="travel-style-label">
-              Travel style
-            </h3>
-            <p className={styles.sectionHint} id="travel-style-hint">
-              Guide the tone of the itinerary with one selection.
-            </p>
+          <Card className={styles.section} padding="lg">
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>Trip brief <span>(optional)</span></h3>
+              <p className={styles.sectionHint}>
+                Tell the AI what kind of trip you want, preferences, pace, places, food, scenery,
+                or special requests.
+              </p>
+            </div>
+            <Textarea
+              label="Prompt"
+              placeholder="Slow mornings, scenic drives, lakeside dinners, local food, and a little photography time each day."
+              rows={5}
+              error={errors.prompt?.message}
+              {...register('prompt')}
+            />
+          </Card>
           </div>
-          <div
-            className={styles.chipGroup}
-            role="radiogroup"
-            aria-labelledby="travel-style-label"
-            aria-describedby={errors.travel_style ? 'travel-style-hint travel-style-error' : 'travel-style-hint'}
-          >
-            {travelStyleOptions.map((option) => (
-              <label
-                key={option}
-                className={styles.chipOption}
-                data-active={travelStyle === option}
-              >
-                <input
-                  className={styles.choiceInput}
-                  type="radio"
-                  value={option}
-                  {...register('travel_style')}
-                />
-                {travelStyle === option && <Check size={14} aria-hidden="true" />}
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
-          {errors.travel_style?.message && (
-            <p className={styles.error} id="travel-style-error" role="alert">
-              {errors.travel_style.message}
-            </p>
-          )}
-        </Card>
-
-        <Card className={styles.section} padding="lg">
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Trip brief</h3>
-            <p className={styles.sectionHint}>
-              Tell the AI what kind of trip you want, preferences, pace, places, food, scenery,
-              or special requests.
-            </p>
-          </div>
-          <Textarea
-            label="Prompt"
-            placeholder="Slow mornings, scenic drives, lakeside dinners, local food, and a little photography time each day."
-            rows={5}
-            error={errors.prompt?.message}
-            {...register('prompt')}
-          />
-        </Card>
+        </details>
       </div>
 
       {isAuthenticated && limits && remainingTrips !== null && (

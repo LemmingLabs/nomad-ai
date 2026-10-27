@@ -51,6 +51,64 @@
   gap: $space-5;
 }
 
+.optionalPreferences {
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: $shadow-sm;
+}
+
+.optionalSummary {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-5 $space-12 $space-5 $space-5;
+  color: $color-text;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker { display: none; }
+  &:focus-visible { outline: 2px solid $color-accent; outline-offset: 2px; }
+
+  &::after {
+    content: '+';
+    position: absolute;
+    top: 50%;
+    right: $space-5;
+    transform: translateY(-50%);
+    color: $color-accent-hover;
+    font-size: $text-2xl;
+    font-weight: $weight-semibold;
+  }
+}
+
+.optionalPreferences[open] > .optionalSummary::after {
+  content: '−';
+}
+
+.optionalTitle {
+  font-size: $text-base;
+  font-weight: $weight-bold;
+
+  span {
+    color: $color-accent-hover;
+    font-size: $text-sm;
+  }
+}
+
+.optionalHint {
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.5;
+}
+
+.optionalFields {
+  @include flex-col;
+  gap: $space-5;
+  padding: 0 $space-4 $space-4;
+}
+
 .section {
   gap: $space-5;
   background:
@@ -67,6 +125,12 @@
   margin: 0;
   font-size: $text-xl;
   color: $color-text;
+
+  span {
+    color: $color-text-muted;
+    font-size: $text-sm;
+    font-weight: $weight-medium;
+  }
 }
 
 .sectionHint {
