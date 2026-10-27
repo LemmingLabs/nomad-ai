@@ -77,7 +77,7 @@ export function PricingPlanCard({ plan, isCurrent, isFeatured = false }: Pricing
         ) : (
           <UpgradeCTA
             planId={plan.id}
-            label={isFree ? 'Choose plan' : 'Upgrade'}
+            label={isFree ? 'Choose plan' : 'Simulate upgrade'}
             size="md"
           />
         )}
@@ -85,7 +85,7 @@ export function PricingPlanCard({ plan, isCurrent, isFeatured = false }: Pricing
 
       {!isCurrent && (
         <span className={styles.hint}>
-          Mock purchase only — no real billing.
+          Simulated plan change only — no payment is processed.
         </span>
       )}
     </div>

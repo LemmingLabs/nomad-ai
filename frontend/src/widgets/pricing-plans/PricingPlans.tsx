@@ -25,8 +25,7 @@ export function PricingPlans() {
       <div className={styles.header}>
         <h2 className={styles.title}>Choose the plan that matches your pace</h2>
         <p className={styles.subtitle}>
-          Track your daily usage right inside the product. Upgrade only when you need more
-          generations or refinements.
+          Development preview: choosing a plan simulates activation. No payment is processed.
         </p>
       </div>
 
