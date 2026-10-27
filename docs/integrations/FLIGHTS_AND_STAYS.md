@@ -1,6 +1,12 @@
 # Flights and Stays: Price Offer Integration Plan
 
-**Reviewed:** October 26, 2026. **Status:** provider research complete; no production provider is approved or connected. This is a technical review, not a substitute for signed partner terms or legal review.
+**Reviewed:** October 27, 2026. **Status:** public provider research complete; no production provider is approved or connected. This is a technical review, not a substitute for signed partner terms or legal review.
+
+### Revalidation on October 27, 2026
+
+Primary provider documentation was rechecked for onboarding, sandbox access, service availability, price display, and rate limits. Booking.com requires [Managed Affiliate Partner registration, an agreed contract, Partner Centre access, and issued credentials before sandbox testing](https://developers.booking.com/demand/docs/getting-started/prerequisites); its current [Demand API service list](https://developers.booking.com/demand/docs/getting-started/overview) includes accommodations but not flights. Its [accommodation API](https://developers.booking.com/demand/docs/accommodations/search-for-available-properties) exposes prices, conditions, and supplier links, while explicitly warning that API inventory/prices can differ from the consumer service. Skyscanner's current [API catalogue](https://developers.skyscanner.net/docs/category/hotels-live-prices-api) includes both flight and stay live-price APIs, but access requires [Partnerships review](https://developers.skyscanner.net/docs/getting-started/authentication) and [quotas are set per API key](https://developers.skyscanner.net/docs/getting-started/rate-limits). These public terms still do not establish NomadAI's account eligibility, contracting jurisdiction, commission, target-market coverage, or production availability. No sandbox or production search was run because NomadAI has no approved provider credentials.
+
+**OFFERS-01 outcome:** keep the pilot narrow to stays in Bishkek and treat Booking.com Demand API as the lead candidate for a future application. Do not select or implement it yet. Current public evidence cannot support a production-provider recommendation for NomadAI's actual market, and no live inventory sample or partner terms are available. Defer OFFERS-02 until an authorized contracting path and target markets are documented, the provider approves access, and representative production searches confirm coverage, displayed totals/conditions, and redirect behavior. Skyscanner remains a separate flight or stay candidate only if its partner review confirms eligibility and useful pilot coverage.
 
 ## Decision
 
