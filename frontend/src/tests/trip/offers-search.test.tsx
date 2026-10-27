@@ -17,6 +17,34 @@ function renderPanel() {
   return render(<OffersSearchPanel countryCode="KG" destinationCity="Bishkek" />)
 }
 
+function liveOffer(overrides: Partial<{
+  id: string
+  kind: 'flight' | 'stay'
+  provider: string
+  fetched_at: string
+  expires_at: string
+  currency: string
+  total_amount: number | string
+  availability: 'available' | 'limited'
+  conditions: string[]
+  handoff_url: string
+}> = {}) {
+  const now = Date.now()
+  return {
+    id: 'provider-flight-1',
+    kind: 'flight' as const,
+    provider: 'TestSupplier',
+    fetched_at: new Date(now - 1000).toISOString(),
+    expires_at: new Date(now + 60_000).toISOString(),
+    currency: 'USD',
+    total_amount: '312.45',
+    availability: 'available' as const,
+    conditions: ['1 checked bag included', 'Non-refundable'],
+    handoff_url: 'https://supplier.example/offers/provider-flight-1',
+    ...overrides,
+  }
+}
+
 test('submits flight search inputs and displays disabled provider response without inventing prices', async () => {
   const user = userEvent.setup()
   vi.mocked(offersApi.search).mockRejectedValue({
@@ -83,6 +111,84 @@ test('shows clearly labeled demo examples without a supplier handoff', async () 
   expect(screen.getByText('Sample flight: ALA to Bishkek')).toBeTruthy()
   expect(screen.getByText(/Example total:/).textContent).toContain('$250.00')
   expect(screen.getByText('NomadAI demo fixture · no supplier link')).toBeTruthy()
+})
+
+test('renders live provider, checked time, conditions, and external handoff', async () => {
+  const user = userEvent.setup()
+  vi.mocked(offersApi.search).mockResolvedValue({
+    state: 'results',
+    provider: 'TestSupplier',
+    offers: [liveOffer()],
+  })
+  renderPanel()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.click(screen.getByRole('button', { name: 'Search flights' }))
+
+  expect(await screen.findByText('TestSupplier · reference provider-flight-1')).toBeTruthy()
+  expect(screen.getByText('$312.45')).toBeTruthy()
+  expect(screen.getByText(/1 checked bag included · Non-refundable/)).toBeTruthy()
+  expect(screen.getByText(/^Checked /)).toBeTruthy()
+  const handoff = screen.getByRole('link', { name: 'Continue to TestSupplier' })
+  expect(handoff.getAttribute('href')).toBe('https://supplier.example/offers/provider-flight-1')
+  expect(handoff.getAttribute('target')).toBe('_blank')
+  expect(handoff.getAttribute('rel')).toBe('noopener noreferrer')
+})
+
+test('shows a clear no-results state without leaving a price visible', async () => {
+  const user = userEvent.setup()
+  vi.mocked(offersApi.search).mockResolvedValue({
+    state: 'no_results',
+    provider: 'TestSupplier',
+    fetched_at: new Date().toISOString(),
+  })
+  renderPanel()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.click(screen.getByRole('button', { name: 'Search flights' }))
+
+  expect((await screen.findByRole('status')).textContent).toContain('No flights were found')
+  expect(screen.queryByText('$312.45')).toBeNull()
+  expect(screen.queryByRole('link', { name: /Continue to/ })).toBeNull()
+})
+
+test('hides an expired supplier price and handoff link', async () => {
+  const user = userEvent.setup()
+  vi.mocked(offersApi.search).mockResolvedValue({
+    state: 'results',
+    provider: 'TestSupplier',
+    offers: [liveOffer({
+      fetched_at: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+      expires_at: new Date(Date.now() - 60_000).toISOString(),
+    })],
+  })
+  renderPanel()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.click(screen.getByRole('button', { name: 'Search flights' }))
+
+  expect(await screen.findByText('Price expired')).toBeTruthy()
+  expect(screen.getByText(/Search again to check the price and availability/)).toBeTruthy()
+  expect(screen.queryByText('$312.45')).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Continue to TestSupplier' })).toBeNull()
+})
+
+test('clears live results when search inputs change', async () => {
+  const user = userEvent.setup()
+  vi.mocked(offersApi.search).mockResolvedValue({
+    state: 'results',
+    provider: 'TestSupplier',
+    offers: [liveOffer()],
+  })
+  renderPanel()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'ALA')
+  await user.click(screen.getByRole('button', { name: 'Search flights' }))
+  expect(await screen.findByText('$312.45')).toBeTruthy()
+
+  await user.type(screen.getByLabelText('Origin airport or city'), 'B')
+  expect(screen.queryByText('$312.45')).toBeNull()
+  expect(screen.queryByRole('link', { name: 'Continue to TestSupplier' })).toBeNull()
 })
 
 test('loads local OurAirports suggestions in the development environment', async () => {
