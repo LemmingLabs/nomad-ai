@@ -73,6 +73,20 @@ class GroqClient:
             match = re.search(r"- Days:\s*(\d+)", last_user_text)
             if match:
                 days = int(match.group(1))
+
+            country_match = re.search(r"- Selected country:\s*([^\n.]+)", last_user_text)
+            country_name = country_match.group(1).strip() if country_match else "Kyrgyzstan"
+            if country_name.casefold() not in {"kyrgyzstan", "kg"}:
+                return {
+                    "title": f"{country_name} itinerary unavailable",
+                    "itinerary": {
+                        "summary": (
+                            f"No development mock itinerary is available for {country_name}. "
+                            "AI generation was unavailable, so no itinerary was created."
+                        ),
+                        "days": [],
+                    },
+                }
             
             days_plan = []
             for day in range(1, days + 1):

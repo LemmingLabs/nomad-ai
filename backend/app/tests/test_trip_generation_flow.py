@@ -1,4 +1,5 @@
 from copy import deepcopy
+from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
@@ -116,6 +117,47 @@ def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline
     assert "ai_generation_failed" in trip.itinerary_json["generation_status"]["reasons"]
     assert trip.itinerary_json["days"][0]["activities"][0]["duration_status"] == "unknown"
     assert db_session.query(TripMessage).count() == 2
+
+
+def test_destination_without_mock_catalog_saves_an_explicit_unavailable_state(
+    db_session, monkeypatch, offline_enrichment
+):
+    destination = SimpleNamespace(
+        id="jp",
+        country_code="JP",
+        country_name="Japan",
+        name="Japan",
+        center_latitude=35.6762,
+        center_longitude=139.6503,
+    )
+    monkeypatch.setattr(trip_service, "resolve_destination", lambda **kwargs: destination)
+
+    def provider_error(self, **kwargs):
+        raise RuntimeError("AI provider unavailable")
+
+    monkeypatch.setattr(
+        "app.services.ai_service.AIService.generate_initial_trip", provider_error
+    )
+
+    trip = trip_service.generate_trip(
+        db=db_session,
+        user_id=None,
+        budget="low",
+        days=2,
+        interests=["culture"],
+        travel_style="relaxed",
+        country_code="JP",
+        destination_id="jp",
+    )
+
+    assert trip.destination_name == "Japan"
+    assert trip.itinerary_json["days"] == []
+    assert "no itinerary was created" in trip.itinerary_json["summary"]
+    assert trip.itinerary_json["generation_status"]["state"] == "degraded"
+    assert trip.itinerary_json["generation_status"]["source"] == "mock"
+    assert "mock_unavailable_for_destination" in trip.itinerary_json["generation_status"]["reasons"]
+    assistant_message = db_session.query(TripMessage).filter_by(role="assistant").one()
+    assert "no safe development fallback exists" in assistant_message.content
 
 
 def test_generation_stage_failures_are_logged_without_provider_payloads(

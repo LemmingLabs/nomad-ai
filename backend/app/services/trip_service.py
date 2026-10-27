@@ -80,9 +80,15 @@ def _build_initial_assistant_message(
     itinerary_json: dict,
     days: int,
     travel_style: str,
+    destination_name: str = "Kyrgyzstan",
 ) -> str:
     generation_status = (itinerary_json or {}).get("generation_status") or {}
     if generation_status.get("state") == "degraded":
+        if "mock_unavailable_for_destination" in generation_status.get("reasons", []):
+            return (
+                f"I couldn't create an itinerary for {destination_name} because AI generation "
+                "was unavailable and no safe development fallback exists for this destination."
+            )
         return (
             "Some planning services did not complete. I saved a clearly marked draft so you can review it; "
             "its timing or route details may be incomplete."
@@ -127,8 +133,26 @@ def _build_initial_assistant_message(
     ).strip()
 
 
-def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> dict:
+def build_mock_itinerary(
+    days: int,
+    interests: list[str],
+    travel_style: str,
+    country_code: str = DEFAULT_COUNTRY_CODE,
+    destination_name: str = "Kyrgyzstan",
+) -> dict:
     """Generate a mock itinerary for development purposes."""
+    if country_code.strip().upper() != DEFAULT_COUNTRY_CODE:
+        return {
+            "summary": (
+                f"No development mock itinerary is available for {destination_name}. "
+                "AI generation was unavailable, so no itinerary was created."
+            ),
+            "days": [],
+            "total_days": days,
+            "interests": interests,
+            "travel_style": travel_style,
+        }
+
     interest_focus = ", ".join(interests[:2]) if interests else "local highlights"
     summary = f"{days}-day {travel_style} trip focusing on {interest_focus}"
 
@@ -761,12 +785,23 @@ def generate_trip(
         }
 
     if not itinerary:
-        itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+        itinerary = build_mock_itinerary(
+            days,
+            normalized_interests,
+            normalized_travel_style,
+            country_code=destination.country_code,
+            destination_name=destination.name,
+        )
+        generation_reasons = ["ai_generation_failed"]
+        if not itinerary["days"]:
+            generation_reasons.append("mock_unavailable_for_destination")
         generation_status = {
             "state": "degraded",
             "source": "mock",
-            "reasons": ["ai_generation_failed"],
+            "reasons": generation_reasons,
         }
+        if "mock_unavailable_for_destination" in generation_reasons:
+            title = f"{destination.name} itinerary unavailable"
 
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
@@ -910,6 +945,7 @@ def generate_trip(
             itinerary_json=cleaned_itinerary,
             days=days,
             travel_style=normalized_travel_style,
+            destination_name=destination.name,
         )
 
         message_repo.create_message(trip_id=trip.id, role="user", content=initial_user_message)

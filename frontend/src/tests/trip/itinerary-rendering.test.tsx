@@ -76,6 +76,26 @@ test('renders degraded generation state and missing timing for a legacy day', ()
   expect(screen.getByText('One or more activity durations are unknown for day 1.')).toBeTruthy();
 });
 
+test('clearly explains when no destination-safe development fallback exists', () => {
+  const itinerary: TripItinerary = {
+    summary: 'No development mock itinerary is available for Japan.',
+    total_days: 2,
+    generation_status: {
+      state: 'degraded',
+      source: 'mock',
+      reasons: ['ai_generation_failed', 'mock_unavailable_for_destination'],
+    },
+    days: [],
+  };
+
+  render(<TripPreview itinerary={itinerary} destinationName="Japan" />);
+
+  expect(screen.getByRole('status').textContent).toContain(
+    'Development fallback is unavailable for Japan',
+  );
+  expect(screen.getByRole('status').textContent).toContain('no itinerary was created');
+});
+
 test('renders source attribution for fact-level reviewed information', () => {
   const itinerary: TripItinerary = {
     days: [{

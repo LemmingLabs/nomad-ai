@@ -36,6 +36,10 @@ export function TripPreview({
     );
   }
 
+  const mockUnavailableForDestination = itinerary.generation_status?.reasons?.includes(
+    'mock_unavailable_for_destination',
+  ) ?? false;
+
   return (
     <div className={styles.preview}>
       <TripHeader
@@ -49,14 +53,20 @@ export function TripPreview({
         actions={actions}
       />
       <div className={styles.guidance}>
-        {itinerary.generation_status?.state === 'degraded' ? (
+        {mockUnavailableForDestination ? (
+          <p className={styles.degradedNotice} role="status">
+            Development fallback is unavailable for {destinationName ?? 'this destination'}. AI generation was unavailable, so no itinerary was created.
+          </p>
+        ) : itinerary.generation_status?.state === 'degraded' ? (
           <p className={styles.degradedNotice} role="status">
             This is a draft because AI or route data was unavailable. Review the warnings and confirm logistics before relying on it.
           </p>
         ) : null}
-        <p className={styles.suggestionNotice}>
-          Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open. Source-reviewed facts and sponsored placements are labeled separately.
-        </p>
+        {itinerary.days.length > 0 ? (
+          <p className={styles.suggestionNotice}>
+            Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open. Source-reviewed facts and sponsored placements are labeled separately.
+          </p>
+        ) : null}
         {itinerary.quality_warnings?.map((warning, index) => (
           <p className={styles.warning} key={`${warning.code}-${warning.day ?? index}`}>
             {warning.message}
@@ -66,10 +76,12 @@ export function TripPreview({
           <p className={styles.warning}>Route details could not be refreshed for this itinerary.</p>
         ) : null}
       </div>
-      <OffersSearchPanel
-        countryCode={destinationCountryCode}
-        destinationCity={itinerary.days[0]?.city ?? ''}
-      />
+      {itinerary.days.length > 0 ? (
+        <OffersSearchPanel
+          countryCode={destinationCountryCode}
+          destinationCity={itinerary.days[0]?.city ?? ''}
+        />
+      ) : null}
       {itinerary.days.length > 1 && (
         <nav className={styles.dayNavigation} aria-label="Jump to itinerary day">
           <span className={styles.dayNavigationLabel}>Jump to day</span>
