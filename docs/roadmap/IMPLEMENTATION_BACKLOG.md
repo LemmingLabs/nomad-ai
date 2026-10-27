@@ -2,6 +2,8 @@
 
 This backlog turns the product direction into four delivery phases. Each phase is represented in GitHub as a milestone and an `[Epic]` issue; the larger implementation issues are linked from that epic. The issue definitions in [`planning/backlog/`](../../planning/backlog/README.md) are the source of truth for issue context and can be synchronized with `scripts/sync-backlog-to-github.sh`.
 
+The backlog also has a separate **Development Quality — Existing Product** milestone and product-quality epic. It tracks improvements to current traveler and business/admin workflows independently of destination expansion, external offers, or launch readiness.
+
 ## Recommended order
 
 | Phase | Epic | Outcome | Depends on |
@@ -23,6 +25,8 @@ This backlog turns the product direction into four delivery phases. Each phase i
 ## First work to pick up
 
 Start with **DEST-01** (destination contract and persistence migration), **DEST-02** (supported destination catalogue and traveler selection), and **DEST-03** (carry the selected country through generation, chat, saved trips, and guest sync). These establish the shared contract that later phases depend on. Work on source/provider discovery can proceed in parallel as a research issue, but do not import or present new-country content before the corresponding review is complete.
+
+For ongoing development of the current app, start with the product-quality epic: **QUALITY-01** (supported destination expectations), **QUALITY-02** (guest chat sign-in guidance), and **QUALITY-03** (accessible form controls). The milestone captures iterative app improvements and does not imply a launch or provider integration commitment.
 
 ## Phase outcomes
 
