@@ -1,19 +1,19 @@
 ## Context
 
-Budget tiers display dollar amounts, but the form does not define the currency, whether the amount is per traveler or group total, or which trip costs the estimate covers.
+The form currently shows dollar ranges even though the trip contract only carries qualitative `low`, `medium`, and `high` preferences. The backend uses these levels to guide AI output and catalogue price-level matching; it does not calculate a trip total or a per-traveler estimate.
 
 ## Goal
 
-Explain what budget choices mean so travelers can provide useful constraints and interpret the generated plan consistently.
+Explain what the budget choices mean without presenting unsupported currency or trip-cost estimates.
 
 ## Acceptance criteria
 
-- The UI states the currency used by the displayed ranges.
-- The UI states whether the range is per traveler or total for the trip and its party.
-- The UI explains whether the range is a planning preference or an estimated trip cost, including any major exclusions.
-- The selected budget meaning is available to generation and visible in an appropriate trip summary.
+- Budget tiers do not show ungrounded currency amounts.
+- The form explains that tiers are relative price-level preferences, not a currency amount, per-traveler estimate, or trip total.
+- The selected preference remains available to generation and is shown with a human-readable label in the trip summary.
+- If numeric budget estimates are added later, their currency, per-person/group scope, and included costs are explicit and supported by the request contract.
 - The copy does not claim price accuracy that the current development app cannot support.
 
 ## Verification
 
-Review the form and generated trip summary for a solo traveler and a group. Confirm the submitted budget constraint remains compatible with the current API contract.
+Review the form and generated trip summary. Confirm the submitted preference remains compatible with the current API contract and no unsupported amount is implied.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { Minus, Plus, Sparkles, X } from 'lucide-react';
+import { Check, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateTripSchema, type GenerateTripFormData } from '../../features/trip/generate-trip';
@@ -13,9 +13,9 @@ import { Card, Textarea } from '../../shared/ui';
 import styles from './GenerateTripForm.module.scss';
 
 const budgetOptions = [
-  { value: 'low', label: 'Low', hint: '$200-500' },
-  { value: 'medium', label: 'Medium', hint: '$500-1200' },
-  { value: 'high', label: 'High', hint: '$1200+' },
+  { value: 'low', label: 'Budget-conscious', hint: 'Prefer lower-priced suggestions' },
+  { value: 'medium', label: 'Balanced', hint: 'Prefer mid-priced suggestions' },
+  { value: 'high', label: 'Higher comfort', hint: 'Prefer higher-priced suggestions' },
 ] as const;
 
 const suggestedInterests = [
@@ -122,10 +122,8 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
         void handleSubmit(onSubmit)(event);
       }}
     >
-      <input type="hidden" {...register('budget')} />
       <input type="hidden" {...register('country_code')} />
       <input type="hidden" {...register('interests')} />
-      <input type="hidden" {...register('travel_style')} />
 
       <div className={styles.header}>
         <span className={styles.badge}>
@@ -192,24 +190,41 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
 
         <Card className={styles.section} padding="lg">
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Budget</h3>
-            <p className={styles.sectionHint}>Choose a comfort level, not a raw backend value.</p>
+            <h3 className={styles.sectionTitle} id="trip-budget-label">Budget preference</h3>
+            <p className={styles.sectionHint} id="trip-budget-hint">
+              This relative preference guides place suggestions. It is not a price estimate or a per-person or trip total; no currency amount is calculated.
+            </p>
           </div>
-          <div className={styles.optionGrid}>
+          <div
+            className={styles.optionGrid}
+            role="radiogroup"
+            aria-labelledby="trip-budget-label"
+            aria-describedby={errors.budget ? 'trip-budget-hint trip-budget-error' : 'trip-budget-hint'}
+          >
             {budgetOptions.map((option) => (
-              <button
+              <label
                 key={option.value}
-                type="button"
                 className={styles.optionCard}
                 data-active={budget === option.value}
-                onClick={() => setValue('budget', option.value, { shouldValidate: true })}
               >
+                <input
+                  className={styles.choiceInput}
+                  type="radio"
+                  value={option.value}
+                  {...register('budget')}
+                />
                 <span className={styles.optionLabel}>{option.label}</span>
                 <span className={styles.optionHint}>{option.hint}</span>
-              </button>
+                {budget === option.value && (
+                  <span className={styles.choiceCheck} aria-hidden="true">
+                    <Check size={14} />
+                    Selected
+                  </span>
+                )}
+              </label>
             ))}
           </div>
-          {errors.budget?.message && <p className={styles.error}>{errors.budget.message}</p>}
+          {errors.budget?.message && <p className={styles.error} id="trip-budget-error" role="alert">{errors.budget.message}</p>}
         </Card>
 
         <Card className={styles.section} padding="lg">
@@ -221,18 +236,25 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
             <button
               type="button"
               className={styles.stepperButton}
+              aria-label="Decrease trip length"
               onClick={() => setValue('days', Math.max(1, days - 1), { shouldValidate: true })}
               disabled={days <= 1}
             >
               <Minus size={16} />
             </button>
-            <div className={styles.daysValue}>
+            <div
+              className={styles.daysValue}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <span className={styles.daysNumber}>{days}</span>
               <span className={styles.daysLabel}>{days === 1 ? 'day' : 'days'}</span>
             </div>
             <button
               type="button"
               className={styles.stepperButton}
+              aria-label="Increase trip length"
               onClick={() => setValue('days', Math.min(14, days + 1), { shouldValidate: true })}
               disabled={days >= 14}
             >
@@ -244,11 +266,16 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
 
         <Card className={styles.section} padding="lg">
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Interests</h3>
-            <p className={styles.sectionHint}>Start with suggested themes and add your own.</p>
+            <h3 className={styles.sectionTitle} id="interests-label">Interests</h3>
+            <p className={styles.sectionHint} id="interests-hint">Start with suggested themes and add your own.</p>
           </div>
 
-          <div className={styles.chipGroup}>
+          <div
+            className={styles.chipGroup}
+            role="group"
+            aria-labelledby="interests-label"
+            aria-describedby={errors.interests ? 'interests-hint interests-error' : 'interests-hint'}
+          >
             {suggestedInterests.map((interest) => {
               const isSelected = interests.includes(interest);
 
@@ -258,6 +285,7 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
                   type="button"
                   className={styles.chip}
                   data-active={isSelected}
+                  aria-pressed={isSelected}
                   onClick={() =>
                     updateInterests(
                       isSelected
@@ -266,6 +294,7 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
                     )
                   }
                 >
+                  {isSelected && <Check size={14} aria-hidden="true" />}
                   {interest}
                 </button>
               );
@@ -311,31 +340,49 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
               ))}
             </div>
           )}
-          {errors.interests?.message && <p className={styles.error}>{errors.interests.message}</p>}
+          {errors.interests?.message && (
+            <p className={styles.error} id="interests-error" role="alert">
+              {errors.interests.message}
+            </p>
+          )}
         </Card>
 
         <Card className={styles.section} padding="lg">
           <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>Travel style</h3>
-            <p className={styles.sectionHint}>Guide the tone of the itinerary with one tap.</p>
+            <h3 className={styles.sectionTitle} id="travel-style-label">
+              Travel style
+            </h3>
+            <p className={styles.sectionHint} id="travel-style-hint">
+              Guide the tone of the itinerary with one selection.
+            </p>
           </div>
-          <div className={styles.chipGroup}>
+          <div
+            className={styles.chipGroup}
+            role="radiogroup"
+            aria-labelledby="travel-style-label"
+            aria-describedby={errors.travel_style ? 'travel-style-hint travel-style-error' : 'travel-style-hint'}
+          >
             {travelStyleOptions.map((option) => (
-              <button
+              <label
                 key={option}
-                type="button"
-                className={styles.chip}
+                className={styles.chipOption}
                 data-active={travelStyle === option}
-                onClick={() =>
-                  setValue('travel_style', option, { shouldValidate: true })
-                }
               >
-                {option}
-              </button>
+                <input
+                  className={styles.choiceInput}
+                  type="radio"
+                  value={option}
+                  {...register('travel_style')}
+                />
+                {travelStyle === option && <Check size={14} aria-hidden="true" />}
+                <span>{option}</span>
+              </label>
             ))}
           </div>
           {errors.travel_style?.message && (
-            <p className={styles.error}>{errors.travel_style.message}</p>
+            <p className={styles.error} id="travel-style-error" role="alert">
+              {errors.travel_style.message}
+            </p>
           )}
         </Card>
 
