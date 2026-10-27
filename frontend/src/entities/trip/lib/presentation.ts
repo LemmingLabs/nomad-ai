@@ -94,6 +94,20 @@ export function formatTravelStyle(style?: string | null): string | null {
   return humanizeToken(style);
 }
 
+const budgetPreferenceLabels: Record<string, string> = {
+  low: 'Budget-conscious',
+  medium: 'Balanced',
+  high: 'Higher comfort',
+};
+
+export function formatBudgetPreference(budget?: string | null): string | null {
+  if (!budget) {
+    return null;
+  }
+
+  return budgetPreferenceLabels[budget.trim().toLowerCase()] ?? humanizeToken(budget);
+}
+
 export function getDisplayPlaceTypes(
   types?: string[] | null,
   limit = 3,

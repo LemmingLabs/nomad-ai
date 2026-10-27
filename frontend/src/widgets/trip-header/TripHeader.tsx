@@ -6,7 +6,7 @@ import {
   Sparkles,
   Wallet,
 } from 'lucide-react';
-import { formatTravelStyle } from '../../entities/trip/lib/presentation';
+import { formatBudgetPreference, formatTravelStyle } from '../../entities/trip/lib/presentation';
 import { TagList } from '../../shared/ui';
 import styles from './TripHeader.module.scss';
 
@@ -32,6 +32,7 @@ export function TripHeader({
   actions,
 }: TripHeaderProps) {
   const travelStyleLabel = formatTravelStyle(travelStyle);
+  const budgetLabel = formatBudgetPreference(budget);
 
   return (
     <header className={styles.header}>
@@ -69,14 +70,14 @@ export function TripHeader({
             </div>
           </div>
 
-          {budget && (
+          {budgetLabel && (
             <div className={styles.stat}>
               <span className={styles.statIcon}>
                 <Wallet size={16} />
               </span>
               <div>
-                <span className={styles.statLabel}>Budget</span>
-                <strong className={styles.statValue}>{budget}</strong>
+                <span className={styles.statLabel}>Budget preference</span>
+                <strong className={styles.statValue}>{budgetLabel}</strong>
               </div>
             </div>
           )}

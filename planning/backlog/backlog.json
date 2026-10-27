@@ -57,7 +57,7 @@
     {"id": "QUALITY-01", "kind": "task", "title": "QUALITY-01 Set clear expectations for supported trip destinations", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-01.md", "depends_on": []},
     {"id": "QUALITY-02", "kind": "task", "title": "QUALITY-02 Consolidate sign-in guidance on guest trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-02.md", "depends_on": []},
     {"id": "QUALITY-03", "kind": "task", "title": "QUALITY-03 Make trip form choices accessible", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-03.md", "depends_on": []},
-    {"id": "QUALITY-04", "kind": "task", "title": "QUALITY-04 Clarify trip budget currency and scope", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-04.md", "depends_on": []},
+    {"id": "QUALITY-04", "kind": "task", "title": "QUALITY-04 Clarify budget preference semantics and trip cost scope", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-04.md", "depends_on": []},
     {"id": "QUALITY-05", "kind": "task", "title": "QUALITY-05 Make business and admin navigation responsive", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-05.md", "depends_on": []},
     {"id": "QUALITY-06", "kind": "task", "title": "QUALITY-06 Standardize structured logs for trip generation failures", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-06.md", "depends_on": []},
     {"id": "QUALITY-07", "kind": "task", "title": "QUALITY-07 Reduce friction in the trip creation form", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-07.md", "depends_on": ["QUALITY-03", "QUALITY-04"]},

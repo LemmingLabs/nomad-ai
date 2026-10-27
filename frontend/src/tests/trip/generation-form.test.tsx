@@ -20,7 +20,7 @@ test('submits the selected budget, interests, and trip brief', async () => {
   const user = userEvent.setup();
   render(<GenerateTripForm onSubmit={submit} />);
 
-  await user.click(screen.getByRole('button', { name: /high/i }));
+  await user.click(screen.getByRole('radio', { name: /higher comfort/i }));
   await user.type(screen.getByRole('textbox', { name: /add custom interest/i }), ' Stargazing ');
   await user.click(screen.getByRole('button', { name: 'Add' }));
   await user.type(screen.getByRole('textbox', { name: /prompt/i }), 'Quiet mountain roads');

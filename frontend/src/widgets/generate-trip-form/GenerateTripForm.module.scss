@@ -111,6 +111,7 @@
 }
 
 .optionCard {
+  position: relative;
   @include flex-col;
   gap: $space-2;
   align-items: flex-start;
@@ -126,6 +127,32 @@
     box-shadow: 0 12px 30px rgba(20, 184, 166, 0.12);
     transform: translateY(-1px);
   }
+
+  &:focus-within {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.choiceCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-2;
+  border-radius: $radius-full;
+  background: $color-accent-light;
+  color: $color-accent-hover;
+  font-size: $text-xs;
+  font-weight: $weight-bold;
+  margin-top: auto;
+}
+
+.choiceInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
 }
 
 .optionLabel {
@@ -159,6 +186,11 @@
   color: $color-text;
   @include flex-center;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
 
   &:disabled {
     opacity: 0.4;
@@ -194,6 +226,7 @@
 }
 
 .chip,
+.chipOption,
 .selectedChip {
   display: inline-flex;
   align-items: center;
@@ -207,7 +240,18 @@
   cursor: pointer;
 }
 
+.chipOption {
+  position: relative;
+  text-transform: capitalize;
+
+  &:focus-within {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
 .chip[data-active='true'],
+.chipOption[data-active='true'],
 .selectedChip {
   border-color: rgba(20, 184, 166, 0.36);
   background: rgba(20, 184, 166, 0.09);
@@ -229,6 +273,16 @@
   padding: 0;
   display: inline-flex;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.chip:focus-visible {
+  outline: 2px solid $color-accent;
+  outline-offset: 2px;
 }
 
 .customInterest {
