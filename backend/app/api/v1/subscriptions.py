@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
@@ -56,6 +57,11 @@ def mock_purchase_subscription(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> UserSubscriptionResponse:
+    if settings.APP_ENV != "development":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
     try:
         subscription = SubscriptionService(db).mock_purchase_subscription(
             user_id=current_user.id,

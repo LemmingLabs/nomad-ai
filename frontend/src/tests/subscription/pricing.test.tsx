@@ -29,9 +29,10 @@ afterEach(() => {
 test('sorts plans by price, marks the active plan, and selects the upgrade', async () => {
   render(<PricingPlans />);
 
+  expect(screen.getByText(/Development preview: choosing a plan simulates activation/)).toBeTruthy();
   const names = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
   expect(names).toEqual(['FREE', 'PRO']);
   expect(screen.getByRole('button', { name: 'Current plan' }).hasAttribute('disabled')).toBe(true);
-  await userEvent.setup().click(screen.getByRole('button', { name: 'Upgrade' }));
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Simulate upgrade' }));
   expect(purchase).toHaveBeenCalledWith(2);
 });

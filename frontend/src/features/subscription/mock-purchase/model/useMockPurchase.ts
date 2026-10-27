@@ -12,7 +12,7 @@ export function useMockPurchase() {
       { plan_id: planId },
       {
         onSuccess: () => {
-          toast.success('Plan updated!');
+          toast.success('Demo plan activated. No payment was processed.');
           void Promise.all([
             queryClient.invalidateQueries({ queryKey: subscriptionQueryKeys.me() }),
             queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() }),
@@ -20,7 +20,7 @@ export function useMockPurchase() {
           ]);
         },
         onError: () => {
-          toast.error('Could not update your plan. Please try again.');
+          toast.error('Could not activate the demo plan. Please try again.');
         },
       },
     );
