@@ -26,7 +26,12 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
   const transportType = humanizeToken(day.route_from_previous?.transport_type);
 
   return (
-    <article className={styles.card}>
+    <article
+      className={styles.card}
+      id={`trip-day-${day.day}`}
+      aria-labelledby={`trip-day-title-${day.day}`}
+      tabIndex={-1}
+    >
       <DayHero day={day} />
 
       <div className={styles.body}>

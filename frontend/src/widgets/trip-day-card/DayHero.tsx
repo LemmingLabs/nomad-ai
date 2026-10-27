@@ -46,7 +46,9 @@ export function DayHero({ day }: DayHeroProps) {
 
         <div className={styles.copy}>
           <p className={styles.placeName}>{placeName}</p>
-          <h3 className={styles.title}>{day.title}</h3>
+          <h3 className={styles.title} id={`trip-day-title-${day.day}`}>
+            {day.title}
+          </h3>
           <p className={styles.location}>
             <MapPin size={16} />
             <span>

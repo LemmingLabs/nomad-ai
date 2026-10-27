@@ -37,6 +37,9 @@ test('renders route evidence and place details for a multi-day itinerary', () =>
 
   expect(screen.getByText('Old town')).toBeTruthy();
   expect(screen.getByText('Lake shore')).toBeTruthy();
+  expect(screen.getByRole('navigation', { name: 'Jump to itinerary day' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Day 2: Lake shore, Cholpon-Ata' }).getAttribute('href'))
+    .toBe('#trip-day-2');
   expect(screen.getByText('Explore the square')).toBeTruthy();
   expect(screen.getByText('Walk along the lake')).toBeTruthy();
   expect(screen.getByText('Transfer snapshot')).toBeTruthy();
@@ -66,6 +69,7 @@ test('renders degraded generation state and missing timing for a legacy day', ()
 
   render(<TripPreview itinerary={itinerary} />);
 
+  expect(screen.queryByRole('navigation', { name: 'Jump to itinerary day' })).toBeNull();
   expect(screen.getByText(/This is a draft/).textContent).toContain('This is a draft');
   expect(screen.getByText('Flexible timing')).toBeTruthy();
   expect(screen.getByText('Duration unknown')).toBeTruthy();

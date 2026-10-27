@@ -55,7 +55,7 @@ export function TripPreview({
           </p>
         ) : null}
         <p className={styles.suggestionNotice}>
-          Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open.
+          Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open. Source-reviewed facts and sponsored placements are labeled separately.
         </p>
         {itinerary.quality_warnings?.map((warning, index) => (
           <p className={styles.warning} key={`${warning.code}-${warning.day ?? index}`}>
@@ -70,6 +70,25 @@ export function TripPreview({
         countryCode={destinationCountryCode}
         destinationCity={itinerary.days[0]?.city ?? ''}
       />
+      {itinerary.days.length > 1 && (
+        <nav className={styles.dayNavigation} aria-label="Jump to itinerary day">
+          <span className={styles.dayNavigationLabel}>Jump to day</span>
+          <ol className={styles.dayNavigationList}>
+            {itinerary.days.map((day) => (
+              <li key={day.day}>
+                <a
+                  className={styles.dayNavigationLink}
+                  href={`#trip-day-${day.day}`}
+                  aria-label={`Day ${day.day}: ${day.title}, ${day.city}`}
+                >
+                  <span>Day {day.day}</span>
+                  <span>{day.city}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <div className={styles.journey}>
         {itinerary.days.map((day) => (
           <Fragment key={day.day}>

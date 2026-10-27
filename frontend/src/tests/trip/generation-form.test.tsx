@@ -21,6 +21,9 @@ test('submits the selected budget, interests, and trip brief', async () => {
   render(<GenerateTripForm onSubmit={submit} />);
 
   await user.click(screen.getByRole('radio', { name: /higher comfort/i }));
+  await user.click(screen.getByText(/personalize your trip/i));
+  await user.click(screen.getByRole('button', { name: 'nature' }));
+  await user.click(screen.getByRole('button', { name: 'culture' }));
   await user.type(screen.getByRole('textbox', { name: /add custom interest/i }), ' Stargazing ');
   await user.click(screen.getByRole('button', { name: 'Add' }));
   await user.type(screen.getByRole('textbox', { name: /prompt/i }), 'Quiet mountain roads');
@@ -37,15 +40,17 @@ test('submits the selected budget, interests, and trip brief', async () => {
   });
 });
 
-test('does not submit when every interest is removed', async () => {
+test('submits a general trip when optional preferences are skipped', async () => {
   const submit = vi.fn();
   const user = userEvent.setup();
   render(<GenerateTripForm onSubmit={submit} />);
 
-  await user.click(screen.getByRole('button', { name: 'Remove nature' }));
-  await user.click(screen.getByRole('button', { name: 'Remove culture' }));
   await user.click(screen.getByRole('button', { name: /generate itinerary/i }));
 
-  expect(await screen.findByText('Add at least one interest')).toBeTruthy();
-  expect(submit).not.toHaveBeenCalled();
+  await waitFor(() => expect(submit).toHaveBeenCalledOnce());
+  expect(submit.mock.calls[0][0]).toMatchObject({
+    interests: '',
+    prompt: '',
+    travel_style: 'relaxed',
+  });
 });

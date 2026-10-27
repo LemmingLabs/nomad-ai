@@ -3,7 +3,7 @@
 
 .hero {
   position: relative;
-  min-height: 320px;
+  min-height: 280px;
   overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 28%),
@@ -36,7 +36,7 @@
 .content {
   position: relative;
   z-index: 1;
-  min-height: 320px;
+  min-height: 280px;
   padding: $space-8;
   display: grid;
   align-content: space-between;
@@ -143,7 +143,7 @@
 @include max-md {
   .hero,
   .content {
-    min-height: 280px;
+    min-height: 240px;
   }
 
   .content {
