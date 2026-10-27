@@ -22,8 +22,40 @@ export type OfferSearchRequest = FlightOfferSearchRequest | StayOfferSearchReque
 
 export type OffersUnavailableResponse = {
   state: 'unavailable'
-  reason: 'feature_disabled' | 'provider_unconfigured'
+  reason:
+    | 'feature_disabled'
+    | 'provider_unconfigured'
+    | 'unsupported_market'
+    | 'provider_timeout'
+    | 'provider_quota_exceeded'
+    | 'provider_error'
+    | 'stale_result'
   message: string
+}
+
+export type NormalizedOffer = {
+  id: string
+  kind: 'flight' | 'stay'
+  provider: string
+  fetched_at: string
+  expires_at: string
+  currency: string
+  total_amount: number | string
+  availability: 'available' | 'limited'
+  conditions: string[]
+  handoff_url: string
+}
+
+export type OffersResultsResponse = {
+  state: 'results'
+  provider: string
+  offers: NormalizedOffer[]
+}
+
+export type OffersNoResultsResponse = {
+  state: 'no_results'
+  provider: string
+  fetched_at: string
 }
 
 export type OfferDemoItem = {
@@ -43,4 +75,8 @@ export type OffersDemoResponse = {
   offers: OfferDemoItem[]
 }
 
-export type OffersSearchResponse = OffersUnavailableResponse | OffersDemoResponse
+export type OffersSearchResponse =
+  | OffersUnavailableResponse
+  | OffersDemoResponse
+  | OffersResultsResponse
+  | OffersNoResultsResponse
