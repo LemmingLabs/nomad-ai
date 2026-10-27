@@ -173,8 +173,68 @@
   span { flex: 0 0 auto; font-weight: 700; }
 }
 
+.liveOffers {
+  display: grid;
+  gap: $space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liveOffer {
+  padding: $space-4;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: $radius-lg;
+  background: #fff;
+}
+
+.liveOfferHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: $space-3;
+  color: $color-text;
+  font-size: $text-sm;
+
+  > div { @include flex-col; gap: $space-1; }
+  small { color: $color-text-muted; font-size: $text-xs; font-weight: 400; }
+}
+
+.liveOfferPrice {
+  align-items: flex-end;
+  flex: 0 0 auto;
+  font-size: $text-base;
+  font-weight: 700;
+  text-align: right;
+}
+
+.conditions,
+.freshness {
+  margin: $space-2 0 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.freshness { font-size: $text-xs; }
+
+.handoff {
+  display: inline-flex;
+  margin-top: $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  color: #fff;
+  background: $color-accent;
+  font-size: $text-sm;
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover { background: $color-accent-hover; }
+}
+
 @include max-md {
   .panel { margin: 0 $space-4 $space-4; padding: $space-4; }
   .header { flex-direction: column; }
   .demoOfferHeading { flex-direction: column; }
+  .liveOfferHeading { flex-direction: column; }
+  .liveOfferPrice { align-items: flex-start; text-align: left; }
 }

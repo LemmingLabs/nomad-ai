@@ -1,5 +1,10 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
-import { offersApi, type OfferDemoItem, type OfferSearchRequest } from '../../entities/offers'
+import {
+  offersApi,
+  type NormalizedOffer,
+  type OfferDemoItem,
+  type OfferSearchRequest,
+} from '../../entities/offers'
 import styles from './OffersSearchPanel.module.scss'
 
 type OffersSearchPanelProps = {
@@ -31,6 +36,21 @@ function followingDate(value: string): string {
   return dateInputValue(result)
 }
 
+function formatOfferTotal(amount: number | string, currency: string): string {
+  const numericAmount = Number(amount)
+  if (!Number.isFinite(numericAmount)) return `${currency} ${amount}`
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(numericAmount)
+  } catch {
+    return `${currency} ${numericAmount.toFixed(2)}`
+  }
+}
+
+function formatCheckedAt(value: string): string {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+}
+
 function getUnavailableMessage(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const response = (error as { response?: { data?: unknown } }).response
@@ -58,9 +78,11 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   const [rooms, setRooms] = useState(1)
   const [isPending, setIsPending] = useState(false)
   const [unavailableMessage, setUnavailableMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [noResultsMessage, setNoResultsMessage] = useState('')
   const [demoMessage, setDemoMessage] = useState('')
   const [demoOffers, setDemoOffers] = useState<OfferDemoItem[]>([])
+  const [liveOffers, setLiveOffers] = useState<NormalizedOffer[]>([])
+  const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -71,11 +93,23 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
     return () => { isCurrent = false }
   }, [])
 
+  useEffect(() => {
+    if (liveOffers.length === 0) return
+    const refresh = () => setNow(Date.now())
+    const timer = window.setInterval(refresh, 5000)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [liveOffers])
+
   const clearSearchState = () => {
     setUnavailableMessage('')
-    setSuccessMessage('')
+    setNoResultsMessage('')
     setDemoMessage('')
     setDemoOffers([])
+    setLiveOffers([])
   }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -108,8 +142,12 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       if (response.state === 'demo') {
         setDemoMessage(response.message)
         setDemoOffers(response.offers)
+      } else if (response.state === 'results') {
+        setLiveOffers(response.offers)
+      } else if (response.state === 'no_results') {
+        setNoResultsMessage(`No ${kind === 'flight' ? 'flights' : 'stays'} were found for those search details.`)
       } else {
-        setSuccessMessage(`${response.message} No current prices are shown until an approved supplier is connected.`)
+        setUnavailableMessage(response.message)
       }
     } catch (error) {
       setUnavailableMessage(getUnavailableMessage(error))
@@ -206,8 +244,42 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       {unavailableMessage ? (
         <p className={styles.notice} role="status">{unavailableMessage}</p>
       ) : null}
-      {successMessage ? (
-        <p className={styles.notice} role="status">{successMessage}</p>
+      {noResultsMessage ? (
+        <p className={styles.notice} role="status">{noResultsMessage}</p>
+      ) : null}
+      {liveOffers.length > 0 ? (
+        <ul className={styles.liveOffers} aria-label="Supplier offer results">
+          {liveOffers.map((offer) => {
+            const expiresAt = new Date(offer.expires_at).getTime()
+            const expired = !Number.isFinite(expiresAt) || expiresAt <= now
+            return (
+              <li className={styles.liveOffer} key={`${offer.provider}-${offer.id}`}>
+                <div className={styles.liveOfferHeading}>
+                  <div>
+                    <strong>{offer.kind === 'flight' ? 'Flight offer' : 'Stay offer'}</strong>
+                    <small>{offer.provider} · reference {offer.id}</small>
+                  </div>
+                  <div className={styles.liveOfferPrice}>
+                    {expired ? 'Price expired' : formatOfferTotal(offer.total_amount, offer.currency)}
+                    <small>{offer.availability === 'available' ? 'Available when checked' : 'Limited availability when checked'}</small>
+                  </div>
+                </div>
+                <p className={styles.conditions}>
+                  {offer.conditions.length > 0 ? offer.conditions.join(' · ') : 'No additional conditions supplied.'}
+                </p>
+                <p className={styles.freshness}>
+                  Checked {formatCheckedAt(offer.fetched_at)}
+                  {expired ? ' · Search again to check the price and availability.' : ''}
+                </p>
+                {!expired ? (
+                  <a className={styles.handoff} href={offer.handoff_url} target="_blank" rel="noopener noreferrer">
+                    Continue to {offer.provider}
+                  </a>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
       ) : null}
       {demoMessage ? (
         <div className={styles.demoNotice} role="status">
