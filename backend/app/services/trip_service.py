@@ -27,6 +27,32 @@ from app.services.itinerary_quality_service import validate_itinerary_quality
 logger = logging.getLogger(__name__)
 
 
+def _log_generation_stage_failure(stage: str, exc: Exception, country_code: str) -> None:
+    """Log provider failures without copying prompts or provider error text into logs."""
+    error_type = type(exc).__name__
+    context = {
+        "event": "trip_generation_stage_failed",
+        "stage": stage,
+        "country_code": country_code.upper(),
+        "error_type": error_type,
+    }
+    provider_module = type(exc).__module__.split(".", maxsplit=1)[0]
+    expected_provider_failure = isinstance(exc, (TimeoutError, ConnectionError)) or (
+        provider_module in {"google", "groq", "httpx", "requests"}
+    )
+
+    if expected_provider_failure:
+        logger.warning("trip_generation_stage_failed", extra=context)
+        return
+
+    safe_exception = RuntimeError(error_type)
+    logger.error(
+        "trip_generation_stage_failed",
+        extra=context,
+        exc_info=(RuntimeError, safe_exception, exc.__traceback__),
+    )
+
+
 def _build_initial_user_message(
     *,
     prompt: str | None,
@@ -54,9 +80,15 @@ def _build_initial_assistant_message(
     itinerary_json: dict,
     days: int,
     travel_style: str,
+    destination_name: str = "Kyrgyzstan",
 ) -> str:
     generation_status = (itinerary_json or {}).get("generation_status") or {}
     if generation_status.get("state") == "degraded":
+        if "mock_unavailable_for_destination" in generation_status.get("reasons", []):
+            return (
+                f"I couldn't create an itinerary for {destination_name} because AI generation "
+                "was unavailable and no safe development fallback exists for this destination."
+            )
         return (
             "Some planning services did not complete. I saved a clearly marked draft so you can review it; "
             "its timing or route details may be incomplete."
@@ -101,8 +133,26 @@ def _build_initial_assistant_message(
     ).strip()
 
 
-def build_mock_itinerary(days: int, interests: list[str], travel_style: str) -> dict:
+def build_mock_itinerary(
+    days: int,
+    interests: list[str],
+    travel_style: str,
+    country_code: str = DEFAULT_COUNTRY_CODE,
+    destination_name: str = "Kyrgyzstan",
+) -> dict:
     """Generate a mock itinerary for development purposes."""
+    if country_code.strip().upper() != DEFAULT_COUNTRY_CODE:
+        return {
+            "summary": (
+                f"No development mock itinerary is available for {destination_name}. "
+                "AI generation was unavailable, so no itinerary was created."
+            ),
+            "days": [],
+            "total_days": days,
+            "interests": interests,
+            "travel_style": travel_style,
+        }
+
     interest_focus = ", ".join(interests[:2]) if interests else "local highlights"
     summary = f"{days}-day {travel_style} trip focusing on {interest_focus}"
 
@@ -725,7 +775,9 @@ def generate_trip(
             if isinstance(candidate_message, str) and candidate_message.strip():
                 assistant_text = candidate_message.strip()
     except Exception as exc:
-        print(f"AI initial generation failed: {exc}")
+        _log_generation_stage_failure(
+            "initial_ai_generation", exc, destination.country_code
+        )
         generation_status = {
             "state": "degraded",
             "source": "mock",
@@ -733,12 +785,23 @@ def generate_trip(
         }
 
     if not itinerary:
-        itinerary = build_mock_itinerary(days, normalized_interests, normalized_travel_style)
+        itinerary = build_mock_itinerary(
+            days,
+            normalized_interests,
+            normalized_travel_style,
+            country_code=destination.country_code,
+            destination_name=destination.name,
+        )
+        generation_reasons = ["ai_generation_failed"]
+        if not itinerary["days"]:
+            generation_reasons.append("mock_unavailable_for_destination")
         generation_status = {
             "state": "degraded",
             "source": "mock",
-            "reasons": ["ai_generation_failed"],
+            "reasons": generation_reasons,
         }
+        if "mock_unavailable_for_destination" in generation_reasons:
+            title = f"{destination.name} itinerary unavailable"
 
     if not title:
         title = f"{days}-day {normalized_travel_style} trip"
@@ -768,7 +831,9 @@ def generate_trip(
             country_name=destination.country_name,
         )
     except Exception as exc:
-        print(f"Place candidate enrichment failed: {exc}")
+        _log_generation_stage_failure(
+            "place_enrichment", exc, destination.country_code
+        )
         generation_reasons.append("place_enrichment_unavailable")
 
     catalog_service = CatalogService(db)
@@ -791,7 +856,7 @@ def generate_trip(
             )
         )
     except Exception as exc:
-        print(f"Routing enrichment failed: {exc}")
+        _log_generation_stage_failure("routing_enrichment", exc, destination.country_code)
         enriched_itinerary["route_status"] = "unavailable"
         generation_reasons.append("routing_unavailable")
     if enriched_itinerary.get("route_status") == "unavailable":
@@ -805,7 +870,7 @@ def generate_trip(
             country_code=destination.country_code,
         )
     except Exception as exc:
-        print(f"Image enrichment failed: {exc}")
+        _log_generation_stage_failure("image_enrichment", exc, destination.country_code)
         generation_reasons.append("image_enrichment_unavailable")
 
     from app.services.sponsored_injection_service import SponsoredInjectionService
@@ -816,7 +881,9 @@ def generate_trip(
             country_code=destination.country_code,
         )
     except Exception as exc:
-        logger.exception("Sponsored injection failed: %s", exc)
+        _log_generation_stage_failure(
+            "sponsored_injection", exc, destination.country_code
+        )
         generation_reasons.append("sponsored_enrichment_unavailable")
 
     if generation_reasons:
@@ -878,6 +945,7 @@ def generate_trip(
             itinerary_json=cleaned_itinerary,
             days=days,
             travel_style=normalized_travel_style,
+            destination_name=destination.name,
         )
 
         message_repo.create_message(trip_id=trip.id, role="user", content=initial_user_message)
