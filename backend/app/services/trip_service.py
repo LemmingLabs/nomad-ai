@@ -27,6 +27,32 @@ from app.services.itinerary_quality_service import validate_itinerary_quality
 logger = logging.getLogger(__name__)
 
 
+def _log_generation_stage_failure(stage: str, exc: Exception, country_code: str) -> None:
+    """Log provider failures without copying prompts or provider error text into logs."""
+    error_type = type(exc).__name__
+    context = {
+        "event": "trip_generation_stage_failed",
+        "stage": stage,
+        "country_code": country_code.upper(),
+        "error_type": error_type,
+    }
+    provider_module = type(exc).__module__.split(".", maxsplit=1)[0]
+    expected_provider_failure = isinstance(exc, (TimeoutError, ConnectionError)) or (
+        provider_module in {"google", "groq", "httpx", "requests"}
+    )
+
+    if expected_provider_failure:
+        logger.warning("trip_generation_stage_failed", extra=context)
+        return
+
+    safe_exception = RuntimeError(error_type)
+    logger.error(
+        "trip_generation_stage_failed",
+        extra=context,
+        exc_info=(RuntimeError, safe_exception, exc.__traceback__),
+    )
+
+
 def _build_initial_user_message(
     *,
     prompt: str | None,
@@ -725,7 +751,9 @@ def generate_trip(
             if isinstance(candidate_message, str) and candidate_message.strip():
                 assistant_text = candidate_message.strip()
     except Exception as exc:
-        print(f"AI initial generation failed: {exc}")
+        _log_generation_stage_failure(
+            "initial_ai_generation", exc, destination.country_code
+        )
         generation_status = {
             "state": "degraded",
             "source": "mock",
@@ -768,7 +796,9 @@ def generate_trip(
             country_name=destination.country_name,
         )
     except Exception as exc:
-        print(f"Place candidate enrichment failed: {exc}")
+        _log_generation_stage_failure(
+            "place_enrichment", exc, destination.country_code
+        )
         generation_reasons.append("place_enrichment_unavailable")
 
     catalog_service = CatalogService(db)
@@ -791,7 +821,7 @@ def generate_trip(
             )
         )
     except Exception as exc:
-        print(f"Routing enrichment failed: {exc}")
+        _log_generation_stage_failure("routing_enrichment", exc, destination.country_code)
         enriched_itinerary["route_status"] = "unavailable"
         generation_reasons.append("routing_unavailable")
     if enriched_itinerary.get("route_status") == "unavailable":
@@ -805,7 +835,7 @@ def generate_trip(
             country_code=destination.country_code,
         )
     except Exception as exc:
-        print(f"Image enrichment failed: {exc}")
+        _log_generation_stage_failure("image_enrichment", exc, destination.country_code)
         generation_reasons.append("image_enrichment_unavailable")
 
     from app.services.sponsored_injection_service import SponsoredInjectionService
@@ -816,7 +846,9 @@ def generate_trip(
             country_code=destination.country_code,
         )
     except Exception as exc:
-        logger.exception("Sponsored injection failed: %s", exc)
+        _log_generation_stage_failure(
+            "sponsored_injection", exc, destination.country_code
+        )
         generation_reasons.append("sponsored_enrichment_unavailable")
 
     if generation_reasons:

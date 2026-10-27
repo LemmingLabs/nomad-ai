@@ -118,6 +118,70 @@ def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline
     assert db_session.query(TripMessage).count() == 2
 
 
+def test_generation_stage_failures_are_logged_without_provider_payloads(
+    db_session, monkeypatch, offline_enrichment, caplog
+):
+    def fail_ai(self, **kwargs):
+        secret = "private prompt" + " text must not appear in logs"
+        raise RuntimeError(secret)
+
+    def fail_place_candidates(*args, **kwargs):
+        secret = "provider request" + " details must not appear in logs"
+        raise TimeoutError(secret)
+
+    async def fail_routing(self, itinerary):
+        secret = "route request" + " details must not appear in logs"
+        raise TimeoutError(secret)
+
+    def fail_images(self, itinerary, **kwargs):
+        secret = "image request" + " details must not appear in logs"
+        raise TimeoutError(secret)
+
+    monkeypatch.setattr("app.services.ai_service.AIService.generate_initial_trip", fail_ai)
+    monkeypatch.setattr(trip_service, "enrich_itinerary_with_place_candidates", fail_place_candidates)
+    monkeypatch.setattr(
+        "app.services.routing_service.RoutingService.enrich_from_itinerary_json",
+        fail_routing,
+    )
+    monkeypatch.setattr(
+        "app.services.image_enrichment_service.ImageEnrichmentService.enrich_trip_with_images",
+        fail_images,
+    )
+
+    trip = trip_service.generate_trip(
+        db=db_session,
+        user_id=None,
+        budget="low",
+        days=1,
+        interests=["nature"],
+        travel_style="relaxed",
+    )
+
+    records = [
+        record
+        for record in caplog.records
+        if getattr(record, "event", None) == "trip_generation_stage_failed"
+    ]
+    assert {record.stage for record in records} >= {
+        "initial_ai_generation",
+        "place_enrichment",
+        "routing_enrichment",
+        "image_enrichment",
+    }
+    assert all(record.country_code == "KG" for record in records)
+    assert all(record.error_type in {"RuntimeError", "TimeoutError"} for record in records)
+    assert all(record.exc_info is None for record in records if record.stage != "initial_ai_generation")
+    assert "private prompt text" not in caplog.text
+    assert "provider request details" not in caplog.text
+    assert trip.itinerary_json["generation_status"]["state"] == "degraded"
+    assert {
+        "ai_generation_failed",
+        "place_enrichment_unavailable",
+        "routing_unavailable",
+        "image_enrichment_unavailable",
+    } <= set(trip.itinerary_json["generation_status"]["reasons"])
+
+
 def test_itinerary_normalization_does_not_invent_replacement_locations():
     itinerary = {
         "summary": "A scenic trip",

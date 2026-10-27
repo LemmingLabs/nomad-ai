@@ -1,5 +1,30 @@
 import logging
+import json
+import traceback
 from logging.config import dictConfig
+from datetime import datetime, timezone
+
+
+class ApplicationFormatter(logging.Formatter):
+    """Keep ordinary logs readable and emit event records as structured JSON."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        event = getattr(record, "event", None)
+        if not event:
+            return super().format(record)
+
+        payload = {
+            "timestamp": datetime.fromtimestamp(record.created, timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "event": event,
+            "stage": getattr(record, "stage", None),
+            "country_code": getattr(record, "country_code", None),
+            "error_type": getattr(record, "error_type", None),
+        }
+        if record.exc_info:
+            payload["traceback"] = "".join(traceback.format_exception(*record.exc_info))
+        return json.dumps(payload, ensure_ascii=False)
 
 
 def configure_logging(debug: bool) -> None:
@@ -11,6 +36,7 @@ def configure_logging(debug: bool) -> None:
             "disable_existing_loggers": False,
             "formatters": {
                 "default": {
+                    "()": "app.core.logging.ApplicationFormatter",
                     "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
                     "datefmt": "%Y-%m-%d %H:%M:%S",
                 },
