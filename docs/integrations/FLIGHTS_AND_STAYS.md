@@ -76,4 +76,4 @@ Before calling the results comparable, use the same traveler count, dates, curre
 
 **Current decision:** no provider is production-approved; **defer OFFERS-02** until the above gates are met. The Booking.com/Skyscanner options are recommendations for partner applications and evidence gathering, not authorization to enable live offers.
 
-The API currently has a provider-independent search contract guarded by `OFFERS_ENABLED=false`. It returns an explicit unavailable response and makes no provider calls. This disabled boundary is preparatory only: it does not provide offers, select a provider, or change the approval gate above.
+The backend now defines provider-neutral search/result schemas and an injectable adapter contract. The application does not currently install a provider adapter, so even `OFFERS_ENABLED=true` returns an explicit `provider_unconfigured` response and makes no provider calls. The result contract carries provider identity, retrieval/expiry times, currency, total amount, conditions, availability, and a supplier handoff URL. This boundary is preparatory only: it does not provide offers, select a provider, or change the approval gate above.

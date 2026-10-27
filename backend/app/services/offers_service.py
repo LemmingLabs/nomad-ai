@@ -1,7 +1,18 @@
+import asyncio
+from datetime import datetime, timezone
+
+from app.integrations.offers import (
+    OffersProvider,
+    OffersProviderError,
+    OffersProviderQuotaExceeded,
+    OffersProviderTimeout,
+)
 from app.schemas.offers import (
     OfferDemoItem,
     OfferSearchRequest,
     OffersDemoResponse,
+    OffersNoResultsResponse,
+    OffersResultsResponse,
     OffersUnavailableResponse,
 )
 
@@ -21,6 +32,8 @@ class OffersSearchService:
         enabled: bool,
         demo_mode: bool = False,
         app_environment: str = "production",
+        provider: OffersProvider | None = None,
+        provider_timeout_seconds: float = 8,
     ):
         if demo_mode and app_environment != "development":
             raise ValueError("Demo offers are only available in development")
@@ -28,17 +41,63 @@ class OffersSearchService:
             raise ValueError("Demo mode and live offers cannot both be enabled")
         self.enabled = enabled
         self.demo_mode = demo_mode
+        self.provider = provider
+        self.provider_timeout_seconds = provider_timeout_seconds
 
     async def search(
         self,
         request: OfferSearchRequest,
-    ) -> OffersDemoResponse | OffersUnavailableResponse:
+    ) -> (
+        OffersDemoResponse
+        | OffersResultsResponse
+        | OffersNoResultsResponse
+        | OffersUnavailableResponse
+    ):
         if self.demo_mode:
             return self._demo_response(request)
         if not self.enabled:
             raise OffersUnavailableError("feature_disabled")
-        # The feature must stay unavailable until a provider and its terms are approved.
-        raise OffersUnavailableError("provider_unconfigured")
+        if self.provider is None:
+            # The feature stays unavailable until an approved adapter is injected.
+            raise OffersUnavailableError("provider_unconfigured")
+
+        if request.destination_country_code not in self.provider.supported_country_codes:
+            raise OffersUnavailableError("unsupported_market")
+
+        try:
+            offers = await asyncio.wait_for(
+                self.provider.search(request),
+                timeout=self.provider_timeout_seconds,
+            )
+        except TimeoutError as error:
+            raise OffersUnavailableError("provider_timeout") from error
+        except OffersProviderTimeout as error:
+            raise OffersUnavailableError("provider_timeout") from error
+        except OffersProviderQuotaExceeded as error:
+            raise OffersUnavailableError("provider_quota_exceeded") from error
+        except OffersProviderError as error:
+            raise OffersUnavailableError("provider_error") from error
+
+        fetched_at = datetime.now(timezone.utc)
+        if not offers:
+            return OffersNoResultsResponse(
+                provider=self.provider.name,
+                fetched_at=fetched_at,
+            )
+
+        if any(
+            offer.provider != self.provider.name
+            or offer.kind != request.kind
+            or offer.fetched_at > fetched_at
+            for offer in offers
+        ):
+            raise OffersUnavailableError("provider_error")
+
+        fresh_offers = [offer for offer in offers if offer.expires_at > fetched_at]
+        if not fresh_offers:
+            raise OffersUnavailableError("stale_result")
+
+        return OffersResultsResponse(provider=self.provider.name, offers=fresh_offers)
 
     @staticmethod
     def _demo_response(request: OfferSearchRequest) -> OffersDemoResponse:
