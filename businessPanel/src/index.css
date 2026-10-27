@@ -1,4 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 @import 'tailwindcss';
+
+:root {
+  --color-bg: #f7f7f3;
+  --color-surface: #ffffff;
+  --color-border: #e7e5e4;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-accent: #14b8a6;
+  --color-accent-hover: #0f9a8a;
+  --color-accent-light: rgb(20 184 166 / 10%);
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-success: #10b981;
+  --font-primary: 'Manrope', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-accent);
+}
 
 *,
 *::before,
@@ -13,8 +39,8 @@ body {
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-family: var(--font-primary);
+  color: var(--color-text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -22,6 +48,90 @@ body {
 
 #root {
   min-height: 100%;
+}
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.dashboard-shell {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-primary);
+}
+
+.dashboard-surface {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.dashboard-muted {
+  color: var(--color-text-muted);
+}
+
+.dashboard-nav-link {
+  display: block;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.dashboard-nav-link:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.dashboard-nav-link[aria-current='page'] {
+  background: var(--color-accent-light);
+  color: var(--color-accent-hover);
+  font-weight: 600;
+}
+
+.shared-section-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-6);
+}
+
+.shared-section-description,
+.shared-state-description {
+  color: var(--color-text-muted);
+}
+
+.shared-empty-state {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-6);
+}
+
+.shared-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+}
+
+.shared-status-success {
+  background: rgb(16 185 129 / 10%);
+  color: #047857;
+}
+
+.shared-status-warning {
+  background: rgb(245 158 11 / 12%);
+  color: #b45309;
+}
+
+.shared-status-neutral {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
 }
 
 gmp-place-autocomplete {

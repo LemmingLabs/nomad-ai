@@ -14,10 +14,10 @@ export function PageErrorState({
   retryLabel = 'Retry',
 }: PageErrorStateProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" role="alert">
       <h1 className="text-lg font-semibold">{title}</h1>
       <SectionCard>
-        <p className="text-sm text-neutral-700">{message}</p>
+        <p className="text-sm text-[var(--color-text)]">{message}</p>
         {onRetry ? (
           <button
             type="button"
