@@ -178,7 +178,7 @@ export function TripPage() {
               isDisabled={!isAuthenticated || tripQuery.isError || isChatLimitReached}
               disabledPlaceholder={
                 !isAuthenticated
-                  ? 'Sign in to continue this conversation...'
+                  ? 'Trip chat is disabled'
                   : isChatLimitReached
                     ? 'Daily AI edit limit reached — upgrade to continue'
                     : 'Chat is currently unavailable...'
@@ -194,9 +194,10 @@ export function TripPage() {
               }
               disabledMessage={
                 !isAuthenticated ? (
-                  <>
-                    Sign in to continue chatting with the AI and sync this trip.
-                  </>
+                  <p className={styles.guestSignInMessage}>
+                    <Link className={styles.authLink} to='/auth/login'>Sign in</Link>{' '}
+                    to continue chatting with the AI and sync this trip to your account.
+                  </p>
                 ) : tripQuery.isError ? (
                   <>{getErrorMessage(tripQuery.error)}</>
                 ) : isChatLimitReached ? (
@@ -212,12 +213,6 @@ export function TripPage() {
               }
               onSend={(content) => sendMutation.mutate(content)}
             />
-            {!isAuthenticated && (
-              <p className={styles.authPrompt}>
-                <Link to='/auth/login'>Sign in</Link> to continue this guest
-                trip.
-              </p>
-            )}
           </div>
         }
         right={

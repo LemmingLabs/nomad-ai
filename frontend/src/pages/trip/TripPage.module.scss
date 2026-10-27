@@ -62,11 +62,16 @@
   font-weight: $weight-bold;
 }
 
-.authPrompt {
-  padding: 0 $space-5 $space-4;
+.guestSignInMessage {
   margin: 0;
   font-size: $text-sm;
   color: $color-text-muted;
+  line-height: 1.5;
+}
+
+.authLink {
+  color: $color-accent-hover;
+  font-weight: $weight-semibold;
 }
 
 @include max-md {
