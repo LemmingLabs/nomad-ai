@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import {
   offersApi,
   type NormalizedOffer,
@@ -83,6 +83,7 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   const [demoOffers, setDemoOffers] = useState<OfferDemoItem[]>([])
   const [liveOffers, setLiveOffers] = useState<NormalizedOffer[]>([])
   const [now, setNow] = useState(() => Date.now())
+  const activeSearchId = useRef(0)
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -105,6 +106,8 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   }, [liveOffers])
 
   const clearSearchState = () => {
+    activeSearchId.current += 1
+    setIsPending(false)
     setUnavailableMessage('')
     setNoResultsMessage('')
     setDemoMessage('')
@@ -136,9 +139,11 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           rooms,
         }
     clearSearchState()
+    const searchId = activeSearchId.current
     setIsPending(true)
     try {
       const response = await offersApi.search(request)
+      if (searchId !== activeSearchId.current) return
       if (response.state === 'demo') {
         setDemoMessage(response.message)
         setDemoOffers(response.offers)
@@ -150,9 +155,11 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
         setUnavailableMessage(response.message)
       }
     } catch (error) {
-      setUnavailableMessage(getUnavailableMessage(error))
+      if (searchId === activeSearchId.current) {
+        setUnavailableMessage(getUnavailableMessage(error))
+      }
     } finally {
-      setIsPending(false)
+      if (searchId === activeSearchId.current) setIsPending(false)
     }
   }
 
@@ -185,19 +192,19 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           {kind === 'flight' ? (
             <>
               <label>Origin airport or city
-                <input required list={airportListId} minLength={2} maxLength={120} value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="e.g. Almaty or ALA" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={origin} onChange={(event) => { clearSearchState(); setOrigin(event.target.value) }} placeholder="e.g. Almaty or ALA" />
               </label>
               <label>Arrival airport or city
-                <input required list={airportListId} minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination city or airport" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={destination} onChange={(event) => { clearSearchState(); setDestination(event.target.value) }} placeholder="Destination city or airport" />
               </label>
               <label>Departure
-                <input required type="date" min={futureDate(0)} value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} />
+                <input required type="date" min={futureDate(0)} value={departureDate} onChange={(event) => { clearSearchState(); setDepartureDate(event.target.value) }} />
               </label>
               <label>Return (optional)
-                <input type="date" min={departureDate} value={returnDate} onChange={(event) => setReturnDate(event.target.value)} />
+                <input type="date" min={departureDate} value={returnDate} onChange={(event) => { clearSearchState(); setReturnDate(event.target.value) }} />
               </label>
               <label>Passengers
-                <input required type="number" min={1} max={9} value={passengers} onChange={(event) => setPassengers(Number(event.target.value))} />
+                <input required type="number" min={1} max={9} value={passengers} onChange={(event) => { clearSearchState(); setPassengers(Number(event.target.value)) }} />
               </label>
               {import.meta.env.DEV && airportSuggestions.length > 0 ? (
                 <>
@@ -219,19 +226,19 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           ) : (
             <>
               <label>Destination city
-                <input required minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="City for your stay" />
+                <input required minLength={2} maxLength={120} value={destination} onChange={(event) => { clearSearchState(); setDestination(event.target.value) }} placeholder="City for your stay" />
               </label>
               <label>Check-in
-                <input required type="date" min={futureDate(0)} value={checkIn} onChange={(event) => setCheckIn(event.target.value)} />
+                <input required type="date" min={futureDate(0)} value={checkIn} onChange={(event) => { clearSearchState(); setCheckIn(event.target.value) }} />
               </label>
               <label>Check-out
-                <input required type="date" min={followingDate(checkIn)} value={checkOut} onChange={(event) => setCheckOut(event.target.value)} />
+                <input required type="date" min={followingDate(checkIn)} value={checkOut} onChange={(event) => { clearSearchState(); setCheckOut(event.target.value) }} />
               </label>
               <label>Adults
-                <input required type="number" min={1} max={16} value={adults} onChange={(event) => setAdults(Number(event.target.value))} />
+                <input required type="number" min={1} max={16} value={adults} onChange={(event) => { clearSearchState(); setAdults(Number(event.target.value)) }} />
               </label>
               <label>Rooms
-                <input required type="number" min={1} max={8} value={rooms} onChange={(event) => setRooms(Number(event.target.value))} />
+                <input required type="number" min={1} max={8} value={rooms} onChange={(event) => { clearSearchState(); setRooms(Number(event.target.value)) }} />
               </label>
             </>
           )}
@@ -251,7 +258,11 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
         <ul className={styles.liveOffers} aria-label="Supplier offer results">
           {liveOffers.map((offer) => {
             const expiresAt = new Date(offer.expires_at).getTime()
-            const expired = !Number.isFinite(expiresAt) || expiresAt <= now
+            const fetchedAt = new Date(offer.fetched_at).getTime()
+            const expired =
+              !Number.isFinite(expiresAt)
+              || expiresAt <= now
+              || !Number.isFinite(fetchedAt)
             return (
               <li className={styles.liveOffer} key={`${offer.provider}-${offer.id}`}>
                 <div className={styles.liveOfferHeading}>
@@ -307,7 +318,7 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       <p className={styles.footnote}>
         {demoMessage
           ? 'Development examples cannot be booked; live offers require an approved supplier.'
-          : 'Live offers are shown only after an approved supplier is connected. Any booking will be completed on the supplier’s site.'}
+          : 'Prices and availability may change on the supplier’s site. Any booking will be completed there.'}
       </p>
     </section>
   )
