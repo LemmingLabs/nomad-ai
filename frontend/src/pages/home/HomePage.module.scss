@@ -18,6 +18,7 @@
   flex: 1;
   @include flex-center;
   padding: $space-8;
+  overflow-y: auto;
 }
 
 .welcomeContent {
@@ -26,6 +27,7 @@
   gap: $space-5;
   text-align: center;
   max-width: 560px;
+  width: 100%;
 }
 
 .welcomeTitle {
@@ -41,6 +43,77 @@
   color: $color-text-muted;
   margin: 0;
   line-height: 1.7;
+}
+
+.destinationPreview,
+.tripPreview {
+  width: 100%;
+  padding: $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: $shadow-sm;
+  text-align: left;
+}
+
+.previewTitle {
+  margin: 0 0 $space-3;
+  color: $color-text;
+  font-size: $text-sm;
+  font-weight: $weight-bold;
+}
+
+.destinationList,
+.previewList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.destinationChip,
+.previewList li {
+  padding: $space-2 $space-3;
+  border-radius: $radius-full;
+  background: $color-accent-light;
+  color: $color-text;
+  font-size: $text-sm;
+  font-weight: $weight-medium;
+}
+
+.previewList li {
+  background: $color-bg;
+}
+
+.destinationStatus {
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-sm;
+  line-height: 1.5;
+}
+
+.destinationError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.retryBtn {
+  flex: 0 0 auto;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-surface;
+  color: $color-text;
+  font: inherit;
+  font-size: $text-sm;
+  cursor: pointer;
+
+  &:hover { border-color: $color-accent; }
+  &:focus-visible { outline: 2px solid $color-accent; outline-offset: 2px; }
 }
 
 .startBtn {
@@ -94,4 +167,19 @@
   color: $color-accent;
   font-weight: $weight-semibold;
   text-decoration: none;
+}
+
+@media (max-width: 640px) {
+  .welcome {
+    padding: $space-5 $space-4;
+  }
+
+  .welcomeTitle {
+    font-size: $text-3xl;
+  }
+
+  .destinationError {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

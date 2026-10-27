@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { Sidebar } from '../../widgets/sidebar';
 import { GenerateTripForm } from '../../widgets/generate-trip-form';
 import { useTripStore } from '../../entities/trip';
+import { useDestinationsQuery } from '../../entities/destination';
 import { useUserStore } from '../../entities/user';
 import { generateTripApi, type GenerateTripFormData } from '../../features/trip/generate-trip';
 import { useSidebarStore } from '../../features/ui/open-sidebar';
@@ -24,6 +25,7 @@ export function HomePage() {
   const { isOpen } = useSidebarStore();
   const { addTrip, setActiveTrip } = useTripStore();
   const { isAuthenticated } = useUserStore();
+  const destinationsQuery = useDestinationsQuery();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [showForm, setShowForm] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -80,8 +82,53 @@ export function HomePage() {
             <div className={styles.welcomeContent}>
               <h1 className={styles.welcomeTitle}>Plan your next adventure 🌍</h1>
               <p className={styles.welcomeText}>
-                Tell the AI where you want to go and it will create a personalized itinerary for you.
+                Create a personalized, day-by-day itinerary for a destination currently supported by NomadAI.
               </p>
+              <section className={styles.destinationPreview} aria-labelledby="supported-destinations-title">
+                <h2 className={styles.previewTitle} id="supported-destinations-title">
+                  Currently supported destinations
+                </h2>
+                {destinationsQuery.isLoading ? (
+                  <p className={styles.destinationStatus} role="status">
+                    Loading available destinations…
+                  </p>
+                ) : destinationsQuery.isError ? (
+                  <div className={styles.destinationError} role="alert">
+                    <p className={styles.destinationStatus}>
+                      Destinations are temporarily unavailable. Your saved trips are still available in the sidebar.
+                    </p>
+                    <button
+                      className={styles.retryBtn}
+                      type="button"
+                      onClick={() => void destinationsQuery.refetch()}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : destinationsQuery.data?.length ? (
+                  <ul className={styles.destinationList}>
+                    {destinationsQuery.data.map((destination) => (
+                      <li className={styles.destinationChip} key={destination.id}>
+                        {destination.name === destination.country_name
+                          ? destination.name
+                          : `${destination.name}, ${destination.country_name}`}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.destinationStatus} role="status">
+                    No destinations are available for new trip planning right now. Your saved trips remain available in the sidebar.
+                  </p>
+                )}
+              </section>
+              <div className={styles.tripPreview}>
+                <h2 className={styles.previewTitle}>Your trip, at a glance</h2>
+                <ul className={styles.previewList}>
+                  <li>Day-by-day itinerary</li>
+                  <li>Activities shaped around your interests</li>
+                  <li>Chat to refine a saved trip</li>
+                </ul>
+              </div>
               <button className={styles.startBtn} onClick={() => setShowForm(true)}>
                 Create a trip
               </button>
