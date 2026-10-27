@@ -50,7 +50,7 @@ export function DashboardShell({
           id="dashboard-navigation"
           className={[
             'dashboard-surface fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto border-r shadow-xl transition-transform duration-200 md:static md:z-auto md:w-64 md:translate-x-0 md:shadow-none',
-            isMobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+            isMobileNavOpen ? 'block translate-x-0' : 'hidden md:block md:translate-x-0',
           ].join(' ')}
         >
           <div className="px-4 py-4">
