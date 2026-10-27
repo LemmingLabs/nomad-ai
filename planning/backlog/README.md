@@ -1,6 +1,6 @@
 # Local GitHub backlog
 
-This folder is the editable source for the planned GitHub milestones, epic issues, and implementation issues. Full issue descriptions live in `epics/` and `issues/`; `backlog.json` assigns each description a stable ID and phase.
+This folder is the editable source for planned GitHub milestones, epic issues, and implementation issues. Full issue descriptions live in `epics/` and `issues/`; `backlog.json` assigns each description a stable ID and milestone. The original four destination/route/offers phases remain, with a separate development-quality milestone for improving the existing product.
 
 ## Sync
 

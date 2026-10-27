@@ -20,6 +20,11 @@
       "id": "PHASE-4",
       "title": "Phase 4 — Offers and International Scale",
       "description": "Add read-only flight and accommodation offers and expand partner markets only after confirming provider access, economics, and operational readiness."
+    },
+    {
+      "id": "QUALITY-DEV",
+      "title": "Development Quality — Existing Product",
+      "description": "Improve the current development product through clearer traveler flows, accessible and responsive interfaces, better diagnostics, and destination-correct development behavior."
     }
   ],
   "labels": [
@@ -46,6 +51,18 @@
     {"id": "OFFERS-01", "kind": "task", "title": "OFFERS-01 Verify flight and accommodation provider access for pilot markets", "milestone": "PHASE-4", "file": "issues/OFFERS-01.md", "depends_on": ["DEST-02"]},
     {"id": "OFFERS-02", "kind": "task", "title": "OFFERS-02 Add a normalized read-only flight and stay offers API", "milestone": "PHASE-4", "file": "issues/OFFERS-02.md", "depends_on": ["OFFERS-01"]},
     {"id": "OFFERS-03", "kind": "task", "title": "OFFERS-03 Show fresh offers and supplier handoff in the traveler app", "milestone": "PHASE-4", "file": "issues/OFFERS-03.md", "depends_on": ["OFFERS-02"]},
-    {"id": "PARTNER-01", "kind": "task", "title": "PARTNER-01 Add a country-by-country rollout model for business partners", "milestone": "PHASE-4", "file": "issues/PARTNER-01.md", "depends_on": ["GEO-02", "DEST-02"]}
+    {"id": "PARTNER-01", "kind": "task", "title": "PARTNER-01 Add a country-by-country rollout model for business partners", "milestone": "PHASE-4", "file": "issues/PARTNER-01.md", "depends_on": ["GEO-02", "DEST-02"]},
+
+    {"id": "EPIC-PRODUCT-QUALITY", "kind": "epic", "title": "[Epic] Improve the existing traveler and business experience", "milestone": "QUALITY-DEV", "file": "epics/EPIC-PRODUCT-QUALITY.md", "children": ["QUALITY-01", "QUALITY-02", "QUALITY-03", "QUALITY-04", "QUALITY-05", "QUALITY-06", "QUALITY-07", "QUALITY-08", "QUALITY-09", "QUALITY-10"]},
+    {"id": "QUALITY-01", "kind": "task", "title": "QUALITY-01 Set clear expectations for supported trip destinations", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-01.md", "depends_on": []},
+    {"id": "QUALITY-02", "kind": "task", "title": "QUALITY-02 Consolidate sign-in guidance on guest trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-02.md", "depends_on": []},
+    {"id": "QUALITY-03", "kind": "task", "title": "QUALITY-03 Make trip form choices accessible", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-03.md", "depends_on": []},
+    {"id": "QUALITY-04", "kind": "task", "title": "QUALITY-04 Clarify trip budget currency and scope", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-04.md", "depends_on": []},
+    {"id": "QUALITY-05", "kind": "task", "title": "QUALITY-05 Make business and admin navigation responsive", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-05.md", "depends_on": []},
+    {"id": "QUALITY-06", "kind": "task", "title": "QUALITY-06 Standardize structured logs for trip generation failures", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-06.md", "depends_on": []},
+    {"id": "QUALITY-07", "kind": "task", "title": "QUALITY-07 Reduce friction in the trip creation form", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-07.md", "depends_on": ["QUALITY-03", "QUALITY-04"]},
+    {"id": "QUALITY-08", "kind": "task", "title": "QUALITY-08 Improve itinerary scanning and source clarity", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-08.md", "depends_on": []},
+    {"id": "QUALITY-09", "kind": "task", "title": "QUALITY-09 Align shared visual patterns across the two apps", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-09.md", "depends_on": []},
+    {"id": "QUALITY-10", "kind": "task", "title": "QUALITY-10 Make development fallback itineraries destination-aware", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-10.md", "depends_on": []}
   ]
 }
