@@ -51,6 +51,14 @@ function formatCheckedAt(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
+function normalizeAirportLocation(value: string, airports: AirportReference[]): string {
+  const normalized = value.trim()
+  const selectedAirport = airports.find((airport) => (
+    `${airport.iata} — ${airport.city}`.toLocaleLowerCase() === normalized.toLocaleLowerCase()
+  ))
+  return selectedAirport?.iata ?? normalized
+}
+
 function getUnavailableMessage(error: unknown): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const response = (error as { response?: { data?: unknown } }).response
@@ -123,8 +131,8 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       ? {
           kind,
           destination_country_code: countryCode.toUpperCase(),
-          origin: origin.trim(),
-          destination: destination.trim(),
+          origin: normalizeAirportLocation(origin, airportSuggestions),
+          destination: normalizeAirportLocation(destination, airportSuggestions),
           departure_date: departureDate,
           return_date: returnDate || null,
           passengers,
