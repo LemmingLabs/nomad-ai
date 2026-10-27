@@ -1,5 +1,10 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
-import { offersApi, type OfferDemoItem, type OfferSearchRequest } from '../../entities/offers'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import {
+  offersApi,
+  type NormalizedOffer,
+  type OfferDemoItem,
+  type OfferSearchRequest,
+} from '../../entities/offers'
 import styles from './OffersSearchPanel.module.scss'
 
 type OffersSearchPanelProps = {
@@ -29,6 +34,21 @@ function followingDate(value: string): string {
   const result = new Date(`${value}T12:00:00`)
   result.setDate(result.getDate() + 1)
   return dateInputValue(result)
+}
+
+function formatOfferTotal(amount: number | string, currency: string): string {
+  const numericAmount = Number(amount)
+  if (!Number.isFinite(numericAmount)) return `${currency} ${amount}`
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(numericAmount)
+  } catch {
+    return `${currency} ${numericAmount.toFixed(2)}`
+  }
+}
+
+function formatCheckedAt(value: string): string {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
 function normalizeAirportLocation(value: string, airports: AirportReference[]): string {
@@ -66,9 +86,12 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
   const [rooms, setRooms] = useState(1)
   const [isPending, setIsPending] = useState(false)
   const [unavailableMessage, setUnavailableMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
+  const [noResultsMessage, setNoResultsMessage] = useState('')
   const [demoMessage, setDemoMessage] = useState('')
   const [demoOffers, setDemoOffers] = useState<OfferDemoItem[]>([])
+  const [liveOffers, setLiveOffers] = useState<NormalizedOffer[]>([])
+  const [now, setNow] = useState(() => Date.now())
+  const activeSearchId = useRef(0)
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -79,11 +102,25 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
     return () => { isCurrent = false }
   }, [])
 
+  useEffect(() => {
+    if (liveOffers.length === 0) return
+    const refresh = () => setNow(Date.now())
+    const timer = window.setInterval(refresh, 5000)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [liveOffers])
+
   const clearSearchState = () => {
+    activeSearchId.current += 1
+    setIsPending(false)
     setUnavailableMessage('')
-    setSuccessMessage('')
+    setNoResultsMessage('')
     setDemoMessage('')
     setDemoOffers([])
+    setLiveOffers([])
   }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -110,19 +147,27 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           rooms,
         }
     clearSearchState()
+    const searchId = activeSearchId.current
     setIsPending(true)
     try {
       const response = await offersApi.search(request)
+      if (searchId !== activeSearchId.current) return
       if (response.state === 'demo') {
         setDemoMessage(response.message)
         setDemoOffers(response.offers)
+      } else if (response.state === 'results') {
+        setLiveOffers(response.offers)
+      } else if (response.state === 'no_results') {
+        setNoResultsMessage(`No ${kind === 'flight' ? 'flights' : 'stays'} were found for those search details.`)
       } else {
-        setSuccessMessage(`${response.message} No current prices are shown until an approved supplier is connected.`)
+        setUnavailableMessage(response.message)
       }
     } catch (error) {
-      setUnavailableMessage(getUnavailableMessage(error))
+      if (searchId === activeSearchId.current) {
+        setUnavailableMessage(getUnavailableMessage(error))
+      }
     } finally {
-      setIsPending(false)
+      if (searchId === activeSearchId.current) setIsPending(false)
     }
   }
 
@@ -155,19 +200,19 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           {kind === 'flight' ? (
             <>
               <label>Origin airport or city
-                <input required list={airportListId} minLength={2} maxLength={120} value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="e.g. Almaty or ALA" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={origin} onChange={(event) => { clearSearchState(); setOrigin(event.target.value) }} placeholder="e.g. Almaty or ALA" />
               </label>
               <label>Arrival airport or city
-                <input required list={airportListId} minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="Destination city or airport" />
+                <input required list={airportListId} minLength={2} maxLength={120} value={destination} onChange={(event) => { clearSearchState(); setDestination(event.target.value) }} placeholder="Destination city or airport" />
               </label>
               <label>Departure
-                <input required type="date" min={futureDate(0)} value={departureDate} onChange={(event) => setDepartureDate(event.target.value)} />
+                <input required type="date" min={futureDate(0)} value={departureDate} onChange={(event) => { clearSearchState(); setDepartureDate(event.target.value) }} />
               </label>
               <label>Return (optional)
-                <input type="date" min={departureDate} value={returnDate} onChange={(event) => setReturnDate(event.target.value)} />
+                <input type="date" min={departureDate} value={returnDate} onChange={(event) => { clearSearchState(); setReturnDate(event.target.value) }} />
               </label>
               <label>Passengers
-                <input required type="number" min={1} max={9} value={passengers} onChange={(event) => setPassengers(Number(event.target.value))} />
+                <input required type="number" min={1} max={9} value={passengers} onChange={(event) => { clearSearchState(); setPassengers(Number(event.target.value)) }} />
               </label>
               {import.meta.env.DEV && airportSuggestions.length > 0 ? (
                 <>
@@ -189,19 +234,19 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
           ) : (
             <>
               <label>Destination city
-                <input required minLength={2} maxLength={120} value={destination} onChange={(event) => setDestination(event.target.value)} placeholder="City for your stay" />
+                <input required minLength={2} maxLength={120} value={destination} onChange={(event) => { clearSearchState(); setDestination(event.target.value) }} placeholder="City for your stay" />
               </label>
               <label>Check-in
-                <input required type="date" min={futureDate(0)} value={checkIn} onChange={(event) => setCheckIn(event.target.value)} />
+                <input required type="date" min={futureDate(0)} value={checkIn} onChange={(event) => { clearSearchState(); setCheckIn(event.target.value) }} />
               </label>
               <label>Check-out
-                <input required type="date" min={followingDate(checkIn)} value={checkOut} onChange={(event) => setCheckOut(event.target.value)} />
+                <input required type="date" min={followingDate(checkIn)} value={checkOut} onChange={(event) => { clearSearchState(); setCheckOut(event.target.value) }} />
               </label>
               <label>Adults
-                <input required type="number" min={1} max={16} value={adults} onChange={(event) => setAdults(Number(event.target.value))} />
+                <input required type="number" min={1} max={16} value={adults} onChange={(event) => { clearSearchState(); setAdults(Number(event.target.value)) }} />
               </label>
               <label>Rooms
-                <input required type="number" min={1} max={8} value={rooms} onChange={(event) => setRooms(Number(event.target.value))} />
+                <input required type="number" min={1} max={8} value={rooms} onChange={(event) => { clearSearchState(); setRooms(Number(event.target.value)) }} />
               </label>
             </>
           )}
@@ -214,8 +259,46 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       {unavailableMessage ? (
         <p className={styles.notice} role="status">{unavailableMessage}</p>
       ) : null}
-      {successMessage ? (
-        <p className={styles.notice} role="status">{successMessage}</p>
+      {noResultsMessage ? (
+        <p className={styles.notice} role="status">{noResultsMessage}</p>
+      ) : null}
+      {liveOffers.length > 0 ? (
+        <ul className={styles.liveOffers} aria-label="Supplier offer results">
+          {liveOffers.map((offer) => {
+            const expiresAt = new Date(offer.expires_at).getTime()
+            const fetchedAt = new Date(offer.fetched_at).getTime()
+            const expired =
+              !Number.isFinite(expiresAt)
+              || expiresAt <= now
+              || !Number.isFinite(fetchedAt)
+            return (
+              <li className={styles.liveOffer} key={`${offer.provider}-${offer.id}`}>
+                <div className={styles.liveOfferHeading}>
+                  <div>
+                    <strong>{offer.kind === 'flight' ? 'Flight offer' : 'Stay offer'}</strong>
+                    <small>{offer.provider} · reference {offer.id}</small>
+                  </div>
+                  <div className={styles.liveOfferPrice}>
+                    {expired ? 'Price expired' : formatOfferTotal(offer.total_amount, offer.currency)}
+                    <small>{offer.availability === 'available' ? 'Available when checked' : 'Limited availability when checked'}</small>
+                  </div>
+                </div>
+                <p className={styles.conditions}>
+                  {offer.conditions.length > 0 ? offer.conditions.join(' · ') : 'No additional conditions supplied.'}
+                </p>
+                <p className={styles.freshness}>
+                  Checked {formatCheckedAt(offer.fetched_at)}
+                  {expired ? ' · Search again to check the price and availability.' : ''}
+                </p>
+                {!expired ? (
+                  <a className={styles.handoff} href={offer.handoff_url} target="_blank" rel="noopener noreferrer">
+                    Continue to {offer.provider}
+                  </a>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
       ) : null}
       {demoMessage ? (
         <div className={styles.demoNotice} role="status">
@@ -243,7 +326,7 @@ export function OffersSearchPanel({ countryCode, destinationCity = '' }: OffersS
       <p className={styles.footnote}>
         {demoMessage
           ? 'Development examples cannot be booked; live offers require an approved supplier.'
-          : 'Live offers are shown only after an approved supplier is connected. Any booking will be completed on the supplier’s site.'}
+          : 'Prices and availability may change on the supplier’s site. Any booking will be completed there.'}
       </p>
     </section>
   )
