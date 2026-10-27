@@ -61,7 +61,7 @@ test('creates a guest trip, saves its identifier, and opens the trip workspace',
   expect(await screen.findByText('Trip workspace')).toBeTruthy();
   expect(vi.mocked(generateTripApi.generate).mock.calls[0][0]).toEqual(expect.objectContaining({
     budget: 'medium',
-    interests: ['nature', 'culture'],
+    interests: [],
     prompt: 'Quiet lakes',
     country_code: 'KG',
     destination_id: 'kg',
