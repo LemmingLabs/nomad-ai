@@ -3,6 +3,6 @@ type PageLoadingStateProps = {
 }
 
 export function PageLoadingState({ message = 'Loading...' }: PageLoadingStateProps) {
-  return <div className="text-sm text-neutral-600">{message}</div>
+  return <div className="dashboard-muted text-sm" role="status" aria-live="polite">{message}</div>
 }
 
