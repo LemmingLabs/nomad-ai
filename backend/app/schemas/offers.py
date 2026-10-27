@@ -1,8 +1,9 @@
-from datetime import date
+from datetime import date, datetime
+from decimal import Decimal
 import re
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
 
 
 def _normalize_country_code(value: object) -> str:
@@ -95,8 +96,56 @@ OfferSearchRequest = Annotated[
 
 class OffersUnavailableResponse(BaseModel):
     state: Literal["unavailable"] = "unavailable"
-    reason: Literal["feature_disabled", "provider_unconfigured"]
+    reason: Literal[
+        "feature_disabled",
+        "provider_unconfigured",
+        "unsupported_market",
+        "provider_timeout",
+        "provider_quota_exceeded",
+        "provider_error",
+        "stale_result",
+    ]
     message: str
+
+
+class NormalizedOffer(BaseModel):
+    """Provider-neutral fields permitted in a traveler-facing offer result."""
+
+    id: str = Field(min_length=1, max_length=200)
+    kind: Literal["flight", "stay"]
+    provider: str = Field(min_length=1, max_length=80)
+    fetched_at: datetime
+    expires_at: datetime
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+    total_amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    availability: Literal["available", "limited"]
+    conditions: list[str] = Field(default_factory=list, max_length=30)
+    handoff_url: AnyHttpUrl
+
+    @field_validator("fetched_at", "expires_at")
+    @classmethod
+    def require_timezone_aware_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("Offer timestamps must include a timezone")
+        return value
+
+    @model_validator(mode="after")
+    def validate_expiry(self):
+        if self.expires_at <= self.fetched_at:
+            raise ValueError("Offer expiry must be after its retrieval time")
+        return self
+
+
+class OffersResultsResponse(BaseModel):
+    state: Literal["results"] = "results"
+    provider: str
+    offers: list[NormalizedOffer] = Field(min_length=1)
+
+
+class OffersNoResultsResponse(BaseModel):
+    state: Literal["no_results"] = "no_results"
+    provider: str
+    fetched_at: datetime
 
 
 class OfferDemoItem(BaseModel):
@@ -120,6 +169,9 @@ class OffersDemoResponse(BaseModel):
 
 
 OffersSearchResponse = Annotated[
-    OffersUnavailableResponse | OffersDemoResponse,
+    OffersUnavailableResponse
+    | OffersDemoResponse
+    | OffersResultsResponse
+    | OffersNoResultsResponse,
     Field(discriminator="state"),
 ]

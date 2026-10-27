@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str | None
     OFFERS_ENABLED: bool = False
     OFFERS_DEMO_MODE: bool = False
+    OFFERS_PROVIDER_TIMEOUT_SECONDS: float = Field(default=8.0, gt=0, le=60)
 
     ADMIN_EMAIL: str | None = None
     ADMIN_PASSWORD: str | None = None
