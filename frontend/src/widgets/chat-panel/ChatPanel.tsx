@@ -151,18 +151,22 @@ export function ChatPanel({
     return () => ctx.revert();
   }, [messages.length]);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitMessage = () => {
     const val = inputRef.current?.value.trim();
     if (!val || isLoading || isDisabled) return;
     onSend(val);
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submitMessage();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e as unknown as FormEvent);
+      submitMessage();
     }
   };
 
