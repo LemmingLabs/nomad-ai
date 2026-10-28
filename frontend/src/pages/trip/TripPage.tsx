@@ -167,7 +167,9 @@ export function TripPage() {
 
   return (
     <div className={styles.layout} data-print-layout="true">
-      <Sidebar isOpen={!isMobile || isOpen} />
+      <div data-print-hide="true">
+        <Sidebar isOpen={!isMobile || isOpen} />
+      </div>
       <ResizableLayout
         isRightExpanded={isPreviewExpanded}
         left={

@@ -83,6 +83,7 @@ export function ResizableLayout({
         [styles['layout--expanded']]: isRightExpanded,
         [styles['layout--dragging']]: isDragging,
       })}
+      data-print-layout="true"
       style={layoutStyle}
     >
       <section className={styles.left} data-print-hide="true">{left}</section>

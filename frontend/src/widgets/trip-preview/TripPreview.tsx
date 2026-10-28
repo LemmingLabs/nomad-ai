@@ -41,7 +41,7 @@ export function TripPreview({
   ) ?? false;
 
   return (
-    <div id="trip-print-root" className={styles.preview}>
+    <div id="trip-print-root" className={styles.preview} data-print-layout="true">
       <TripHeader
         title={tripTitle ?? itinerary.summary ?? 'Your itinerary'}
         destinationName={destinationName}
