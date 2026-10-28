@@ -53,7 +53,7 @@
     {"id": "OFFERS-03", "kind": "task", "title": "OFFERS-03 Show fresh offers and supplier handoff in the traveler app", "milestone": "PHASE-4", "file": "issues/OFFERS-03.md", "depends_on": ["OFFERS-02"]},
     {"id": "PARTNER-01", "kind": "task", "title": "PARTNER-01 Add a country-by-country rollout model for business partners", "milestone": "PHASE-4", "file": "issues/PARTNER-01.md", "depends_on": ["GEO-02", "DEST-02"]},
 
-    {"id": "EPIC-PRODUCT-QUALITY", "kind": "epic", "title": "[Epic] Improve the existing traveler and business experience", "milestone": "QUALITY-DEV", "file": "epics/EPIC-PRODUCT-QUALITY.md", "children": ["QUALITY-01", "QUALITY-02", "QUALITY-03", "QUALITY-04", "QUALITY-05", "QUALITY-06", "QUALITY-07", "QUALITY-08", "QUALITY-09", "QUALITY-10"]},
+    {"id": "EPIC-PRODUCT-QUALITY", "kind": "epic", "title": "[Epic] Improve the existing traveler and business experience", "milestone": "QUALITY-DEV", "file": "epics/EPIC-PRODUCT-QUALITY.md", "children": ["QUALITY-01", "QUALITY-02", "QUALITY-03", "QUALITY-04", "QUALITY-05", "QUALITY-06", "QUALITY-07", "QUALITY-08", "QUALITY-09", "QUALITY-10", "QUALITY-11", "QUALITY-12", "QUALITY-13"]},
     {"id": "QUALITY-01", "kind": "task", "title": "QUALITY-01 Set clear expectations for supported trip destinations", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-01.md", "depends_on": []},
     {"id": "QUALITY-02", "kind": "task", "title": "QUALITY-02 Consolidate sign-in guidance on guest trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-02.md", "depends_on": []},
     {"id": "QUALITY-03", "kind": "task", "title": "QUALITY-03 Make trip form choices accessible", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-03.md", "depends_on": []},
@@ -63,6 +63,9 @@
     {"id": "QUALITY-07", "kind": "task", "title": "QUALITY-07 Reduce friction in the trip creation form", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-07.md", "depends_on": ["QUALITY-03", "QUALITY-04"]},
     {"id": "QUALITY-08", "kind": "task", "title": "QUALITY-08 Improve itinerary scanning and source clarity", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-08.md", "depends_on": []},
     {"id": "QUALITY-09", "kind": "task", "title": "QUALITY-09 Align shared visual patterns across the two apps", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-09.md", "depends_on": []},
-    {"id": "QUALITY-10", "kind": "task", "title": "QUALITY-10 Make development fallback itineraries destination-aware", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-10.md", "depends_on": []}
+    {"id": "QUALITY-10", "kind": "task", "title": "QUALITY-10 Make development fallback itineraries destination-aware", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-10.md", "depends_on": []},
+    {"id": "QUALITY-11", "kind": "task", "title": "QUALITY-11 Make itineraries easy to print and keep", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-11.md", "depends_on": []},
+    {"id": "QUALITY-12", "kind": "task", "title": "QUALITY-12 Offer contextual one-click trip refinements", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-12.md", "depends_on": []},
+    {"id": "QUALITY-13", "kind": "task", "title": "QUALITY-13 Let travelers rename saved trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-13.md", "depends_on": []}
   ]
 }
