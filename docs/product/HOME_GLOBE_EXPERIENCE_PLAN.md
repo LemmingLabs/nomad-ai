@@ -1,6 +1,6 @@
 # Interactive Home Globe — experience and implementation plan
 
-**Status:** Proposal, 2026-10-29. No globe code, dependency, image, or texture has been added yet.
+**Status:** Prototype in progress, 2026-10-29. See the [asset manifest](../assets/HOME_GLOBE_ASSETS.md) for the exact images used.
 
 ## Product goal
 
@@ -44,7 +44,7 @@ Do not generate a trip directly from a globe click. A click should select a scen
 | [COBE](https://github.com/shuding/cobe) | MIT-licensed, dependency-light, approximately 5 KB according to its project; attractive abstract globe with markers. | Stylized dot-map appearance rather than a photographic Earth; custom work for location picking and accessible controls. | Fallback candidate if the visual concept can be more abstract or the first prototype misses performance targets. |
 | Custom Three.js scene | Maximum visual control. | More shader, interaction, cleanup, and accessibility work for an effect that existing libraries already provide. | Defer. |
 
-The proposed Earth texture is a compressed, appropriately sized derivative of [NASA Blue Marble: Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/), served with the app rather than pulled from an uncontrolled demo URL. NASA asks users to credit **NASA Earth Observatory**; its [media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/) also require checking for third-party material and avoiding implied endorsement. Keep a source URL and attribution in the asset manifest and visible credits.
+The prototype uses the 2048 × 1024 [NASA Earth Observatory Blue Marble 2002 texture](https://visibleearth.nasa.gov/images/57730/the-blue-marble-land-surface-ocean-color-and-sea-ice), served with the app rather than pulled from an uncontrolled demo URL. NASA asks users to credit **NASA Earth Observatory**; its [media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/) also require checking for third-party material and avoiding implied endorsement. The source and attribution are recorded in the asset manifest and visible credits.
 
 For landscapes, select a small set of specific images and record each photo ID, photographer, source URL, subject, license snapshot, and optimized image sizes. [Pexels permits use on websites and apps](https://www.pexels.com/license/); its [API guidelines](https://www.pexels.com/api/documentation/) call for a prominent Pexels link when making API requests and photographer credit where possible. Use curated images for the home page so a random API response cannot mismatch a location or create unstable loading. Never label a generic photo as an exact place without checking its metadata.
 
@@ -77,3 +77,9 @@ These are **proposed targets**, not measured results. Record baseline home-page 
 5. **Review:** check contrast, 200% zoom, touch scrolling, keyboard path, no-WebGL fallback, slow connection, and realistic image loading. Compare a before/after capture on desktop and phone.
 
 This plan does not add an issue or milestone yet. Once the visual prototype and asset choices are reviewed, the work can be split into reviewable issues for assets, the globe widget, and home-page integration.
+
+## Prototype implementation note
+
+The first implementation uses three curated Kyrgyzstan scenes, a lazily imported React Globe canvas on desktop, and a static Earth poster on phones until the traveler opts in. The canvas pauses when the tab or globe leaves view; reduced-motion and WebGL-unavailable environments retain the poster and scene buttons. A selected scene opens the existing form only when the destination API reports its country as enabled.
+
+The production build puts the 3D renderer in a separate **549 KB gzip** JavaScript chunk; the 2048 × 1024 Earth texture is **267 KB**. The chunk is deferred until browser idle on desktop and never loaded for the default phone view. These are transfer sizes, not frame-rate results. The frame-rate, memory, 200% zoom, and device-specific targets above still require a live browser review before treating the prototype as performance-validated.

@@ -14,7 +14,7 @@ This folder describes the current state of the product and the agreed developmen
 | [Business Model](business/) | [International Partners](business/INTERNATIONAL_PARTNER_MODEL.md); [Current Sponsored System](business/MONETIZATION_AND_SPONSORED_SYSTEM.md) |
 | [Research](research/) | [Data Sources, Licenses, and Access](research/DATA_SOURCES_AND_RIGHTS.md) |
 | [Operations](operations/) | [Local Startup Audit](operations/RESTART_AUDIT.md) |
-| [Assets](assets/) | Screenshots and certificate |
+| [Assets](assets/) | [Home globe image sources and credits](assets/HOME_GLOBE_ASSETS.md); screenshots and certificate |
 
 ## How to Read This Plan
 

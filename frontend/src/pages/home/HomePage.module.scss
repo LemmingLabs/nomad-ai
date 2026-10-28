@@ -12,30 +12,55 @@
   flex: 1;
   overflow: hidden;
   @include flex-col;
+  background: linear-gradient(115deg, #fbfcf8 0%, #f4f8f5 52%, #ecf5f3 100%);
 }
 
 .welcome {
   flex: 1;
-  @include flex-center;
-  padding: $space-8;
+  display: flex;
+  align-items: center;
+  padding: clamp(1.5rem, 4vw, 4rem);
   overflow-y: auto;
+}
+
+.welcomeGrid {
+  display: grid;
+  grid-template-columns: minmax(310px, 0.82fr) minmax(450px, 1.18fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5.5rem);
+  width: min(100%, 1440px);
+  margin: auto;
 }
 
 .welcomeContent {
   @include flex-col;
-  align-items: center;
-  gap: $space-5;
-  text-align: center;
-  max-width: 560px;
+  align-items: flex-start;
+  gap: clamp(1.2rem, 2vw, 1.9rem);
+  text-align: left;
   width: 100%;
 }
 
+.kicker {
+  display: inline-block;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(16, 120, 108, 0.18);
+  border-radius: 999px;
+  color: #137b71;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
 .welcomeTitle {
-  font-size: $text-4xl;
+  font-size: clamp(3rem, 5vw, 5.8rem);
   font-weight: $weight-extrabold;
-  color: $color-text;
+  color: #153a42;
   margin: 0;
-  letter-spacing: -1px;
+  line-height: 1.03;
+  letter-spacing: -0.065em;
+
+  em { color: #128b7c; font-style: normal; }
 }
 
 .welcomeText {
@@ -43,18 +68,27 @@
   color: $color-text-muted;
   margin: 0;
   line-height: 1.7;
+  max-width: 32rem;
 }
 
-.destinationPreview,
-.tripPreview {
+.destinationPreview {
   width: 100%;
-  padding: $space-4;
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: $shadow-sm;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(31, 82, 87, 0.14);
   text-align: left;
 }
+
+.tripPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  color: #729094;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.primaryActions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.25rem; }
 
 .previewTitle {
   margin: 0 0 $space-3;
@@ -63,8 +97,7 @@
   font-weight: $weight-bold;
 }
 
-.destinationList,
-.previewList {
+.destinationList {
   display: flex;
   flex-wrap: wrap;
   gap: $space-2;
@@ -73,18 +106,13 @@
   list-style: none;
 }
 
-.destinationChip,
-.previewList li {
+.destinationChip {
   padding: $space-2 $space-3;
   border-radius: $radius-full;
   background: $color-accent-light;
   color: $color-text;
   font-size: $text-sm;
   font-weight: $weight-medium;
-}
-
-.previewList li {
-  background: $color-bg;
 }
 
 .destinationStatus {
@@ -117,18 +145,19 @@
 }
 
 .startBtn {
-  background: $color-accent;
+  background: #164b53;
   color: #fff;
   border: none;
   padding: $space-4 $space-10;
-  border-radius: $radius-2xl;
+  border-radius: 999px;
   font-size: $text-base;
   font-weight: $weight-semibold;
   font-family: $font-primary;
   cursor: pointer;
   transition: background $transition-fast, transform $transition-fast;
 
-  &:hover { background: $color-accent-hover; transform: translateY(-2px); }
+  &:hover { background: #0e7070; transform: translateY(-2px); }
+  &:focus-visible { outline: 2px solid #087c70; outline-offset: 3px; }
 }
 
 .authNote {
@@ -175,11 +204,21 @@
   }
 
   .welcomeTitle {
-    font-size: $text-3xl;
+    font-size: clamp(2.6rem, 11vw, 4rem);
   }
 
   .destinationError {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+@media (max-width: 1180px) {
+  .welcomeGrid { grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 780px; }
+  .welcomeContent { gap: 1.25rem; }
+}
+
+@media (max-width: 768px) {
+  .welcome { padding: 1.25rem 1rem 2rem; }
+  .tripPreview { display: none; }
 }

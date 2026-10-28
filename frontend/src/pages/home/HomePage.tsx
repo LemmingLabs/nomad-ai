@@ -18,6 +18,7 @@ import { handleApiError } from '../../shared/lib';
 import styles from './HomePage.module.scss';
 import { LimitReachedModal } from '../../widgets/limit-reached-modal';
 import { limitQueryKeys } from '../../entities/limit';
+import { HomeGlobe } from '../../widgets/home-globe';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -28,21 +29,22 @@ export function HomePage() {
   const destinationsQuery = useDestinationsQuery();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [showForm, setShowForm] = useState(false);
+  const [initialDestinationId, setInitialDestinationId] = useState<string>();
   const [limitModalOpen, setLimitModalOpen] = useState(false);
 
   const generateMutation = useMutation({
     mutationFn: generateTripApi.generate,
-      onSuccess: (trip) => {
-        addTrip(trip);
-        setActiveTrip(trip.id);
-        if (!isAuthenticated) {
-          localStorage.setItem(config.storageKeys.guestTripId, String(trip.id));
-        }
-        setShowForm(false);
-        toast.success('Trip generated!');
-        void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
-        void navigate(`/trip/${trip.id}`);
-      },
+    onSuccess: (trip) => {
+      addTrip(trip);
+      setActiveTrip(trip.id);
+      if (!isAuthenticated) {
+        localStorage.setItem(config.storageKeys.guestTripId, String(trip.id));
+      }
+      setShowForm(false);
+      toast.success('Trip generated!');
+      void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
+      void navigate(`/trip/${trip.id}`);
+    },
     onError: (error) => {
       if (isLimitExceededError(error)) {
         setLimitModalOpen(true);
@@ -56,87 +58,85 @@ export function HomePage() {
     <div className={styles.layout}>
       <Sidebar
         isOpen={!isMobile || isOpen}
-        onNewTrip={() => setShowForm(true)}
+        onNewTrip={() => {
+          setInitialDestinationId(undefined);
+          setShowForm(true);
+        }}
       />
 
       <main className={styles.main}>
         {showForm ? (
-            <div className={styles.formOverlay}>
-              <GenerateTripForm
-                onSubmit={(data: GenerateTripFormData) =>
-                  generateMutation.mutate({
-                    ...data,
-                    interests: data.interests
-                      .split(',')
-                      .map((interest) => interest.trim())
-                      .filter(Boolean),
-                    prompt: data.prompt?.trim() || undefined,
-                  })
-                }
-                isLoading={generateMutation.isPending}
-              />
+          <div className={styles.formOverlay}>
+            <GenerateTripForm
+              initialDestinationId={initialDestinationId}
+              onSubmit={(data: GenerateTripFormData) =>
+                generateMutation.mutate({
+                  ...data,
+                  interests: data.interests
+                    .split(',')
+                    .map((interest) => interest.trim())
+                    .filter(Boolean),
+                  prompt: data.prompt?.trim() || undefined,
+                })
+              }
+              isLoading={generateMutation.isPending}
+            />
             <button className={styles.cancelBtn} onClick={() => setShowForm(false)}>Cancel</button>
           </div>
         ) : (
           <div className={styles.welcome}>
-            <div className={styles.welcomeContent}>
-              <h1 className={styles.welcomeTitle}>Plan your next adventure 🌍</h1>
-              <p className={styles.welcomeText}>
-                Create a personalized, day-by-day itinerary for a destination currently supported by NomadAI.
-              </p>
-              <section className={styles.destinationPreview} aria-labelledby="supported-destinations-title">
-                <h2 className={styles.previewTitle} id="supported-destinations-title">
-                  Currently supported destinations
-                </h2>
-                {destinationsQuery.isLoading ? (
-                  <p className={styles.destinationStatus} role="status">
-                    Loading available destinations…
-                  </p>
-                ) : destinationsQuery.isError ? (
-                  <div className={styles.destinationError} role="alert">
-                    <p className={styles.destinationStatus}>
-                      Destinations are temporarily unavailable. Your saved trips are still available in the sidebar.
+            <div className={styles.welcomeGrid}>
+              <div className={styles.welcomeContent}>
+                <span className={styles.kicker}>EXPLORE / IMAGINE / GO</span>
+                <h1 className={styles.welcomeTitle}>Start with a place that <em>moves you.</em></h1>
+                <p className={styles.welcomeText}>
+                  Explore the landscapes of Kyrgyzstan, then shape your own day-by-day journey with NomadAI.
+                </p>
+                <div className={styles.primaryActions}>
+                  <button className={styles.startBtn} onClick={() => {
+                    setInitialDestinationId(undefined);
+                    setShowForm(true);
+                  }}>
+                    Create a trip <span aria-hidden="true">↗</span>
+                  </button>
+                  {!isAuthenticated && (
+                    <p className={styles.authNote}>
+                      <Link to="/auth/login" className={styles.authLink}>Sign in</Link> to save your trips
                     </p>
-                    <button
-                      className={styles.retryBtn}
-                      type="button"
-                      onClick={() => void destinationsQuery.refetch()}
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : destinationsQuery.data?.length ? (
-                  <ul className={styles.destinationList}>
-                    {destinationsQuery.data.map((destination) => (
-                      <li className={styles.destinationChip} key={destination.id}>
-                        {destination.name === destination.country_name
-                          ? destination.name
-                          : `${destination.name}, ${destination.country_name}`}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.destinationStatus} role="status">
-                    No destinations are available for new trip planning right now. Your saved trips remain available in the sidebar.
-                  </p>
-                )}
-              </section>
-              <div className={styles.tripPreview}>
-                <h2 className={styles.previewTitle}>Your trip, at a glance</h2>
-                <ul className={styles.previewList}>
-                  <li>Day-by-day itinerary</li>
-                  <li>Activities shaped around your interests</li>
-                  <li>Chat to refine a saved trip</li>
-                </ul>
+                  )}
+                </div>
+                <section className={styles.destinationPreview} aria-labelledby="supported-destinations-title">
+                  <h2 className={styles.previewTitle} id="supported-destinations-title">Currently available for planning</h2>
+                  {destinationsQuery.isLoading ? (
+                    <p className={styles.destinationStatus} role="status">Loading available destinations…</p>
+                  ) : destinationsQuery.isError ? (
+                    <div className={styles.destinationError} role="alert">
+                      <p className={styles.destinationStatus}>Destinations are temporarily unavailable. Your saved trips are still available in the sidebar.</p>
+                      <button className={styles.retryBtn} type="button" onClick={() => void destinationsQuery.refetch()}>Retry</button>
+                    </div>
+                  ) : destinationsQuery.data?.length ? (
+                    <ul className={styles.destinationList}>
+                      {destinationsQuery.data.map((destination) => (
+                        <li className={styles.destinationChip} key={destination.id}>
+                          {destination.name === destination.country_name ? destination.name : `${destination.name}, ${destination.country_name}`}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className={styles.destinationStatus} role="status">No destinations are available for new trip planning right now.</p>
+                  )}
+                </section>
+                <div className={styles.tripPreview}>
+                  <span>01 / DISCOVER</span><span>02 / SHAPE YOUR ROUTE</span><span>03 / REFINE IN CHAT</span>
+                </div>
               </div>
-              <button className={styles.startBtn} onClick={() => setShowForm(true)}>
-                Create a trip
-              </button>
-              {!isAuthenticated && (
-                 <p className={styles.authNote}>
-                   <Link to="/auth/login" className={styles.authLink}>Sign in</Link> to save your trips
-                 </p>
-               )}
+              <HomeGlobe
+                destinations={destinationsQuery.data ?? []}
+                onPlan={(destinationId) => {
+                  setInitialDestinationId(destinationId);
+                  setShowForm(true);
+                }}
+              />
             </div>
           </div>
         )}
