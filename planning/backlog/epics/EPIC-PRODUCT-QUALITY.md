@@ -18,6 +18,7 @@ Travelers can understand what the current development app supports, complete tri
 - The business/admin shell and its key workflows are usable at narrow and wide viewports.
 - Generation and enrichment failures use structured logs and remain visibly degraded where appropriate.
 - Development fallback output does not imply it represents a destination other than the one selected.
+- Travelers can keep a readable copy of an itinerary, discover useful chat refinements, and organize saved trips with clear names.
 
 ## Guardrails
 
