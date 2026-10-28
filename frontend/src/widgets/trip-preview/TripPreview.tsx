@@ -41,7 +41,7 @@ export function TripPreview({
   ) ?? false;
 
   return (
-    <div className={styles.preview}>
+    <div id="trip-print-root" className={styles.preview}>
       <TripHeader
         title={tripTitle ?? itinerary.summary ?? 'Your itinerary'}
         destinationName={destinationName}
@@ -77,13 +77,15 @@ export function TripPreview({
         ) : null}
       </div>
       {itinerary.days.length > 0 ? (
-        <OffersSearchPanel
-          countryCode={destinationCountryCode}
-          destinationCity={itinerary.days[0]?.city ?? ''}
-        />
+        <div data-print-hide="true">
+          <OffersSearchPanel
+            countryCode={destinationCountryCode}
+            destinationCity={itinerary.days[0]?.city ?? ''}
+          />
+        </div>
       ) : null}
       {itinerary.days.length > 1 && (
-        <nav className={styles.dayNavigation} aria-label="Jump to itinerary day">
+        <nav className={styles.dayNavigation} aria-label="Jump to itinerary day" data-print-hide="true">
           <span className={styles.dayNavigationLabel}>Jump to day</span>
           <ol className={styles.dayNavigationList}>
             {itinerary.days.map((day) => (

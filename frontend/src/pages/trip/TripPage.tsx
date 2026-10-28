@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
-import { Maximize2, Minimize2, PanelRight } from 'lucide-react';
+import { Maximize2, Minimize2, PanelRight, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { messageApi, type Message } from '../../entities/message';
@@ -141,21 +141,32 @@ export function TripPage() {
   };
 
   const previewActions = (
-    <Button
-      type='button'
-      variant='secondary'
-      size='sm'
-      leftIcon={
-        isPreviewExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />
-      }
-      onClick={togglePreviewExpand}
-    >
-      {isPreviewExpanded ? 'Exit focus' : 'Focus route'}
-    </Button>
+    <div className={styles.previewActions}>
+      <Button
+        type='button'
+        variant='secondary'
+        size='sm'
+        leftIcon={<Printer size={14} />}
+        onClick={() => window.print()}
+      >
+        Print itinerary
+      </Button>
+      <Button
+        type='button'
+        variant='secondary'
+        size='sm'
+        leftIcon={
+          isPreviewExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />
+        }
+        onClick={togglePreviewExpand}
+      >
+        {isPreviewExpanded ? 'Exit focus' : 'Focus route'}
+      </Button>
+    </div>
   );
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.layout} data-print-layout="true">
       <Sidebar isOpen={!isMobile || isOpen} />
       <ResizableLayout
         isRightExpanded={isPreviewExpanded}
@@ -216,7 +227,7 @@ export function TripPage() {
           </div>
         }
         right={
-          <div className={styles.previewPane}>
+          <div className={styles.previewPane} data-print-layout="true">
             <TripPreview
               itinerary={itinerary}
               tripId={currentTrip?.id ?? (Number.isFinite(tripId) ? tripId : undefined)}
