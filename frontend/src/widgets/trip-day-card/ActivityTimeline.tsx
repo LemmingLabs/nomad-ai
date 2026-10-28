@@ -94,6 +94,12 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
           const Icon = getActivityIcon(activity.type);
           const timeBucket = getTimeBucket(activity.time);
           const TimeIcon = timeBucket.icon;
+          const isDevelopmentMock = activity.content_status === 'mock_suggestion';
+          const sourceLabel = isDevelopmentMock
+            ? 'Development mock'
+            : activity.content_status === 'ai_suggestion'
+              ? 'AI suggestion'
+              : 'Suggestion';
           const activityKey = `${activity.time ?? activity.time_window ?? 'flexible'}-${activity.description}`;
 
           return (
@@ -116,6 +122,9 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
                   ) : (
                     <span className={styles.time}>Duration unknown</span>
                   )}
+                  <span className={`${styles.source}${isDevelopmentMock ? ` ${styles.mockSource}` : ''}`}>
+                    {sourceLabel}
+                  </span>
                 </div>
                 <p className={styles.description}>{activity.description}</p>
                 {activity.practical_details?.length ? (

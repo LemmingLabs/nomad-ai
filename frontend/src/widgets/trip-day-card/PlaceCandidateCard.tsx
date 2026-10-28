@@ -73,6 +73,11 @@ export function PlaceCandidateCard({ day }: PlaceCandidateCardProps) {
   }
 
   const status = formatStatus(placeCandidate.business_status);
+  const providerLabel = placeCandidate.provider === 'google_places'
+    ? 'Google Places result'
+    : placeCandidate.provider
+      ? `${humanizeToken(placeCandidate.provider)} result`
+      : null;
   const types = getDisplayPlaceTypes(placeCandidate.types);
   const matchedInterest = humanizeToken(placeCandidate.matched_interest);
   const mapsUrl = getMapsUrl(
@@ -93,6 +98,12 @@ export function PlaceCandidateCard({ day }: PlaceCandidateCardProps) {
       {matchedInterest && (
         <p className={styles.match}>
           Perfect for <strong>{matchedInterest}</strong>
+        </p>
+      )}
+
+      {providerLabel && (
+        <p className={styles.sourceNote}>
+          {providerLabel}. Check current listing details before relying on them.
         </p>
       )}
 

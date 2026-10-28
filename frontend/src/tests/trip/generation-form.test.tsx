@@ -20,6 +20,8 @@ test('submits the selected budget, interests, and trip brief', async () => {
   const user = userEvent.setup();
   render(<GenerateTripForm onSubmit={submit} />);
 
+  expect(screen.getByText(/not a price estimate or a per-person or trip total/i)).toBeTruthy();
+
   await user.click(screen.getByRole('radio', { name: /higher comfort/i }));
   await user.click(screen.getByText(/personalize your trip/i));
   await user.click(screen.getByRole('button', { name: 'nature' }));

@@ -3,7 +3,6 @@ import { SponsoredCard } from '../../features/sponsored/ui/SponsoredCard';
 import {
   formatDistance,
   formatDuration,
-  formatEstimatedCost,
   humanizeToken,
   isRouteAvailable,
 } from '../../entities/trip/lib/presentation';
@@ -74,15 +73,6 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
                     {formatDuration(day.route_from_previous?.duration_mins) && (
                       <span className={styles.routeChip}>
                         {formatDuration(day.route_from_previous?.duration_mins)}
-                      </span>
-                    )}
-                    {formatEstimatedCost(
-                      day.route_from_previous?.estimated_cost,
-                    ) && (
-                      <span className={styles.routeChip}>
-                        {formatEstimatedCost(
-                          day.route_from_previous?.estimated_cost,
-                        )}
                       </span>
                     )}
                   </div>

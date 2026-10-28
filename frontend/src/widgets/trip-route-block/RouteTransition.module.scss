@@ -96,6 +96,14 @@
   padding-left: 3.2rem;
 }
 
+.costNote {
+  margin: 0;
+  padding-left: 3.2rem;
+  color: $color-text-muted;
+  font-size: $text-xs;
+  line-height: 1.5;
+}
+
 .stat {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(20, 184, 166, 0.1);
@@ -130,6 +138,10 @@
 
   .stats,
   .fallback {
+    padding-left: 0;
+  }
+
+  .costNote {
     padding-left: 0;
   }
 }

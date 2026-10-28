@@ -127,6 +127,14 @@
   line-height: 1.3;
 }
 
+.statHint {
+  display: block;
+  margin-top: $space-1;
+  color: $color-text-muted;
+  font-size: $text-xs;
+  line-height: 1.4;
+}
+
 .tags {
   margin-top: -$space-1;
 }

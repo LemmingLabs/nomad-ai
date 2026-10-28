@@ -14,16 +14,17 @@ test('renders route evidence and place details for a multi-day itinerary', () =>
     days: [
       {
         day: 1, title: 'Old town', city: 'Bishkek', location: 'Ala-Too Square',
-        activities: [{ time: 'morning', description: 'Explore the square', type: 'culture' }],
+        activities: [{ time: 'morning', description: 'Explore the square', type: 'culture', content_status: 'ai_suggestion', duration_minutes: 90, duration_status: 'estimated' }],
       },
       {
         day: 2, title: 'Lake shore', city: 'Cholpon-Ata', location: 'Issyk-Kul',
-        activities: [{ time: 'afternoon', description: 'Walk along the lake', type: 'nature' }],
+        activities: [{ time: 'afternoon', description: 'Walk along the lake', type: 'nature', content_status: 'mock_suggestion' }],
         route_from_previous: {
           origin: 'Bishkek', destination: 'Cholpon-Ata', transport_type: 'car',
           distance_km: 260, duration_mins: 240, estimated_cost: 3000,
         },
         place_candidate: {
+          provider: 'google_places',
           name: 'Lake Promenade', city: 'Cholpon-Ata', lat: 42.64, lng: 77.07,
           rating: 4.6, user_rating_count: 1200, matched_interest: 'nature',
           business_status: 'OPERATIONAL', types: ['point_of_interest', 'park'],
@@ -41,11 +42,75 @@ test('renders route evidence and place details for a multi-day itinerary', () =>
   expect(screen.getByRole('link', { name: 'Day 2: Lake shore, Cholpon-Ata' }).getAttribute('href'))
     .toBe('#trip-day-2');
   expect(screen.getByText('Explore the square')).toBeTruthy();
+  expect(screen.getByText('AI suggestion')).toBeTruthy();
+  expect(screen.getByText('Development mock')).toBeTruthy();
+  expect(screen.getByText('Budget preference')).toBeTruthy();
+  expect(screen.getByText('Balanced')).toBeTruthy();
+  expect(screen.getByText(/Relative price preference only; no trip cost calculated/)).toBeTruthy();
   expect(screen.getByText('Walk along the lake')).toBeTruthy();
+  expect(screen.getByText(/Google Places result\. Check current listing details/)).toBeTruthy();
+  expect(screen.getByText('Est. 90 min')).toBeTruthy();
   expect(screen.getByText('Transfer snapshot')).toBeTruthy();
   expect(screen.getAllByText('260 km').length).toBeGreaterThan(0);
   expect(screen.getAllByText('Lake Promenade').length).toBeGreaterThan(0);
   expect(screen.getByRole('link', { name: /website/i }).getAttribute('href')).toBe('https://example.com/lake');
+});
+
+test('does not infer a day duration from the number of activities', () => {
+  const itinerary: TripItinerary = {
+    total_days: 1,
+    days: [{
+      day: 1,
+      title: 'City day',
+      city: 'Bishkek',
+      location: 'City Center',
+      activities: [
+        { description: 'Visit a museum', type: 'culture' },
+        { description: 'Walk in a park', type: 'nature' },
+      ],
+    }],
+  };
+
+  render(<TripPreview itinerary={itinerary} />);
+
+  expect(screen.queryByText('Day pace')).toBeNull();
+  expect(screen.queryByText(/exploring/)).toBeNull();
+});
+
+test('labels an estimated taxi fare as a per-leg vehicle amount', () => {
+  const itinerary: TripItinerary = {
+    total_days: 2,
+    days: [
+      {
+        day: 1,
+        title: 'Arrival',
+        city: 'Bishkek',
+        location: 'Airport',
+        activities: [],
+      },
+      {
+        day: 2,
+        title: 'City walk',
+        city: 'Bishkek',
+        location: 'City Center',
+        activities: [],
+        route_from_previous: {
+          origin: 'Airport',
+          destination: 'City Center',
+          transport_type: 'taxi',
+          distance_km: 30,
+          duration_mins: 40,
+          estimated_cost: 440,
+        },
+      },
+    ],
+  };
+
+  render(<TripPreview itinerary={itinerary} />);
+
+  expect(screen.getByText('~440 KGS')).toBeTruthy();
+  expect(screen.getByText(/Rough taxi fare for this route leg, for the vehicle rather than per traveler/)).toBeTruthy();
+  expect(screen.getByText(/separate from the trip total/)).toBeTruthy();
 });
 
 test('renders degraded generation state and missing timing for a legacy day', () => {
