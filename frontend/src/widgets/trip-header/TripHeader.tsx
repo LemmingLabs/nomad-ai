@@ -50,7 +50,7 @@ export function TripHeader({
             </span>
           )}
         </div>
-        {actions && <div className={styles.actions}>{actions}</div>}
+        {actions && <div className={styles.actions} data-print-hide="true">{actions}</div>}
       </div>
 
       <div className={styles.content}>

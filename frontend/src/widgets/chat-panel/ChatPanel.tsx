@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { Message } from '../../entities/message';
+import type { TripItinerary } from '../../entities/trip';
 import { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
 import styles from './ChatPanel.module.scss';
 
@@ -29,7 +30,40 @@ interface ChatPanelProps {
   disabledMessage?: ReactNode;
   disabledPlaceholder?: string;
   notice?: ReactNode;
+  itinerary?: TripItinerary | null;
   onSend: (content: string) => void;
+}
+
+function getRefinementSuggestions(itinerary?: TripItinerary | null) {
+  const hasLongTransfer = itinerary?.days.some(
+    (day) => (day.route_from_previous?.duration_mins ?? 0) >= 120,
+  );
+  const firstInterest = itinerary?.interests?.[0];
+
+  return [
+    {
+      label: 'Slow the pace',
+      prompt: 'Make this itinerary more relaxed, with fewer activities each day and more time for breaks.',
+    },
+    hasLongTransfer
+      ? {
+          label: 'Shorten long transfers',
+          prompt: 'Look for ways to reduce the longest transfers in this itinerary, and clearly note any route details that are only suggestions.',
+        }
+      : {
+          label: 'Add local food and culture',
+          prompt: 'Add a few more local food and cultural experiences that fit this itinerary.',
+        },
+    firstInterest
+      ? {
+          label: `More ${firstInterest}`,
+          prompt: `Add more ${firstInterest} experiences while keeping the trip length and overall pace similar.`,
+        }
+      : {
+          label: 'Add more nature',
+          prompt: 'Add a few more nature-focused stops that fit this itinerary.',
+        },
+  ];
 }
 
 export function ChatPanel({
@@ -39,6 +73,7 @@ export function ChatPanel({
   disabledMessage,
   disabledPlaceholder = 'Sign in to continue this conversation...',
   notice,
+  itinerary,
   onSend,
 }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -116,18 +151,22 @@ export function ChatPanel({
     return () => ctx.revert();
   }, [messages.length]);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const submitMessage = () => {
     const val = inputRef.current?.value.trim();
     if (!val || isLoading || isDisabled) return;
     onSend(val);
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submitMessage();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e as unknown as FormEvent);
+      submitMessage();
     }
   };
 
@@ -179,6 +218,22 @@ export function ChatPanel({
             </div>
           </div>
         )}
+        <div className={styles.refinements} role="group" aria-label="Quick trip refinements">
+          <p className={styles.refinementLabel}>Try a quick edit</p>
+          <div className={styles.refinementList}>
+            {getRefinementSuggestions(itinerary).map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                className={styles.refinementButton}
+                onClick={() => onSend(suggestion.prompt)}
+                disabled={isLoading || isDisabled}
+              >
+                {suggestion.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div ref={bottomRef} />
       </div>
 

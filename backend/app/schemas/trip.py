@@ -35,6 +35,17 @@ class TripGenerateRequest(BaseModel):
         return self
 
 
+class TripTitleUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def normalize_title(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        return value.strip()
+
+
 class TripResponse(BaseModel):
     id: int
     title: str

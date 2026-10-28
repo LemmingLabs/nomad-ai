@@ -102,7 +102,8 @@
     border-color $transition-fast;
 
   .item:hover &,
-  .item--active & {
+  .item--active &,
+  &:focus-visible {
     opacity: 1;
   }
 
@@ -110,6 +111,94 @@
     color: $color-accent;
     border-color: rgba(20, 184, 166, 0.14);
   }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  top: 2.5rem;
+  right: $space-2;
+  display: flex;
+  flex-direction: column;
+  min-width: 9rem;
+  padding: $space-1;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: #fff;
+  box-shadow: $shadow-md;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 2.25rem;
+  padding: $space-2 $space-3;
+  border: 0;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text;
+  font: inherit;
+  font-size: $text-xs;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(20, 184, 166, 0.08);
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px $color-accent;
+  }
+
+  &--danger {
+    color: $color-error;
+  }
+}
+
+.renameForm {
+  @include flex-col;
+  gap: $space-2;
+  padding: 0 $space-3 $space-3;
+}
+
+.renameLabel {
+  color: $color-text-muted;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+}
+
+.renameInput {
+  width: 100%;
+  min-width: 0;
+  padding: $space-2 $space-3;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  color: $color-text;
+  font: inherit;
+  font-size: $text-xs;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 1px;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: $color-error;
+  }
+}
+
+.renameError {
+  margin: 0;
+  color: $color-error;
+  font-size: $text-xs;
 }
 
 .confirm {
@@ -135,6 +224,16 @@
   font-size: $text-xs;
   background: rgba(31, 41, 55, 0.04);
   color: $color-text;
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 
   &--danger {
     background: rgba(239, 68, 68, 0.12);

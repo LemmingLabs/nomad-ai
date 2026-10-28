@@ -15,6 +15,12 @@
   overflow: hidden;
 }
 
+.previewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .chatPane {
   background:
     radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 24%),

@@ -83,18 +83,20 @@ export function ResizableLayout({
         [styles['layout--expanded']]: isRightExpanded,
         [styles['layout--dragging']]: isDragging,
       })}
+      data-print-layout="true"
       style={layoutStyle}
     >
-      <section className={styles.left}>{left}</section>
+      <section className={styles.left} data-print-hide="true">{left}</section>
       <button
         type="button"
         className={styles.handle}
+        data-print-hide="true"
         onPointerDown={handlePointerDown}
         aria-label="Resize trip preview"
       >
         <span className={styles.handleGrip} />
       </button>
-      <section className={styles.right}>{right}</section>
+      <section className={styles.right} data-print-layout="true">{right}</section>
     </div>
   );
 }

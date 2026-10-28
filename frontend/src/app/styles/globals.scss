@@ -130,3 +130,72 @@ p {
   border: 1px solid $color-border !important;
   box-shadow: $shadow-md !important;
 }
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html:has(#trip-print-root),
+  body:has(#trip-print-root) {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body:has(#trip-print-root) #root {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(#trip-print-root) #root::before {
+    display: none !important;
+  }
+
+  body:has(#trip-print-root) #root * {
+    visibility: hidden !important;
+  }
+
+  body:has(#trip-print-root) #trip-print-root,
+  body:has(#trip-print-root) #trip-print-root * {
+    visibility: visible !important;
+  }
+
+  body:has(#trip-print-root) [data-print-layout="true"] {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body:has(#trip-print-root) [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  body:has(#trip-print-root) #trip-print-root {
+    position: static !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+
+  body:has(#trip-print-root) #trip-print-root * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body:has(#trip-print-root) #trip-print-root article,
+  body:has(#trip-print-root) #trip-print-root section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body:has(#trip-print-root) #trip-print-root a {
+    color: inherit;
+    overflow-wrap: anywhere;
+  }
+}

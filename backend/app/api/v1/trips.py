@@ -9,6 +9,7 @@ from app.schemas.trip import (
     TripResponse,
     TripDetailResponse,
     SyncGuestTripRequest,
+    TripTitleUpdateRequest,
 )
 from app.services import trip_service
 
@@ -70,6 +71,24 @@ def get_trip(
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc
     return detailed_trip
+
+
+@router.patch("/{trip_id}", response_model=TripResponse)
+def rename_trip(
+    trip_id: int,
+    payload: TripTitleUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> TripResponse:
+    try:
+        return trip_service.rename_user_trip(
+            db=db,
+            user_id=current_user.id,
+            trip_id=trip_id,
+            title=payload.title,
+        )
+    except ValueError as exc:
+        raise _map_value_error_to_http_exception(exc) from exc
 
 
 @router.post("/sync-guest", response_model=TripResponse)

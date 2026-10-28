@@ -163,6 +163,59 @@
   word-break: break-word;
 }
 
+.refinements {
+  @include flex-col;
+  gap: $space-2;
+  align-items: flex-start;
+  margin-top: auto;
+  padding: $space-2 0 $space-1;
+}
+
+.refinementLabel {
+  margin: 0;
+  color: $color-text-muted;
+  font-size: $text-xs;
+  font-weight: $weight-semibold;
+}
+
+.refinementList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.refinementButton {
+  min-height: 2.25rem;
+  padding: $space-2 $space-3;
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: $radius-full;
+  background: rgba(255, 255, 255, 0.92);
+  color: $color-text;
+  font: inherit;
+  font-size: $text-xs;
+  cursor: pointer;
+  transition:
+    background $transition-fast,
+    border-color $transition-fast,
+    color $transition-fast;
+
+  &:hover:not(:disabled) {
+    border-color: $color-accent;
+    background: rgba(20, 184, 166, 0.08);
+    color: $color-accent-hover;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-accent;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
 // Typing dots
 .typing {
   display: inline-flex;
