@@ -6,7 +6,7 @@ This folder describes the current state of the product and the agreed developmen
 
 | Section | Documents |
 |---|---|
-| [Product](product/) | [Goals and Scope](product/PRODUCT_VISION.md) |
+| [Product](product/) | [Goals and Scope](product/PRODUCT_VISION.md); [Interactive Home Globe Plan](product/HOME_GLOBE_EXPERIENCE_PLAN.md) |
 | [Roadmap](roadmap/) | [Destination Expansion and Route Quality](roadmap/EXPANSION_PLAN.md); [Epic order and implementation backlog](roadmap/IMPLEMENTATION_BACKLOG.md); [local issues and GitHub sync](../planning/backlog/README.md) |
 | [Architecture](architecture/) | [Meaningful and Verifiable Itinerary](architecture/ITINERARY_QUALITY.md) |
 | [Reviews](reviews/) | [Product quality audit (2026-10-27)](reviews/PRODUCT_QUALITY_AUDIT_2026-10-27.md); [Product feature audit (2026-10-29)](reviews/PRODUCT_FEATURE_AUDIT_2026-10-29.md) |
