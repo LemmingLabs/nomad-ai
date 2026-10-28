@@ -62,8 +62,11 @@ export function formatDuration(durationMins?: number | null): string | null {
   return `${minutes}m`;
 }
 
-export function formatEstimatedCost(cost?: number | null): string | null {
-  if (cost == null) {
+export function formatEstimatedCost(
+  cost?: number | null,
+  transportType?: string | null,
+): string | null {
+  if (cost == null || transportType?.toLowerCase() !== 'taxi') {
     return null;
   }
 

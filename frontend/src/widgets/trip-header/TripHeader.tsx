@@ -78,6 +78,7 @@ export function TripHeader({
               <div>
                 <span className={styles.statLabel}>Budget preference</span>
                 <strong className={styles.statValue}>{budgetLabel}</strong>
+                <span className={styles.statHint}>Relative price preference only; no trip cost calculated</span>
               </div>
             </div>
           )}

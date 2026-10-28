@@ -25,7 +25,7 @@ export function RouteTransition({ route }: RouteTransitionProps) {
   const routeAvailable = isRouteAvailable(route);
   const distance = formatDistance(route.distance_km);
   const duration = formatDuration(route.duration_mins);
-  const estimatedCost = formatEstimatedCost(route.estimated_cost);
+  const estimatedCost = formatEstimatedCost(route.estimated_cost, route.transport_type);
   const transportType = humanizeToken(route.transport_type);
 
   return (
@@ -52,32 +52,39 @@ export function RouteTransition({ route }: RouteTransitionProps) {
       </div>
 
       {routeAvailable ? (
-        <div className={styles.stats}>
-          {distance && (
-            <span className={styles.stat}>
-              <MapPinned size={14} />
-              {distance}
-            </span>
-          )}
-          {duration && (
-            <span className={styles.stat}>
-              <Clock3 size={14} />
-              {duration}
-            </span>
-          )}
-          {estimatedCost && (
-            <span className={styles.stat}>
-              <Wallet size={14} />
-              {estimatedCost}
-            </span>
-          )}
-          {transportType && (
-            <span className={styles.stat}>
-              <CarFront size={14} />
-              {transportType}
-            </span>
-          )}
-        </div>
+        <>
+          <div className={styles.stats}>
+            {distance && (
+              <span className={styles.stat}>
+                <MapPinned size={14} />
+                {distance}
+              </span>
+            )}
+            {duration && (
+              <span className={styles.stat}>
+                <Clock3 size={14} />
+                {duration}
+              </span>
+            )}
+            {estimatedCost && (
+              <span className={styles.stat}>
+                <Wallet size={14} />
+                {estimatedCost}
+              </span>
+            )}
+            {transportType && (
+              <span className={styles.stat}>
+                <CarFront size={14} />
+                {transportType}
+              </span>
+            )}
+          </div>
+          {estimatedCost ? (
+            <p className={styles.costNote}>
+              Rough taxi fare for this route leg, for the vehicle rather than per traveler; it is separate from the trip total.
+            </p>
+          ) : null}
+        </>
       ) : (
         <p className={styles.fallback}>
           {route.status === 'stale'

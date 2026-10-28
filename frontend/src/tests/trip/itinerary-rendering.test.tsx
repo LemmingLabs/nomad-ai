@@ -41,11 +41,50 @@ test('renders route evidence and place details for a multi-day itinerary', () =>
   expect(screen.getByRole('link', { name: 'Day 2: Lake shore, Cholpon-Ata' }).getAttribute('href'))
     .toBe('#trip-day-2');
   expect(screen.getByText('Explore the square')).toBeTruthy();
+  expect(screen.getByText('Budget preference')).toBeTruthy();
+  expect(screen.getByText('Balanced')).toBeTruthy();
+  expect(screen.getByText(/Relative price preference only; no trip cost calculated/)).toBeTruthy();
   expect(screen.getByText('Walk along the lake')).toBeTruthy();
   expect(screen.getByText('Transfer snapshot')).toBeTruthy();
   expect(screen.getAllByText('260 km').length).toBeGreaterThan(0);
   expect(screen.getAllByText('Lake Promenade').length).toBeGreaterThan(0);
   expect(screen.getByRole('link', { name: /website/i }).getAttribute('href')).toBe('https://example.com/lake');
+});
+
+test('labels an estimated taxi fare as a per-leg vehicle amount', () => {
+  const itinerary: TripItinerary = {
+    total_days: 2,
+    days: [
+      {
+        day: 1,
+        title: 'Arrival',
+        city: 'Bishkek',
+        location: 'Airport',
+        activities: [],
+      },
+      {
+        day: 2,
+        title: 'City walk',
+        city: 'Bishkek',
+        location: 'City Center',
+        activities: [],
+        route_from_previous: {
+          origin: 'Airport',
+          destination: 'City Center',
+          transport_type: 'taxi',
+          distance_km: 30,
+          duration_mins: 40,
+          estimated_cost: 440,
+        },
+      },
+    ],
+  };
+
+  render(<TripPreview itinerary={itinerary} />);
+
+  expect(screen.getByText('~440 KGS')).toBeTruthy();
+  expect(screen.getByText(/Rough taxi fare for this route leg, for the vehicle rather than per traveler/)).toBeTruthy();
+  expect(screen.getByText(/separate from the trip total/)).toBeTruthy();
 });
 
 test('renders degraded generation state and missing timing for a legacy day', () => {

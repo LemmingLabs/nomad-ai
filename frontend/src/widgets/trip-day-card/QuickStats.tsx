@@ -1,4 +1,4 @@
-import { Clock3, MapPinned, Star, Wallet } from 'lucide-react';
+import { Clock3, MapPinned, Star } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { TripDay } from '../../entities/trip';
 import styles from './QuickStats.module.scss';
@@ -42,14 +42,6 @@ export function QuickStats({ day }: QuickStatsProps) {
       icon: MapPinned,
       label: 'Distance',
       value: `${formatNumber(day.route_from_previous.distance_km)} km`,
-    });
-  }
-
-  if (day.route_from_previous?.estimated_cost != null) {
-    stats.push({
-      icon: Wallet,
-      label: 'Move cost',
-      value: `~${formatNumber(day.route_from_previous.estimated_cost)} KGS`,
     });
   }
 
