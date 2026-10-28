@@ -24,6 +24,7 @@ test('submits flight search inputs and displays disabled provider response witho
   })
   renderPanel()
 
+  await screen.findByText(/Development airport suggestions from OurAirports/)
   await user.type(screen.getByLabelText('Origin airport or city'), 'ALA — Almaty')
   await user.click(screen.getByRole('button', { name: 'Search flights' }))
 
