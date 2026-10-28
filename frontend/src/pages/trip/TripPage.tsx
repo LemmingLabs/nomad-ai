@@ -222,6 +222,7 @@ export function TripPage() {
                   </div>
                 ) : undefined
               }
+              itinerary={itinerary}
               onSend={(content) => sendMutation.mutate(content)}
             />
           </div>
