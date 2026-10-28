@@ -45,11 +45,18 @@
 
 .match,
 .fallback,
-.infoRow {
+.infoRow,
+.sourceNote {
   margin: 0;
   font-size: $text-sm;
   line-height: 1.6;
   color: $color-text-muted;
+}
+
+.sourceNote {
+  padding: $space-2 $space-3;
+  border-left: 3px solid rgba(20, 184, 166, 0.45);
+  background: rgba(20, 184, 166, 0.05);
 }
 
 .match strong {
