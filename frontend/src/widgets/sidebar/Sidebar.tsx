@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutPanelLeft,
   LayoutPanelTop,
@@ -9,7 +10,7 @@ import cn from 'classnames';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import styles from './Sidebar.module.scss';
-import { useTripStore } from '../../entities/trip';
+import { tripApi, useTripStore, type TripDetailResponse } from '../../entities/trip';
 import { useUserStore } from '../../entities/user';
 import { LogoutButton } from '../../features/auth/logout';
 import { deleteTripApi } from '../../features/trip/delete-trip';
@@ -26,9 +27,10 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
   const navigate = useNavigate();
-  const { trips, activeTripId, setActiveTrip, removeTrip } = useTripStore();
+  const { trips, activeTripId, setActiveTrip, removeTrip, renameTripTitle } = useTripStore();
   const { isAuthenticated, user } = useUserStore();
   const { isCollapsed, toggleCollapsed } = useSidebarStore();
+  const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
     mutationFn: async (tripId: number) => {
@@ -49,6 +51,23 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
     },
     onError: () => {
       toast.error('Could not delete this trip');
+    },
+  });
+
+  const renameMutation = useMutation({
+    mutationFn: ({ tripId, title }: { tripId: number; title: string }) =>
+      tripApi.rename(tripId, title),
+    onSuccess: (trip) => {
+      renameTripTitle(trip.id, trip.title);
+      queryClient.setQueryData<TripDetailResponse>(['trip', trip.id], (current) =>
+        current
+          ? { ...current, trip: { ...current.trip, title: trip.title } }
+          : current,
+      );
+      toast.success('Trip renamed');
+    },
+    onError: () => {
+      toast.error('Could not rename this trip');
     },
   });
 
@@ -108,6 +127,8 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
             isActive={activeTripId === trip.id}
             isCollapsed={isCollapsed}
             isDeleting={deleteMutation.isPending}
+            canRename={isAuthenticated}
+            isSavingRename={renameMutation.isPending}
             onSelect={(tripId) => {
               setActiveTrip(tripId);
               void navigate(`/trip/${tripId}`);
@@ -115,6 +136,11 @@ export function Sidebar({ isOpen = true, onNewTrip }: SidebarProps) {
             onDelete={(tripId) => {
               if (!deleteMutation.isPending) {
                 deleteMutation.mutate(tripId);
+              }
+            }}
+            onRename={(tripId, title) => {
+              if (!renameMutation.isPending) {
+                renameMutation.mutate({ tripId, title });
               }
             }}
           />

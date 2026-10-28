@@ -10,6 +10,7 @@ from app.repositories.trip_repository import (
     get_trip_by_id,
     get_user_trips,
     assign_trip_to_user,
+    update_trip,
 )
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
@@ -1003,6 +1004,15 @@ def get_user_trip_by_id(db: Session, user_id: int, trip_id: int) -> Trip:
     if trip is None or trip.user_id != user_id:
         raise ValueError("Trip not found")
     return trip
+
+
+def rename_user_trip(db: Session, user_id: int, trip_id: int, title: str) -> Trip:
+    """Rename a saved trip after verifying that it belongs to the caller."""
+    normalized_title = title.strip()
+    if not normalized_title or len(normalized_title) > 255:
+        raise ValueError("Trip title must contain 1 to 255 characters")
+    trip = get_user_trip_by_id(db, user_id, trip_id)
+    return update_trip(db, trip, title=normalized_title)
 
 
 def get_trip_detail(db: Session, user_id: int, trip_id: int) -> dict:

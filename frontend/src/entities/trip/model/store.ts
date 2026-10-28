@@ -8,6 +8,7 @@ interface TripState {
   setTrips: (trips: TripListItem[]) => void;
   setActiveTrip: (id: number | null) => void;
   updateTrip: (trip: Trip) => void;
+  renameTripTitle: (id: number, title: string) => void;
   addTrip: (trip: TripListItem) => void;
   removeTrip: (id: number) => void;
   clearTrips: () => void;
@@ -23,6 +24,12 @@ export const useTripStore = create<TripState>()(
       setActiveTrip: (activeTripId) => set({ activeTripId }),
       updateTrip: (trip) =>
         set((s) => ({ trips: s.trips.map((t) => (t.id === trip.id ? trip : t)) })),
+      renameTripTitle: (id, title) =>
+        set((s) => ({
+          trips: s.trips.map((trip) =>
+            trip.id === id ? { ...trip, title } : trip,
+          ),
+        })),
       addTrip: (trip) =>
         set((s) => ({
           trips: [trip, ...s.trips.filter((existingTrip) => existingTrip.id !== trip.id)],
