@@ -1,6 +1,6 @@
 # Local GitHub backlog
 
-This folder is the editable source for planned GitHub milestones, epic issues, and implementation issues. Full issue descriptions live in `epics/` and `issues/`; `backlog.json` assigns each description a stable ID and milestone. The original four destination/route/offers phases remain, with a separate development-quality milestone for improving the existing product.
+This folder is the editable source for planned GitHub milestones, epic issues, and implementation issues. Full issue descriptions live in `epics/` and `issues/`; `backlog.json` assigns each description a stable ID and milestone. The original destination/route/offers phases and development-quality milestone remain alongside the traveler workspace and itinerary milestones.
 
 ## Sync
 
@@ -19,7 +19,7 @@ Edit the Markdown source files, not the generated GitHub copy. Keep IDs stable o
 
 ## Planning conventions
 
-- Four phases become four GitHub milestones and four `[Epic]` issues.
+- Each phase or outcome can have a GitHub milestone and an `[Epic]` issue.
 - Implementation issues represent coherent, reviewable end-to-end capabilities, not isolated cosmetic edits.
 - Dependencies are expressed with stable backlog IDs locally and GitHub issue references after sync.
 - Local issue documents are written in English to match the repository's current docs; update them with the team as scope changes.

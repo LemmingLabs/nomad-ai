@@ -25,6 +25,16 @@
       "id": "QUALITY-DEV",
       "title": "Development Quality — Existing Product",
       "description": "Improve the current development product through clearer traveler flows, accessible and responsive interfaces, better diagnostics, and destination-correct development behavior."
+    },
+    {
+      "id": "WORKSPACE-RELIABILITY",
+      "title": "Traveler Workspace — Reliability",
+      "description": "Make mobile trip access, navigation, chat history, and concurrent edits reliable in the current development product."
+    },
+    {
+      "id": "ITINERARY-EXPLORATION",
+      "title": "Itinerary — Clarity and Exploration",
+      "description": "Improve itinerary understanding, imagery and spatial exploration with honest provenance and bounded provider use."
     }
   ],
   "labels": [
@@ -66,6 +76,18 @@
     {"id": "QUALITY-10", "kind": "task", "title": "QUALITY-10 Make development fallback itineraries destination-aware", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-10.md", "depends_on": []},
     {"id": "QUALITY-11", "kind": "task", "title": "QUALITY-11 Make itineraries easy to print and keep", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-11.md", "depends_on": []},
     {"id": "QUALITY-12", "kind": "task", "title": "QUALITY-12 Offer contextual one-click trip refinements", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-12.md", "depends_on": []},
-    {"id": "QUALITY-13", "kind": "task", "title": "QUALITY-13 Let travelers rename saved trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-13.md", "depends_on": []}
+    {"id": "QUALITY-13", "kind": "task", "title": "QUALITY-13 Let travelers rename saved trips", "milestone": "QUALITY-DEV", "file": "issues/QUALITY-13.md", "depends_on": []},
+
+    {"id": "EPIC-WORKSPACE-RELIABILITY", "kind": "epic", "title": "[Epic] Make the traveler workspace reliable", "milestone": "WORKSPACE-RELIABILITY", "file": "epics/EPIC-WORKSPACE-RELIABILITY.md", "children": ["WORKSPACE-01", "WORKSPACE-02", "WORKSPACE-03", "WORKSPACE-04"]},
+    {"id": "WORKSPACE-01", "kind": "task", "title": "WORKSPACE-01 Make itinerary and chat accessible on mobile", "milestone": "WORKSPACE-RELIABILITY", "file": "issues/WORKSPACE-01.md", "depends_on": []},
+    {"id": "WORKSPACE-02", "kind": "task", "title": "WORKSPACE-02 Isolate trip state when navigating between trips", "milestone": "WORKSPACE-RELIABILITY", "file": "issues/WORKSPACE-02.md", "depends_on": []},
+    {"id": "WORKSPACE-03", "kind": "task", "title": "WORKSPACE-03 Load recent chat messages and paginate history", "milestone": "WORKSPACE-RELIABILITY", "file": "issues/WORKSPACE-03.md", "depends_on": []},
+    {"id": "WORKSPACE-04", "kind": "task", "title": "WORKSPACE-04 Prevent conflicting trip edits from overwriting each other", "milestone": "WORKSPACE-RELIABILITY", "file": "issues/WORKSPACE-04.md", "depends_on": []},
+
+    {"id": "EPIC-ITINERARY-EXPLORATION", "kind": "epic", "title": "[Epic] Make itineraries clearer and easier to explore", "milestone": "ITINERARY-EXPLORATION", "file": "epics/EPIC-ITINERARY-EXPLORATION.md", "children": ["ITINERARY-01", "ITINERARY-02", "ITINERARY-03", "ITINERARY-04"]},
+    {"id": "ITINERARY-01", "kind": "task", "title": "ITINERARY-01 Add an accessible schematic trip overview", "milestone": "ITINERARY-EXPLORATION", "file": "issues/ITINERARY-01.md", "depends_on": []},
+    {"id": "ITINERARY-02", "kind": "task", "title": "ITINERARY-02 Show quality warnings alongside their itinerary days", "milestone": "ITINERARY-EXPLORATION", "file": "issues/ITINERARY-02.md", "depends_on": []},
+    {"id": "ITINERARY-03", "kind": "task", "title": "ITINERARY-03 Make day imagery resilient and clearly attributed", "milestone": "ITINERARY-EXPLORATION", "file": "issues/ITINERARY-03.md", "depends_on": []},
+    {"id": "ITINERARY-04", "kind": "task", "title": "ITINERARY-04 Bound image enrichment requests and latency", "milestone": "ITINERARY-EXPLORATION", "file": "issues/ITINERARY-04.md", "depends_on": []}
   ]
 }
