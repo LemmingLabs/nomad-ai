@@ -1,4 +1,4 @@
-import type { TripDay } from '../../entities/trip';
+import type { TripDay, TripItinerary } from '../../entities/trip';
 import { SponsoredCard } from '../../features/sponsored/ui/SponsoredCard';
 import {
   formatDistance,
@@ -16,12 +16,12 @@ import styles from './TripDayCard.module.scss';
 interface TripDayCardProps {
   day: TripDay;
   tripId?: number | null;
+  warnings?: NonNullable<TripItinerary['quality_warnings']>;
 }
 
-export function TripDayCard({ day, tripId }: TripDayCardProps) {
+export function TripDayCard({ day, tripId, warnings = [] }: TripDayCardProps) {
   const routeAvailable = isRouteAvailable(day.route_from_previous);
   const placeCandidate = day.place_candidate;
-  const heroImage = day.images?.hero;
   const transportType = humanizeToken(day.route_from_previous?.transport_type);
 
   return (
@@ -34,6 +34,12 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
       <DayHero day={day} />
 
       <div className={styles.body}>
+        {warnings.length > 0 && (
+          <section className={styles.dayWarnings} aria-label={`Review notes for day ${day.day}`}>
+            <h4>Details to review</h4>
+            <ul>{warnings.map((warning, index) => <li key={`${warning.code}-${index}`}>{warning.message}</li>)}</ul>
+          </section>
+        )}
         <QuickFacts day={day} />
 
         <div className={styles.contentStack}>
@@ -112,12 +118,6 @@ export function TripDayCard({ day, tripId }: TripDayCardProps) {
                       'AI-curated blend'}
                   </dd>
                 </div>
-                {heroImage?.photographer && (
-                  <div className={styles.infoItem}>
-                    <dt>Visual note</dt>
-                    <dd>Hero photo by {heroImage.photographer}</dd>
-                  </div>
-                )}
               </dl>
             </section>
           </div>

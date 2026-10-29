@@ -14,6 +14,19 @@
   color: #fff;
 }
 
+.hero:not(.hero--withImage)::before {
+  content: '';
+  position: absolute;
+  width: 17rem;
+  aspect-ratio: 1;
+  right: -3rem;
+  top: -5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(117, 198, 186, 0.2);
+  box-shadow: 0 0 0 2rem rgba(117, 198, 186, 0.04), 0 0 0 4rem rgba(145, 182, 211, 0.04);
+  pointer-events: none;
+}
+
 .background,
 .overlay {
   position: absolute;
@@ -29,7 +42,7 @@
 
 .overlay {
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.32) 36%, rgba(15, 23, 42, 0.86) 100%),
+    linear-gradient(180deg, rgba(9, 20, 29, 0.75) 0%, rgba(9, 20, 29, 0.55) 42%, rgba(9, 20, 29, 0.9) 100%),
     linear-gradient(135deg, rgba(20, 184, 166, 0.22), rgba(20, 184, 166, 0) 48%);
 }
 
@@ -118,6 +131,7 @@
 
 .credit {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: $space-2;
   margin: 0;
@@ -127,8 +141,13 @@
 
   a {
     color: inherit;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
+}
+
+@media print {
+  .background, .overlay { display: none !important; }
 }
 
 .hero:not(.hero--withImage) .placeName,

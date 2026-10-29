@@ -90,6 +90,18 @@
   line-height: 1.5;
 }
 
+.warningSummary {
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-surface;
+
+  p { margin: 0 0 $space-2; color: $color-text; font-size: $text-sm; font-weight: $weight-semibold; }
+  ul { display: flex; flex-wrap: wrap; gap: $space-2 $space-4; list-style: none; margin: 0; padding: 0; }
+  a { color: $color-accent; font-size: $text-sm; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid $color-focus; outline-offset: 3px; }
+}
+
 .suggestionNotice {
   color: $color-text-muted;
   background: rgba(20, 35, 48, 0.7);

@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { TripPreview } from '../../widgets/trip-preview/TripPreview';
 import type { TripItinerary } from '../../entities/trip/model/types';
 
@@ -189,4 +189,41 @@ test('renders source attribution for fact-level reviewed information', () => {
   expect(screen.getByRole('link', { name: 'Source: Park authority' }).getAttribute('href'))
     .toBe('https://example.com/permits');
   expect(screen.getByText(/Checked/)).toBeTruthy();
+});
+
+test('groups day warnings with their days and keeps unmatched warnings visible', () => {
+  const itinerary: TripItinerary = {
+    days: [
+      { day: 1, title: 'City', city: 'Bishkek', location: 'Center', activities: [] },
+      { day: 2, title: 'Lake', city: 'Karakol', location: 'Lake', activities: [],
+        route_from_previous: { origin: 'Bishkek', destination: 'Karakol', distance_km: 0, duration_mins: 0, transport_type: 'unknown', status: 'stale' } },
+    ],
+    route_status: 'unavailable',
+    quality_warnings: [
+      { code: 'overlap', day: 1, message: 'Day one times may overlap.' },
+      { code: 'route', day: 2, message: 'Day two route is stale.' },
+      { code: 'pace', day: 2, message: 'Day two may be too long.' },
+      { code: 'global', message: 'Review the trip details.' },
+      { code: 'missing', day: 7, message: 'An unavailable day needs review.' },
+    ],
+  };
+  render(<TripPreview itinerary={itinerary} />);
+
+  const overview = screen.getByRole('region', { name: 'Days to review' });
+  expect(overview.getAttribute('data-print-hide')).toBe('true');
+  expect(within(overview).getByRole('link', { name: 'Day 2 · 2 notes' }).getAttribute('href')).toBe('#trip-day-2');
+  const dayOne = screen.getByRole('region', { name: 'Review notes for day 1' });
+  const dayTwo = screen.getByRole('region', { name: 'Review notes for day 2' });
+  expect(within(dayOne).getByText('Day one times may overlap.')).toBeTruthy();
+  expect(within(dayTwo).getByText('Day two route is stale.')).toBeTruthy();
+  expect(within(dayTwo).getByText('Day two may be too long.')).toBeTruthy();
+  expect(screen.getByText('Review the trip details.')).toBeTruthy();
+  expect(screen.getByText('An unavailable day needs review.')).toBeTruthy();
+  expect(screen.getByText('Route details could not be refreshed for this itinerary.')).toBeTruthy();
+  expect(screen.getByText(/transfer details come from before the last itinerary edit/i)).toBeTruthy();
+});
+
+test('does not show a review overview when there are no day warnings', () => {
+  render(<TripPreview itinerary={{ days: [{ day: 1, title: 'City', city: 'Bishkek', location: 'Center', activities: [] }] }} />);
+  expect(screen.queryByRole('region', { name: 'Days to review' })).toBeNull();
 });
