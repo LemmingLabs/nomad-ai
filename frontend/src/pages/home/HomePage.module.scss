@@ -27,6 +27,9 @@
   gap: clamp(0.8rem, 1.7vw, 1.35rem);
   text-align: center;
   width: 100%;
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
 }
 
 .welcomeTitle {
