@@ -32,6 +32,7 @@ export function TripPage() {
   const queryClient = useQueryClient();
   const { isOpen, isCollapsed, setCollapsed } = useSidebarStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobileWorkspace = useMediaQuery('(max-width: 767px)');
   const localTrip = trips.find((trip) => trip.id === tripId) as
     | Trip
     | undefined;
@@ -151,7 +152,7 @@ export function TripPage() {
       >
         Print itinerary
       </Button>
-      <Button
+      {!isMobileWorkspace && <Button
         type='button'
         variant='secondary'
         size='sm'
@@ -161,7 +162,7 @@ export function TripPage() {
         onClick={togglePreviewExpand}
       >
         {isPreviewExpanded ? 'Exit focus' : 'Focus route'}
-      </Button>
+      </Button>}
     </div>
   );
 

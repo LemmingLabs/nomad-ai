@@ -49,17 +49,45 @@
   transition: background $transition-fast;
 }
 
+.mobileSwitch { display: none; }
+
 @include max-md {
   .layout {
     display: flex;
+    flex-direction: column;
   }
 
-  .handle,
-  .right {
-    display: none;
+  .layout--expanded .left { opacity: 1; pointer-events: auto; }
+
+  .mobileSwitch {
+    display: flex;
+    gap: $space-2;
+    padding: $space-3 $space-4;
+    background: $color-surface;
+    border-bottom: 1px solid $color-border;
+
+    button {
+      flex: 1;
+      min-height: 44px;
+      border: 1px solid $color-border-control;
+      border-radius: $radius-lg;
+      background: $color-surface-raised;
+      color: $color-text;
+      font: inherit;
+      font-weight: $weight-semibold;
+      cursor: pointer;
+
+      &[aria-pressed='true'] { background: $color-accent; color: $color-on-accent; border-color: $color-accent; }
+      &:focus-visible { outline: 2px solid $color-focus; outline-offset: 2px; }
+    }
   }
 
-  .left {
+  .handle { display: none; }
+
+  .left, .right {
     flex: 1;
   }
+
+  .layout[data-mobile-pane='itinerary'] .left,
+  .layout[data-mobile-pane='chat'] .right { display: none; }
 }
