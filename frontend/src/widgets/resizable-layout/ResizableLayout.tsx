@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
+import { useMediaQuery } from '../../shared/hooks';
 import styles from './ResizableLayout.module.scss';
 
 interface ResizableLayoutProps {
@@ -29,6 +30,8 @@ export function ResizableLayout({
   const containerRef = useRef<HTMLDivElement>(null);
   const [rightWidth, setRightWidth] = useState(defaultRightWidth);
   const [isDragging, setIsDragging] = useState(false);
+  const [mobilePane, setMobilePane] = useState<'itinerary' | 'chat'>('itinerary');
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   useEffect(() => {
     if (!isDragging) {
@@ -84,9 +87,14 @@ export function ResizableLayout({
         [styles['layout--dragging']]: isDragging,
       })}
       data-print-layout="true"
+      data-mobile-pane={mobilePane}
       style={layoutStyle}
     >
-      <section className={styles.left} data-print-hide="true">{left}</section>
+      <div className={styles.mobileSwitch} role="group" aria-label="Trip workspace view" data-print-hide="true">
+        <button type="button" aria-pressed={mobilePane === 'itinerary'} onClick={() => setMobilePane('itinerary')}>Itinerary</button>
+        <button type="button" aria-pressed={mobilePane === 'chat'} onClick={() => setMobilePane('chat')}>Chat</button>
+      </div>
+      <section className={styles.left} data-print-hide="true" aria-hidden={isMobile && mobilePane !== 'chat'} inert={isMobile && mobilePane !== 'chat'}>{left}</section>
       <button
         type="button"
         className={styles.handle}
@@ -96,7 +104,7 @@ export function ResizableLayout({
       >
         <span className={styles.handleGrip} />
       </button>
-      <section className={styles.right} data-print-layout="true">{right}</section>
+      <section className={styles.right} data-print-layout="true" aria-hidden={isMobile && mobilePane !== 'itinerary'} inert={isMobile && mobilePane !== 'itinerary'}>{right}</section>
     </div>
   );
 }
