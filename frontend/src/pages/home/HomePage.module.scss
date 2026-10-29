@@ -12,31 +12,20 @@
   flex: 1;
   overflow: hidden;
   @include flex-col;
-  background: linear-gradient(115deg, #fbfcf8 0%, #f4f8f5 52%, #ecf5f3 100%);
+  background: #e8f0f1;
 }
 
 .welcome {
   flex: 1;
-  display: flex;
-  align-items: center;
-  padding: clamp(1.5rem, 4vw, 4rem);
+  min-height: 0;
   overflow-y: auto;
-}
-
-.welcomeGrid {
-  display: grid;
-  grid-template-columns: minmax(310px, 0.82fr) minmax(450px, 1.18fr);
-  align-items: center;
-  gap: clamp(2rem, 5vw, 5.5rem);
-  width: min(100%, 1440px);
-  margin: auto;
 }
 
 .welcomeContent {
   @include flex-col;
-  align-items: flex-start;
-  gap: clamp(1.2rem, 2vw, 1.9rem);
-  text-align: left;
+  align-items: center;
+  gap: clamp(0.8rem, 1.7vw, 1.35rem);
+  text-align: center;
   width: 100%;
 }
 
@@ -53,11 +42,11 @@
 }
 
 .welcomeTitle {
-  font-size: clamp(3rem, 5vw, 5.8rem);
+  font-size: clamp(3rem, 5.2vw, 5.4rem);
   font-weight: $weight-extrabold;
   color: #153a42;
   margin: 0;
-  line-height: 1.03;
+  line-height: 1.05;
   letter-spacing: -0.065em;
 
   em { color: #128b7c; font-style: normal; }
@@ -68,19 +57,21 @@
   color: $color-text-muted;
   margin: 0;
   line-height: 1.7;
-  max-width: 32rem;
+  max-width: 34rem;
 }
 
 .destinationPreview {
   width: 100%;
+  max-width: 29rem;
   padding: 1rem 0 0;
   border-top: 1px solid rgba(31, 82, 87, 0.14);
-  text-align: left;
+  text-align: center;
 }
 
 .tripPreview {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem 1rem;
   color: #729094;
   font-size: 0.64rem;
@@ -88,7 +79,7 @@
   letter-spacing: 0.05em;
 }
 
-.primaryActions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem 1.25rem; }
+.primaryActions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1rem 1.25rem; }
 
 .previewTitle {
   margin: 0 0 $space-3;
@@ -100,6 +91,7 @@
 .destinationList {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: $space-2;
   margin: 0;
   padding: 0;
@@ -199,12 +191,8 @@
 }
 
 @media (max-width: 640px) {
-  .welcome {
-    padding: $space-5 $space-4;
-  }
-
   .welcomeTitle {
-    font-size: clamp(2.6rem, 11vw, 4rem);
+    font-size: clamp(2.4rem, 10vw, 3.5rem);
   }
 
   .destinationError {
@@ -213,12 +201,6 @@
   }
 }
 
-@media (max-width: 1180px) {
-  .welcomeGrid { grid-template-columns: minmax(0, 1fr); gap: 2rem; max-width: 780px; }
-  .welcomeContent { gap: 1.25rem; }
-}
-
 @media (max-width: 768px) {
-  .welcome { padding: 1.25rem 1rem 2rem; }
   .tripPreview { display: none; }
 }

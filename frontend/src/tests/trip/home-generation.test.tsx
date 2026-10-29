@@ -83,6 +83,7 @@ test('opens the existing trip form from a curated globe scene', async () => {
     </QueryClientProvider>,
   );
 
+  await user.click(screen.getByRole('button', { name: /explore the globe/i }));
   await user.click(screen.getByRole('button', { name: /naryn/i }));
   expect(screen.getByRole('heading', { name: 'Naryn' })).toBeTruthy();
   expect(screen.getByRole('link', { name: /erlan shatmanov/i }).getAttribute('href'))

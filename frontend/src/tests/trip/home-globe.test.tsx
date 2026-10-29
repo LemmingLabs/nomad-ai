@@ -13,8 +13,9 @@ test('keeps a landscape available as inspiration when its destination is disable
 
   render(<HomeGlobe destinations={[{
     id: 'kg', country_code: 'KG', country_name: 'Kyrgyzstan', name: 'Kyrgyzstan', enabled: false,
-  }]} onPlan={onPlan} />);
+  }]} onPlan={onPlan}><p>Trip planning</p></HomeGlobe>);
 
+  await user.click(screen.getByRole('button', { name: /explore the globe/i }));
   await user.click(screen.getByRole('button', { name: /issyk-kul/i }));
   expect(screen.getByRole('heading', { name: 'Issyk-Kul' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /plan kyrgyzstan/i })).toBeNull();

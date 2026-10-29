@@ -85,7 +85,13 @@ export function HomePage() {
           </div>
         ) : (
           <div className={styles.welcome}>
-            <div className={styles.welcomeGrid}>
+            <HomeGlobe
+              destinations={destinationsQuery.data ?? []}
+              onPlan={(destinationId) => {
+                setInitialDestinationId(destinationId);
+                setShowForm(true);
+              }}
+            >
               <div className={styles.welcomeContent}>
                 <span className={styles.kicker}>EXPLORE / IMAGINE / GO</span>
                 <h1 className={styles.welcomeTitle}>Start with a place that <em>moves you.</em></h1>
@@ -130,14 +136,7 @@ export function HomePage() {
                   <span>01 / DISCOVER</span><span>02 / SHAPE YOUR ROUTE</span><span>03 / REFINE IN CHAT</span>
                 </div>
               </div>
-              <HomeGlobe
-                destinations={destinationsQuery.data ?? []}
-                onPlan={(destinationId) => {
-                  setInitialDestinationId(destinationId);
-                  setShowForm(true);
-                }}
-              />
-            </div>
+            </HomeGlobe>
           </div>
         )}
       </main>
