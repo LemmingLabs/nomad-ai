@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Trip, TripListItem } from './types';
+import type { Trip, TripItinerary, TripListItem } from './types';
 
 interface TripState {
   trips: TripListItem[];
@@ -8,6 +8,7 @@ interface TripState {
   setTrips: (trips: TripListItem[]) => void;
   setActiveTrip: (id: number | null) => void;
   updateTrip: (trip: Trip) => void;
+  updateTripItinerary: (id: number, itinerary: TripItinerary) => void;
   renameTripTitle: (id: number, title: string) => void;
   addTrip: (trip: TripListItem) => void;
   removeTrip: (id: number) => void;
@@ -24,6 +25,14 @@ export const useTripStore = create<TripState>()(
       setActiveTrip: (activeTripId) => set({ activeTripId }),
       updateTrip: (trip) =>
         set((s) => ({ trips: s.trips.map((t) => (t.id === trip.id ? trip : t)) })),
+      updateTripItinerary: (id, itinerary) =>
+        set((s) => ({
+          trips: s.trips.map((trip) =>
+            trip.id === id && 'itinerary_json' in trip
+              ? { ...trip, itinerary_json: itinerary }
+              : trip,
+          ),
+        })),
       renameTripTitle: (id, title) =>
         set((s) => ({
           trips: s.trips.map((trip) =>

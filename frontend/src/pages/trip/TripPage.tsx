@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { Maximize2, Minimize2, PanelRight, Printer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { messageApi, type Message } from '../../entities/message';
 import { useMyLimitsQuery, limitQueryKeys } from '../../entities/limit';
@@ -9,6 +9,7 @@ import {
   tripApi,
   useTripStore,
   type Trip,
+  type TripDetailResponse,
   type TripItinerary,
 } from '../../entities/trip';
 import { useUserStore } from '../../entities/user';
@@ -26,8 +27,11 @@ import styles from './TripPage.module.scss';
 
 export function TripPage() {
   const { id } = useParams<{ id: string }>();
-  const tripId = Number(id);
-  const { trips, setActiveTrip, updateTrip } = useTripStore();
+  return <TripWorkspace key={id} tripId={Number(id)} />;
+}
+
+function TripWorkspace({ tripId }: { tripId: number }) {
+  const { trips, setActiveTrip, updateTrip, updateTripItinerary } = useTripStore();
   const { isAuthenticated } = useUserStore();
   const queryClient = useQueryClient();
   const { isOpen, isCollapsed, setCollapsed } = useSidebarStore();
@@ -43,6 +47,12 @@ export function TripPage() {
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [collapsedBeforeFocus, setCollapsedBeforeFocus] = useState(false);
   const [forceEditLimitReached, setForceEditLimitReached] = useState(false);
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const limitsQuery = useMyLimitsQuery();
   const limits = limitsQuery.data ?? (isAuthenticated ? fallbackFreeLimits : null);
@@ -65,13 +75,13 @@ export function TripPage() {
 
   const tripQuery = useQuery({
     queryKey: ['trip', tripId],
-    queryFn: async () => {
-      const response = await tripApi.getById(tripId);
-      updateTrip(response.trip);
-      return response;
-    },
+    queryFn: () => tripApi.getById(tripId),
     enabled: isAuthenticated && Number.isFinite(tripId),
   });
+
+  useEffect(() => {
+    if (tripQuery.data) updateTrip(tripQuery.data.trip);
+  }, [tripQuery.data, updateTrip]);
 
   const currentTrip = tripQuery.data?.trip ?? localTrip;
   const itinerary = itineraryOverride ?? currentTrip?.itinerary_json ?? null;
@@ -95,23 +105,29 @@ export function TripPage() {
       return { optimisticId };
     },
     onSuccess: (response) => {
-      setMessages((prev) => [
-        ...(prev ?? tripQuery.data?.messages.items ?? []),
-        response.message,
-      ]);
-      setForceEditLimitReached(false);
+      if (mountedRef.current) {
+        setMessages((prev) => [
+          ...(prev ?? tripQuery.data?.messages.items ?? []),
+          response.message,
+        ]);
+        setForceEditLimitReached(false);
+      }
       void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
       if (response.updated_itinerary) {
-        setItineraryOverride(response.updated_itinerary);
-        if (currentTrip) {
-          updateTrip({
-            ...currentTrip,
-            itinerary_json: response.updated_itinerary,
-          });
-        }
+        const updatedItinerary = response.updated_itinerary;
+        if (mountedRef.current) setItineraryOverride(updatedItinerary);
+        updateTripItinerary(tripId, updatedItinerary);
+        queryClient.setQueryData<TripDetailResponse>(['trip', tripId], (previous) => previous
+          ? { ...previous, trip: { ...previous.trip, itinerary_json: updatedItinerary } }
+          : previous);
       }
+      void queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
     },
     onError: (error, _variables, context) => {
+      if (!mountedRef.current) {
+        if (isLimitExceededError(error)) void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
+        return;
+      }
       setMessages((prev) =>
         (prev ?? tripQuery.data?.messages.items ?? []).filter(
           (message) => message.id !== context?.optimisticId,
