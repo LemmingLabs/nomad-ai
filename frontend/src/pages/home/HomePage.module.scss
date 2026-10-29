@@ -12,7 +12,7 @@
   flex: 1;
   overflow: hidden;
   @include flex-col;
-  background: #e8f0f1;
+  background: #071722;
 }
 
 .welcome {
@@ -29,32 +29,20 @@
   width: 100%;
 }
 
-.kicker {
-  display: inline-block;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid rgba(16, 120, 108, 0.18);
-  border-radius: 999px;
-  color: #137b71;
-  background: rgba(255, 255, 255, 0.72);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
 .welcomeTitle {
   font-size: clamp(3rem, 5.2vw, 5.4rem);
   font-weight: $weight-extrabold;
-  color: #153a42;
+  color: #f6faf9;
   margin: 0;
   line-height: 1.05;
   letter-spacing: -0.065em;
 
-  em { color: #128b7c; font-style: normal; }
+  em { color: #f7dba4; font-style: normal; }
 }
 
 .welcomeText {
   font-size: $text-base;
-  color: $color-text-muted;
+  color: #d4e2e6;
   margin: 0;
   line-height: 1.7;
   max-width: 34rem;
@@ -64,7 +52,7 @@
   width: 100%;
   max-width: 29rem;
   padding: 1rem 0 0;
-  border-top: 1px solid rgba(31, 82, 87, 0.14);
+  border-top: 1px solid rgba(227, 240, 241, 0.28);
   text-align: center;
 }
 
@@ -73,7 +61,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.5rem 1rem;
-  color: #729094;
+  color: #d4e5e7;
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -83,7 +71,7 @@
 
 .previewTitle {
   margin: 0 0 $space-3;
-  color: $color-text;
+  color: #e7f1f1;
   font-size: $text-sm;
   font-weight: $weight-bold;
 }
@@ -101,15 +89,15 @@
 .destinationChip {
   padding: $space-2 $space-3;
   border-radius: $radius-full;
-  background: $color-accent-light;
-  color: $color-text;
+  background: rgba(227, 247, 247, 0.14);
+  color: #ecf6f5;
   font-size: $text-sm;
   font-weight: $weight-medium;
 }
 
 .destinationStatus {
   margin: 0;
-  color: $color-text-muted;
+  color: #d4e2e6;
   font-size: $text-sm;
   line-height: 1.5;
 }
@@ -124,10 +112,10 @@
 .retryBtn {
   flex: 0 0 auto;
   padding: $space-2 $space-3;
-  border: 1px solid $color-border;
+  border: 1px solid rgba(227, 240, 241, 0.4);
   border-radius: $radius-md;
-  background: $color-surface;
-  color: $color-text;
+  background: rgba(18, 48, 57, 0.8);
+  color: #f2f8f8;
   font: inherit;
   font-size: $text-sm;
   cursor: pointer;
@@ -137,8 +125,8 @@
 }
 
 .startBtn {
-  background: #164b53;
-  color: #fff;
+  background: #f4d69b;
+  color: #142c34;
   border: none;
   padding: $space-4 $space-10;
   border-radius: 999px;
@@ -148,13 +136,13 @@
   cursor: pointer;
   transition: background $transition-fast, transform $transition-fast;
 
-  &:hover { background: #0e7070; transform: translateY(-2px); }
-  &:focus-visible { outline: 2px solid #087c70; outline-offset: 3px; }
+  &:hover { background: #ffe6b6; transform: translateY(-2px); }
+  &:focus-visible { outline: 2px solid #f4d69b; outline-offset: 3px; }
 }
 
 .authNote {
   font-size: $text-sm;
-  color: $color-text-muted;
+  color: #d4e2e6;
   margin: 0;
 }
 
@@ -185,7 +173,7 @@
 }
 
 .authLink {
-  color: $color-accent;
+  color: #f4d69b;
   font-weight: $weight-semibold;
   text-decoration: none;
 }

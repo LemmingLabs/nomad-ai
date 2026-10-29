@@ -5,7 +5,7 @@
   min-height: 680px;
   overflow: hidden;
   isolation: isolate;
-  background: #e8f0f1;
+  background: #071722;
 }
 
 .sky, .sunWash, .sunHalo, .stars, .globe {
@@ -17,8 +17,8 @@
   z-index: 0;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.92), transparent 45%),
-    linear-gradient(125deg, #edf5f2, #dce9ed 55%, #cadce4);
+    radial-gradient(circle at 50% 45%, rgba(30, 64, 81, 0.7), transparent 48%),
+    linear-gradient(125deg, #06131e, #102b3b 55%, #071824);
 }
 
 .sunWash {
@@ -92,14 +92,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  color: #275461;
+  color: #d6e8ea;
   font-size: 0.66rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.sunLabel { color: #906d3d; }
+.sunLabel { color: #f3d49a; }
 
 .intro {
   position: absolute;
@@ -116,24 +116,34 @@
   transition: opacity 600ms ease, transform 700ms cubic-bezier(0.2, 0.75, 0.2, 1), filter 600ms ease, visibility 0s;
 }
 
+.intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 58% 57% at 50% 51%, rgba(1, 9, 16, 0.94) 0%, rgba(2, 13, 22, 0.86) 42%, rgba(3, 19, 29, 0.44) 73%, transparent 100%);
+  pointer-events: none;
+}
+
 .introContent {
+  position: relative;
+  z-index: 1;
   width: min(100%, 780px);
   padding: clamp(1.4rem, 4vw, 3.5rem);
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(248, 252, 249, 0.97) 0%, rgba(249, 252, 250, 0.9) 48%, rgba(249, 252, 250, 0.4) 67%, transparent 78%);
   pointer-events: auto;
   animation: introArrive 850ms cubic-bezier(0.2, 0.75, 0.2, 1) both;
 }
 
 .exploreButton {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 1.25rem;
-  border: 1px solid rgba(19, 78, 85, 0.2);
+  border: 1px solid rgba(241, 246, 245, 0.4);
   border-radius: 999px;
-  color: #164a51;
-  background: rgba(255, 255, 255, 0.85);
+  color: #f5fafa;
+  background: rgba(20, 50, 63, 0.82);
   box-shadow: 0 8px 30px rgba(36, 87, 99, 0.12);
   font: inherit;
   font-size: 0.82rem;
@@ -254,7 +264,7 @@
   z-index: 5;
   right: clamp(1rem, 3vw, 2.8rem);
   bottom: 0.9rem;
-  color: #547179;
+  color: #c5d7dc;
   font-size: 0.61rem;
 }
 
@@ -284,7 +294,7 @@
   .sunLabel { display: none; }
   .poster { width: max(660px, 140vw); }
   .intro { padding: 4rem 1rem 2rem; }
-  .introContent { border-radius: 2rem; padding: 1.25rem 0.5rem; }
+  .introContent { padding: 1.25rem 0.5rem; }
   .exploreBar { top: 4rem; flex-wrap: wrap; }
   .exploreBar > span { display: none; }
   .sceneDock { bottom: 2.4rem; gap: 0.65rem; }

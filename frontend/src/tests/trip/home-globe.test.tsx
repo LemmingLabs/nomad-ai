@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HomeGlobe } from '../../widgets/home-globe';
 
@@ -20,4 +20,14 @@ test('keeps a landscape available as inspiration when its destination is disable
   expect(screen.getByRole('heading', { name: 'Issyk-Kul' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /plan kyrgyzstan/i })).toBeNull();
   expect(onPlan).not.toHaveBeenCalled();
+});
+
+test('opens exploration from the surrounding Earth but keeps the intro when its text is pressed', () => {
+  render(<HomeGlobe destinations={[]} onPlan={vi.fn()}><p>Trip planning</p></HomeGlobe>);
+
+  fireEvent.pointerDown(screen.getByText('Trip planning'));
+  expect(screen.getByRole('button', { name: /explore the globe/i })).toBeTruthy();
+
+  fireEvent.pointerDown(screen.getByTestId('globe-backdrop'));
+  expect(screen.getByRole('button', { name: /back to start/i })).toBeTruthy();
 });

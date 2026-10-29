@@ -12,7 +12,7 @@ The [current home page](../../frontend/src/pages/home/HomePage.tsx) has a center
 
 ### Opening view
 
-- Fill the traveler home area with Earth. Center the heading, supported-destination message, and primary **Create a trip** action over the globe with a soft translucent light field for readability. Keep the sidebar and existing form behavior.
+- Fill the traveler home area with Earth. Center the heading, supported-destination message, and primary **Create a trip** action over the globe with a dark, fading vignette for readability. Clicking the open Earth around the text enters exploration mode; clicking the text itself does not. Keep the sidebar and existing form behavior.
 - Start with one of three to five **curated Kyrgyzstan scenes** selected at random per page visit (possible subjects: Issyk-Kul, Ala-Archa, and the Karakol area). Randomize the scene and starting globe viewpoint, not an unreviewed live image search. Avoid repeating the same scene immediately when local preference data is available.
 - Before interaction, slowly cycle between the curated places and let the camera travel between them. The centered introduction fades and scales away when the traveler drags Earth or activates **Explore the globe**. In exploration mode, show a bottom photo dock with one detailed scene and thumbnail choices.
 - Place a directional light at the approximate [subsolar point calculated from current UTC time](https://gml.noaa.gov/grad/solcalc/solareqns.PDF). As the globe turns, its sun-facing side receives warm light and the surrounding sky shifts from cool blue-green toward gold. This is an illustrative lighting effect, not a physically exact Earth rendering.

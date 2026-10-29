@@ -93,7 +93,6 @@ export function HomePage() {
               }}
             >
               <div className={styles.welcomeContent}>
-                <span className={styles.kicker}>EXPLORE / IMAGINE / GO</span>
                 <h1 className={styles.welcomeTitle}>Start with a place that <em>moves you.</em></h1>
                 <p className={styles.welcomeText}>
                   Explore the landscapes of Kyrgyzstan, then shape your own day-by-day journey with NomadAI.

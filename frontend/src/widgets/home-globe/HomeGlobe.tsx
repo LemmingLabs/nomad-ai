@@ -93,7 +93,7 @@ export function HomeGlobe({ children, destinations, onPlan }: HomeGlobeProps) {
       />
       <div className={styles.stars} aria-hidden="true" />
 
-      <div className={styles.globe} aria-hidden="true">
+      <div className={styles.globe} aria-hidden="true" data-testid="globe-backdrop" onPointerDown={onExplore}>
         {show3D ? (
           <GlobeErrorBoundary onFailure={onFailure} fallback={<div className={styles.poster} />}>
             <Suspense fallback={<div className={styles.poster} />}>
