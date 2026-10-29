@@ -54,6 +54,7 @@ test('creates a guest trip, saves its identifier, and opens the trip workspace',
     </QueryClientProvider>,
   );
 
+  expect(screen.getByRole('heading', { level: 1, name: 'Start with a place that moves you.' })).toBeTruthy();
   await user.click(screen.getByRole('button', { name: 'Create a trip' }));
   await user.type(screen.getByRole('textbox', { name: /prompt/i }), '  Quiet lakes  ');
   await user.click(screen.getByRole('button', { name: /generate itinerary/i }));

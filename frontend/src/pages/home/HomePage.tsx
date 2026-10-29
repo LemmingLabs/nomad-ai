@@ -93,7 +93,11 @@ export function HomePage() {
               }}
             >
               <div className={styles.welcomeContent}>
-                <h1 className={styles.welcomeTitle}>Start with a place that <em>moves you.</em></h1>
+                <h1 className={styles.welcomeTitle}>
+                  <span className={styles.titleFirst}>Start with a</span>{' '}
+                  <span className={styles.titleSecond}>place that</span>{' '}
+                  <em className={styles.titleAccent}>moves you.</em>
+                </h1>
                 <p className={styles.welcomeText}>
                   Explore the landscapes of Kyrgyzstan, then shape your own day-by-day journey with NomadAI.
                 </p>
