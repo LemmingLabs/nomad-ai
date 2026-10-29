@@ -1,5 +1,6 @@
 import cn from 'classnames';
 import { Camera, MapPin, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import type { TripDay } from '../../entities/trip';
 import { humanizeToken } from '../../entities/trip/lib/presentation';
 import styles from './DayHero.module.scss';
@@ -10,9 +11,16 @@ interface DayHeroProps {
 
 export function DayHero({ day }: DayHeroProps) {
   const heroImage = day.images?.hero;
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const placeName = day.place_candidate?.name ?? day.location;
   const matchedInterest = humanizeToken(day.place_candidate?.matched_interest);
-  const hasHeroImage = Boolean(heroImage?.url);
+  const imageUrl = typeof heroImage?.url === 'string' ? heroImage.url.trim() : '';
+  const hasHeroImage = Boolean(imageUrl && imageUrl !== failedUrl);
+  const source = typeof heroImage?.source === 'string' ? heroImage.source.trim() : '';
+  const photoId = typeof heroImage?.photo_id === 'string' ? heroImage.photo_id : '';
+  const pexelsPhotoUrl = source.toLowerCase() === 'pexels' && /^\d+$/.test(photoId)
+    ? `https://www.pexels.com/photo/${photoId}/`
+    : null;
 
   return (
     <header
@@ -23,10 +31,12 @@ export function DayHero({ day }: DayHeroProps) {
       {hasHeroImage && (
         <>
           <img
-            src={heroImage?.url}
-            alt={heroImage?.alt ?? placeName ?? day.title}
+            src={imageUrl}
+            alt={heroImage?.alt?.trim() || 'Travel inspiration photo; exact location not verified'}
             className={styles.background}
             loading='lazy'
+            onError={() => setFailedUrl(imageUrl)}
+            onLoad={() => setFailedUrl(null)}
           />
           <div className={styles.overlay} />
         </>
@@ -58,10 +68,11 @@ export function DayHero({ day }: DayHeroProps) {
           </p>
         </div>
 
-        {heroImage?.photographer && (
+        {hasHeroImage && (
           <p className={styles.credit}>
-            <Camera size={14} />
-            {heroImage.photographer_url ? (
+            <Camera size={14} aria-hidden='true' />
+            <span>Inspiration photo · location not verified</span>
+            {heroImage?.photographer && heroImage.photographer_url ? (
               <a
                 href={heroImage.photographer_url}
                 target='_blank'
@@ -69,9 +80,9 @@ export function DayHero({ day }: DayHeroProps) {
               >
                 Photo by {heroImage.photographer}
               </a>
-            ) : (
-              <span>Photo by {heroImage.photographer}</span>
-            )}
+            ) : heroImage?.photographer ? <span>Photo by {heroImage.photographer}</span> : null}
+            {pexelsPhotoUrl ? <a href={pexelsPhotoUrl} target='_blank' rel='noreferrer'>Pexels</a>
+              : source ? <span>{source.toLowerCase() === 'pexels' ? 'Pexels' : source}</span> : null}
           </p>
         )}
       </div>

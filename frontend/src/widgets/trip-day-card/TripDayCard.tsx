@@ -22,7 +22,6 @@ interface TripDayCardProps {
 export function TripDayCard({ day, tripId, warnings = [] }: TripDayCardProps) {
   const routeAvailable = isRouteAvailable(day.route_from_previous);
   const placeCandidate = day.place_candidate;
-  const heroImage = day.images?.hero;
   const transportType = humanizeToken(day.route_from_previous?.transport_type);
 
   return (
@@ -119,12 +118,6 @@ export function TripDayCard({ day, tripId, warnings = [] }: TripDayCardProps) {
                       'AI-curated blend'}
                   </dd>
                 </div>
-                {heroImage?.photographer && (
-                  <div className={styles.infoItem}>
-                    <dt>Visual note</dt>
-                    <dd>Hero photo by {heroImage.photographer}</dd>
-                  </div>
-                )}
               </dl>
             </section>
           </div>
