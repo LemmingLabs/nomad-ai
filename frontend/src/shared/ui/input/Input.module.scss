@@ -19,8 +19,8 @@
   font-size: $text-sm;
   font-family: $font-primary;
   color: $color-text;
-  background: $color-surface;
-  border: 1.5px solid $color-border;
+  background: $color-surface-raised;
+  border: 1.5px solid $color-border-control;
   border-radius: $radius-lg;
   outline: none;
   transition: border-color $transition-fast, box-shadow $transition-fast;

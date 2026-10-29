@@ -50,9 +50,10 @@ function parseInterests(value: string): string[] {
 interface GenerateTripFormProps {
   onSubmit: (data: GenerateTripFormData) => void;
   isLoading?: boolean;
+  initialDestinationId?: string;
 }
 
-export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps) {
+export function GenerateTripForm({ onSubmit, isLoading, initialDestinationId }: GenerateTripFormProps) {
   const { isAuthenticated } = useUserStore();
   const limitsQuery = useMyLimitsQuery();
   const destinationsQuery = useDestinationsQuery();
@@ -95,11 +96,11 @@ export function GenerateTripForm({ onSubmit, isLoading }: GenerateTripFormProps)
 
   useEffect(() => {
     if (!destinationId && destinations.length > 0) {
-      const firstDestination = destinations[0];
-      setValue('destination_id', firstDestination.id, { shouldValidate: true });
-      setValue('country_code', firstDestination.country_code, { shouldValidate: true });
+      const initialDestination = destinations.find((destination) => destination.id === initialDestinationId) ?? destinations[0];
+      setValue('destination_id', initialDestination.id, { shouldValidate: true });
+      setValue('country_code', initialDestination.country_code, { shouldValidate: true });
     }
-  }, [destinationId, destinations, setValue]);
+  }, [destinationId, destinations, initialDestinationId, setValue]);
 
   const updateInterests = (nextInterests: string[]) => {
     setValue('interests', nextInterests.join(', '), { shouldValidate: true });

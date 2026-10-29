@@ -12,7 +12,7 @@
 
   &--dragging .handleGrip,
   .handle:hover .handleGrip {
-    background: rgba(20, 184, 166, 0.26);
+    background: rgba(117, 198, 186, 0.26);
   }
 
   &--expanded {
@@ -45,7 +45,7 @@
   width: 4px;
   height: 5.5rem;
   border-radius: $radius-full;
-  background: rgba(31, 41, 55, 0.08);
+  background: rgba(178, 197, 201, 0.08);
   transition: background $transition-fast;
 }
 

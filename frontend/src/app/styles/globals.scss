@@ -9,6 +9,8 @@
 :root {
   --color-bg: #{$color-bg};
   --color-surface: #{$color-surface};
+  --color-surface-raised: #{$color-surface-raised};
+  --color-border-control: #{$color-border-control};
   --color-border: #{$color-border};
   --color-text: #{$color-text};
   --color-text-muted: #{$color-text-muted};
@@ -35,8 +37,9 @@
 // ─── Base ─────────────────────────────────────────────────────────────────────
 html,
 body {
-  background-color: #fff;
-  color: #1f2937; // Соответствует text-gray-800
+  background-color: $color-bg;
+  color: $color-text;
+  color-scheme: dark;
   font-family: $font-primary;
   font-size: $text-base;
   line-height: 1.6;
@@ -49,7 +52,7 @@ body {
   flex-direction: column;
   position: relative;
   isolation: isolate;
-  background-color: #fff; // bg-white
+  background-color: $color-bg;
 }
 
 // Перенос паттерна "Concentric Squares" в псевдоэлемент
@@ -114,7 +117,7 @@ h5,
 h6 {
   font-family: $font-primary;
   font-weight: $weight-bold;
-  color: #1f2937;
+  color: $color-text;
   line-height: 1.25;
 }
 
@@ -186,6 +189,11 @@ p {
   body:has(#trip-print-root) #trip-print-root * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    color: #18242d !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: #aebbc0 !important;
+    box-shadow: none !important;
   }
 
   body:has(#trip-print-root) #trip-print-root article,

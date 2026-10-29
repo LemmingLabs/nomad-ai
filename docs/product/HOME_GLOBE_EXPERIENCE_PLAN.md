@@ -1,6 +1,6 @@
 # Interactive Home Globe — experience and implementation plan
 
-**Status:** Proposal, 2026-10-29. No globe code, dependency, image, or texture has been added yet.
+**Status:** Full-screen prototype revision, 2026-10-29. See the [asset manifest](../assets/HOME_GLOBE_ASSETS.md) for the exact images used.
 
 ## Product goal
 
@@ -12,18 +12,19 @@ The [current home page](../../frontend/src/pages/home/HomePage.tsx) has a center
 
 ### Opening view
 
-- Keep the heading, supported-destination message, and primary **Create a trip** action above the 3D layer. Put the globe in the right/background portion of the hero on wide screens, with a subtle dark-to-light overlay behind text. The globe should look like a product feature, not an opaque full-screen video.
+- Fill the traveler home area with Earth. Center the heading, supported-destination message, and primary **Create a trip** action over the globe with a dark, fading vignette for readability. Clicking the open Earth around the text enters exploration mode; clicking the text itself does not. Keep the sidebar and existing form behavior.
 - Start with one of three to five **curated Kyrgyzstan scenes** selected at random per page visit (possible subjects: Issyk-Kul, Ala-Archa, and the Karakol area). Randomize the scene and starting globe viewpoint, not an unreviewed live image search. Avoid repeating the same scene immediately when local preference data is available.
-- Show one compact scene card with the location name, a landscape photo, photographer/source credit, and an **Explore this place** button. A marker on the globe identifies the active scene. The card can be dismissed without blocking the main trip action.
+- Before interaction, slowly cycle between the curated places and let the camera travel between them. The centered introduction fades and scales away when the traveler drags Earth or activates **Explore the globe**. In exploration mode, show a bottom photo dock with one detailed scene and thumbnail choices.
+- Place a directional light at the approximate [subsolar point calculated from current UTC time](https://gml.noaa.gov/grad/solcalc/solareqns.PDF). As the globe turns, its sun-facing side receives warm light and the surrounding sky shifts from cool blue-green toward gold. This is an illustrative lighting effect, not a physically exact Earth rendering.
 - A scene card is *inspiration*, not a verified itinerary stop, live offer, or proof that every place is supported by planning data.
 
 ### Interaction
 
 | Input | Behavior |
 |---|---|
-| Mouse drag / touch drag | Rotate the globe; stop automatic rotation while the traveler interacts. |
+| Mouse drag / touch drag | Enter exploration mode, rotate the globe, and stop automatic rotation and scene cycling. |
 | Mouse wheel / trackpad | Preserve normal page scrolling by default. Offer explicit zoom buttons and allow wheel zoom only in a clearly labeled **Explore globe** interaction mode. |
-| Marker click / scene card | Rotate to that scene, update its card, and expose **Create a trip to Kyrgyzstan** only when its destination ID is present in the enabled destinations API response. |
+| Marker click / photo dock | Enter exploration mode, rotate to that scene, update its card, and expose **Plan Kyrgyzstan** only when its destination ID is present in the enabled destinations API response. |
 | Keyboard / assistive tech | Use an ordinary list of scene buttons and zoom/rotate controls as an equivalent path; the canvas itself is decorative to screen readers. |
 | Form open | Stop globe interaction and animation so the planning form has a calm, stable backdrop. |
 
@@ -31,8 +32,8 @@ Do not generate a trip directly from a globe click. A click should select a scen
 
 ### Layout by device
 
-- **Desktop:** large globe right of the copy; scene card near the marker or at the bottom edge; hero content remains readable at 200% zoom.
-- **Tablet:** smaller globe and a card below the headline; avoid overlap with the sidebar or create button.
+- **Desktop:** Earth fills the background behind centered copy; the photo dock sits at the bottom after exploration. Keep the copy readable at 200% zoom.
+- **Tablet:** retain the full-bleed globe and stack the photo dock to avoid overlap with the sidebar or controls.
 - **Phone:** show a poster frame and scene cards first. Load interactive 3D only after an explicit **Explore globe** tap or after a measured device-capability gate. The trip form must never depend on the canvas.
 - **Reduced motion:** no automatic rotation or animated camera travel. Keep scene selection and the static image available. Honor `prefers-reduced-motion` as described by [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion).
 
@@ -44,7 +45,7 @@ Do not generate a trip directly from a globe click. A click should select a scen
 | [COBE](https://github.com/shuding/cobe) | MIT-licensed, dependency-light, approximately 5 KB according to its project; attractive abstract globe with markers. | Stylized dot-map appearance rather than a photographic Earth; custom work for location picking and accessible controls. | Fallback candidate if the visual concept can be more abstract or the first prototype misses performance targets. |
 | Custom Three.js scene | Maximum visual control. | More shader, interaction, cleanup, and accessibility work for an effect that existing libraries already provide. | Defer. |
 
-The proposed Earth texture is a compressed, appropriately sized derivative of [NASA Blue Marble: Next Generation](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/), served with the app rather than pulled from an uncontrolled demo URL. NASA asks users to credit **NASA Earth Observatory**; its [media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/) also require checking for third-party material and avoiding implied endorsement. Keep a source URL and attribution in the asset manifest and visible credits.
+The prototype uses the 2048 × 1024 [NASA Earth Observatory Blue Marble 2002 texture](https://visibleearth.nasa.gov/images/57730/the-blue-marble-land-surface-ocean-color-and-sea-ice), served with the app rather than pulled from an uncontrolled demo URL. NASA asks users to credit **NASA Earth Observatory**; its [media guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/) also require checking for third-party material and avoiding implied endorsement. The source and attribution are recorded in the asset manifest and visible credits.
 
 For landscapes, select a small set of specific images and record each photo ID, photographer, source URL, subject, license snapshot, and optimized image sizes. [Pexels permits use on websites and apps](https://www.pexels.com/license/); its [API guidelines](https://www.pexels.com/api/documentation/) call for a prominent Pexels link when making API requests and photographer credit where possible. Use curated images for the home page so a random API response cannot mismatch a location or create unstable loading. Never label a generic photo as an exact place without checking its metadata.
 
@@ -77,3 +78,9 @@ These are **proposed targets**, not measured results. Record baseline home-page 
 5. **Review:** check contrast, 200% zoom, touch scrolling, keyboard path, no-WebGL fallback, slow connection, and realistic image loading. Compare a before/after capture on desktop and phone.
 
 This plan does not add an issue or milestone yet. Once the visual prototype and asset choices are reviewed, the work can be split into reviewable issues for assets, the globe widget, and home-page integration.
+
+## Prototype implementation note
+
+The revised implementation uses three curated Kyrgyzstan scenes, a lazily imported React Globe canvas behind the centered home content, and a static Earth poster on phones until the traveler opts in. Intro mode cycles scenes every seven seconds. Dragging or using the explore control reveals a bottom photo dock. The canvas pauses when the tab or globe leaves view; reduced-motion and WebGL-unavailable environments retain the poster and scene buttons. A selected scene opens the existing form only when the destination API reports its country as enabled. The light location uses NOAA's approximate solar equations and updates each minute.
+
+The production build puts the 3D renderer in a separate **549 KB gzip** JavaScript chunk; the 2048 × 1024 Earth texture is **267 KB**. The chunk is deferred until browser idle on desktop and never loaded for the default phone view. These are transfer sizes, not frame-rate results. The frame-rate, memory, 200% zoom, and device-specific targets above still require a live browser review before treating the prototype as performance-validated.

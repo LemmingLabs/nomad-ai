@@ -38,5 +38,5 @@
   transition: all $transition-fast;
   margin-top: $space-4;
 
-  &:hover { background: $color-accent; color: #fff; }
+  &:hover { background: $color-accent; color: $color-on-accent; }
 }

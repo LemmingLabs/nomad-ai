@@ -70,3 +70,26 @@ test('creates a guest trip, saves its identifier, and opens the trip workspace',
   expect(setActiveTrip).toHaveBeenCalledWith(42);
   expect(localStorage.getItem('guest_trip_id')).toBe('42');
 });
+
+test('opens the existing trip form from a curated globe scene', async () => {
+  const user = userEvent.setup();
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/']}>
+        <HomePage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  await user.click(screen.getByRole('button', { name: /explore the globe/i }));
+  await user.click(screen.getByRole('button', { name: /naryn/i }));
+  expect(screen.getByRole('heading', { name: 'Naryn' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: /erlan shatmanov/i }).getAttribute('href'))
+    .toBe('https://www.pexels.com/photo/13335981/');
+
+  await user.click(screen.getByRole('button', { name: /plan kyrgyzstan/i }));
+  expect(screen.getByRole('heading', { name: /build your next itinerary/i })).toBeTruthy();
+  expect(screen.getByRole('combobox', { name: /country or destination/i })).toHaveProperty('value', 'kg');
+});

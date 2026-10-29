@@ -6,7 +6,7 @@
   flex-direction: column;
   width: var(--sidebar-width);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92));
+    linear-gradient(180deg, rgba(20, 35, 48, 0.98), rgba(20, 35, 48, 0.92));
   border-right: 1px solid $color-border;
   height: 100vh;
   overflow: hidden;
@@ -72,9 +72,9 @@
   border-radius: $radius-xl;
   @include flex-center;
   background: linear-gradient(180deg, $color-accent, $color-accent-hover);
-  color: #fff;
+  color: $color-on-accent;
   font-weight: $weight-extrabold;
-  box-shadow: 0 16px 28px rgba(20, 184, 166, 0.18);
+  box-shadow: 0 16px 28px rgba(117, 198, 186, 0.18);
 }
 
 .logo {
@@ -95,7 +95,7 @@
   height: 2.2rem;
   border-radius: $radius-full;
   border: 1px solid $color-border;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(20, 35, 48, 0.92);
   color: $color-text-muted;
   @include flex-center;
   cursor: pointer;
@@ -103,8 +103,8 @@
 
   &:hover {
     color: $color-accent;
-    border-color: rgba(20, 184, 166, 0.16);
-    background: rgba(20, 184, 166, 0.08);
+    border-color: rgba(117, 198, 186, 0.16);
+    background: rgba(117, 198, 186, 0.08);
   }
 }
 
@@ -151,7 +151,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid rgba(20, 184, 166, 0.35);
+    outline: 2px solid rgba(117, 198, 186, 0.35);
     outline-offset: 4px;
     border-radius: $radius-lg;
   }
@@ -168,7 +168,7 @@
   height: 2rem;
   border-radius: $radius-full;
   @include flex-center;
-  background: rgba(20, 184, 166, 0.08);
+  background: rgba(117, 198, 186, 0.08);
   color: $color-accent;
 }
 

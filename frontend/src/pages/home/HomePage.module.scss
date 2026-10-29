@@ -12,84 +12,92 @@
   flex: 1;
   overflow: hidden;
   @include flex-col;
+  background: #071722;
 }
 
 .welcome {
   flex: 1;
-  @include flex-center;
-  padding: $space-8;
+  min-height: 0;
   overflow-y: auto;
 }
 
 .welcomeContent {
   @include flex-col;
   align-items: center;
-  gap: $space-5;
+  gap: clamp(0.8rem, 1.7vw, 1.35rem);
   text-align: center;
-  max-width: 560px;
   width: 100%;
 }
 
 .welcomeTitle {
-  font-size: $text-4xl;
+  font-size: clamp(3rem, 5.2vw, 5.4rem);
   font-weight: $weight-extrabold;
-  color: $color-text;
+  color: #f6faf9;
   margin: 0;
-  letter-spacing: -1px;
+  line-height: 1.05;
+  letter-spacing: -0.065em;
+
+  em { color: $color-accent; font-style: normal; }
 }
 
 .welcomeText {
   font-size: $text-base;
-  color: $color-text-muted;
+  color: #d4e2e6;
   margin: 0;
   line-height: 1.7;
+  max-width: 34rem;
 }
 
-.destinationPreview,
-.tripPreview {
+.destinationPreview {
   width: 100%;
-  padding: $space-4;
-  border: 1px solid $color-border;
-  border-radius: $radius-xl;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: $shadow-sm;
-  text-align: left;
+  max-width: 29rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(227, 240, 241, 0.28);
+  text-align: center;
 }
+
+.tripPreview {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  color: #d4e5e7;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.primaryActions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1rem 1.25rem; }
 
 .previewTitle {
   margin: 0 0 $space-3;
-  color: $color-text;
+  color: #e7f1f1;
   font-size: $text-sm;
   font-weight: $weight-bold;
 }
 
-.destinationList,
-.previewList {
+.destinationList {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: $space-2;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.destinationChip,
-.previewList li {
+.destinationChip {
   padding: $space-2 $space-3;
   border-radius: $radius-full;
-  background: $color-accent-light;
-  color: $color-text;
+  background: rgba(227, 247, 247, 0.14);
+  color: #ecf6f5;
   font-size: $text-sm;
   font-weight: $weight-medium;
 }
 
-.previewList li {
-  background: $color-bg;
-}
-
 .destinationStatus {
   margin: 0;
-  color: $color-text-muted;
+  color: #d4e2e6;
   font-size: $text-sm;
   line-height: 1.5;
 }
@@ -104,10 +112,10 @@
 .retryBtn {
   flex: 0 0 auto;
   padding: $space-2 $space-3;
-  border: 1px solid $color-border;
+  border: 1px solid rgba(227, 240, 241, 0.4);
   border-radius: $radius-md;
-  background: $color-surface;
-  color: $color-text;
+  background: rgba(18, 48, 57, 0.8);
+  color: #f2f8f8;
   font: inherit;
   font-size: $text-sm;
   cursor: pointer;
@@ -118,10 +126,10 @@
 
 .startBtn {
   background: $color-accent;
-  color: #fff;
+  color: $color-on-accent;
   border: none;
   padding: $space-4 $space-10;
-  border-radius: $radius-2xl;
+  border-radius: 999px;
   font-size: $text-base;
   font-weight: $weight-semibold;
   font-family: $font-primary;
@@ -129,11 +137,12 @@
   transition: background $transition-fast, transform $transition-fast;
 
   &:hover { background: $color-accent-hover; transform: translateY(-2px); }
+  &:focus-visible { outline: 2px solid $color-focus; outline-offset: 3px; }
 }
 
 .authNote {
   font-size: $text-sm;
-  color: $color-text-muted;
+  color: #d4e2e6;
   margin: 0;
 }
 
@@ -147,8 +156,8 @@
   overflow-y: auto;
   @include scrollbar-thin;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(247, 247, 243, 1));
+    radial-gradient(circle at top right, rgba(117, 198, 186, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.42), rgba(20, 35, 48, 1));
 }
 
 .cancelBtn {
@@ -170,16 +179,16 @@
 }
 
 @media (max-width: 640px) {
-  .welcome {
-    padding: $space-5 $space-4;
-  }
-
   .welcomeTitle {
-    font-size: $text-3xl;
+    font-size: clamp(2.4rem, 10vw, 3.5rem);
   }
 
   .destinationError {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+@media (max-width: 768px) {
+  .tripPreview { display: none; }
 }

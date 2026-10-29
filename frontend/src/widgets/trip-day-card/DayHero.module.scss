@@ -7,7 +7,7 @@
   overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(20, 184, 166, 0.18), transparent 28%),
-    linear-gradient(135deg, #fdfefe 0%, #f4f8f7 42%, #edf7f5 100%);
+    linear-gradient(135deg, $color-surface-raised, $color-surface);
 }
 
 .hero--withImage {
@@ -64,7 +64,7 @@
 
 .dayBadge {
   background: $color-accent;
-  color: #fff;
+  color: $color-on-accent;
   box-shadow: 0 12px 30px rgba(20, 184, 166, 0.3);
 }
 

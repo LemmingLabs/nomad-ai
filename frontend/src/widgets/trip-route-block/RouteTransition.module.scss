@@ -8,16 +8,16 @@
   padding: $space-5 $space-6;
   border-radius: $radius-2xl;
   background:
-    linear-gradient(180deg, rgba(20, 184, 166, 0.08), rgba(20, 184, 166, 0.02)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92));
-  border: 1px solid rgba(20, 184, 166, 0.12);
-  box-shadow: 0 20px 44px rgba(20, 184, 166, 0.08);
+    linear-gradient(180deg, rgba(117, 198, 186, 0.08), rgba(117, 198, 186, 0.02)),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.96), rgba(20, 35, 48, 0.92));
+  border: 1px solid rgba(117, 198, 186, 0.12);
+  box-shadow: 0 20px 44px rgba(117, 198, 186, 0.08);
 }
 
 .block--fallback {
   background:
-    linear-gradient(180deg, rgba(31, 41, 55, 0.04), rgba(31, 41, 55, 0.02)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.92));
+    linear-gradient(180deg, rgba(178, 197, 201, 0.04), rgba(178, 197, 201, 0.02)),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.96), rgba(20, 35, 48, 0.92));
 }
 
 .rail {
@@ -27,7 +27,7 @@
   bottom: -1.5rem;
   width: 2px;
   border-radius: $radius-full;
-  background: linear-gradient(180deg, rgba(20, 184, 166, 0.26), rgba(20, 184, 166, 0));
+  background: linear-gradient(180deg, rgba(117, 198, 186, 0.26), rgba(117, 198, 186, 0));
 }
 
 .header {
@@ -42,7 +42,7 @@
   height: 2.5rem;
   border-radius: $radius-full;
   @include flex-center;
-  background: rgba(20, 184, 166, 0.12);
+  background: rgba(117, 198, 186, 0.12);
   color: $color-accent;
 }
 
@@ -84,8 +84,8 @@
 }
 
 .transport {
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(20, 184, 166, 0.12);
+  background: rgba(20, 35, 48, 0.74);
+  border: 1px solid rgba(117, 198, 186, 0.12);
   color: $color-text;
 }
 
@@ -105,8 +105,8 @@
 }
 
 .stat {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(20, 184, 166, 0.1);
+  background: rgba(20, 35, 48, 0.72);
+  border: 1px solid rgba(117, 198, 186, 0.1);
   color: $color-text;
 }
 
