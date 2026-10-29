@@ -26,8 +26,13 @@ export default function GlobeCanvas({
   const inViewRef = useRef(true);
   const lastViewReportRef = useRef(0);
   const lastFocusRef = useRef({ sceneId: scene.id, altitude });
-  const [size, setSize] = useState({ width: 1200, height: 800 });
+  const revealFrameRef = useRef<number | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [ready, setReady] = useState(false);
+
+  useEffect(() => () => {
+    if (revealFrameRef.current !== null) cancelAnimationFrame(revealFrameRef.current);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -90,7 +95,7 @@ export default function GlobeCanvas({
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: '100%', opacity: ready ? 1 : 0, transition: 'opacity 350ms ease', pointerEvents: ready ? 'auto' : 'none' }}
       onPointerDown={() => {
         onExplore();
         const controls = globeRef.current?.controls();
@@ -98,7 +103,7 @@ export default function GlobeCanvas({
         globeRef.current?.resumeAnimation();
       }}
     >
-      <Globe
+      {size.width > 0 && size.height > 0 && <Globe
         ref={globeRef}
         width={size.width}
         height={size.height}
@@ -130,7 +135,7 @@ export default function GlobeCanvas({
           const controls = instance.controls();
           controls.enableZoom = false;
           controls.enablePan = false;
-          controls.autoRotate = !exploring;
+          controls.autoRotate = false;
           controls.autoRotateSpeed = 0.2;
           const sunlight = new DirectionalLight('#fff1ce', 2.15);
           const position = instance.getCoords(sun.lat, sun.lng, 5);
@@ -139,9 +144,16 @@ export default function GlobeCanvas({
           instance.lights([new AmbientLight('#c4dcf1', 0.48), sunlight]);
           instance.pointOfView({ lat: scene.lat, lng: scene.lng, altitude }, 0);
           if (document.hidden || !inViewRef.current) instance.pauseAnimation();
-          setReady(true);
+          // Let the renderer draw the configured camera before revealing its canvas.
+          if (revealFrameRef.current !== null) cancelAnimationFrame(revealFrameRef.current);
+          revealFrameRef.current = requestAnimationFrame(() => {
+            revealFrameRef.current = requestAnimationFrame(() => {
+              revealFrameRef.current = null;
+              setReady(true);
+            });
+          });
         }}
-      />
+      />}
     </div>
   );
 }
