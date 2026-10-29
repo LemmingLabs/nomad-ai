@@ -1,17 +1,23 @@
 // ─── NomadAI Design Tokens ───────────────────────────────────────────────────
 
-// Colors — Light Theme
-$color-bg:         #F7F7F3;
-$color-surface:    #FFFFFF;
-$color-border:     #E7E5E4;
-$color-text:       #1F2937;
-$color-text-muted: #6B7280;
-$color-accent:     #14B8A6;
-$color-accent-hover: #0F9A8A;
-$color-accent-light: rgba(20, 184, 166, 0.1);
-$color-error:      #EF4444;
-$color-warning:    #F59E0B;
-$color-success:    #10B981;
+// Traveler dark theme: semantic roles shared by all screens.
+$color-bg:           #0B141E;
+$color-surface:      #142330;
+$color-surface-raised: #1C303D;
+$color-surface-hover: #27404C;
+$color-border:       #536B76;
+$color-border-control: #8299A2;
+$color-text:         #F0F5F4;
+$color-text-muted:   #B2C5C9;
+$color-accent:       #75C6BA;
+$color-on-accent:    #092522;
+$color-accent-hover: #9ADBD1;
+$color-accent-light: rgba(117, 198, 186, 0.12);
+$color-secondary:    #91B6D3;
+$color-focus:        #B5E8E0;
+$color-error:        #FFB4AB;
+$color-warning:      #F2C879;
+$color-success:      #8ED5A5;
 
 // Shadows
 $shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);

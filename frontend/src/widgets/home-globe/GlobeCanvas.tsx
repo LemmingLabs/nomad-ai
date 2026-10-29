@@ -110,7 +110,7 @@ export default function GlobeCanvas({
         pointsData={scenes}
         pointLat="lat"
         pointLng="lng"
-        pointColor={(point) => (point as GlobeScene).id === scene.id ? '#ffe5a2' : '#ffffff'}
+        pointColor={(point) => (point as GlobeScene).id === scene.id ? '#75c6ba' : '#ffffff'}
         pointAltitude={0.025}
         pointRadius={0.66}
         pointLabel={(point) => (point as GlobeScene).name}

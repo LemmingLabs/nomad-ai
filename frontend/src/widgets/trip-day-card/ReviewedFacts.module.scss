@@ -21,7 +21,7 @@
 
 .copy {
   margin: 0;
-  color: var(--color-muted, #637781);
+  color: var(--color-text-muted, #b2c5c9);
   font-size: 0.8rem;
 }
 
@@ -41,7 +41,7 @@
 }
 
 .label {
-  color: var(--color-muted, #637781);
+  color: var(--color-text-muted, #b2c5c9);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -60,7 +60,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 0.35rem 0.75rem;
-  color: var(--color-muted, #637781);
+  color: var(--color-text-muted, #b2c5c9);
   font-size: 0.75rem;
 }
 

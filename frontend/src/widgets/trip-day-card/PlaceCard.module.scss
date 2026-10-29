@@ -28,8 +28,8 @@
 
 .placeholder {
   @include flex-center;
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(31, 41, 55, 0.06));
-  color: rgba(31, 41, 55, 0.42);
+  background: linear-gradient(135deg, rgba(117, 198, 186, 0.16), rgba(178, 197, 201, 0.06));
+  color: $color-text-muted;
 }
 
 .type {
@@ -40,7 +40,7 @@
   align-items: center;
   padding: 0.35rem 0.65rem;
   border-radius: $radius-full;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(20, 35, 48, 0.9);
   color: $color-text;
   font-size: $text-xs;
   text-transform: capitalize;
@@ -55,7 +55,7 @@
   align-items: center;
   padding: 0.25rem 0.55rem;
   border-radius: $radius-full;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(20, 35, 48, 0.92);
   color: $color-text-muted;
   font-size: $text-xs;
   font-weight: $weight-semibold;

@@ -7,8 +7,8 @@
   overflow-y: auto;
   @include scrollbar-thin;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(247, 247, 243, 1));
+    radial-gradient(circle at top right, rgba(117, 198, 186, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.34), rgba(20, 35, 48, 1));
 }
 
 .journey {
@@ -31,9 +31,9 @@
   align-items: center;
   gap: $space-4;
   padding: $space-3 $space-8;
-  border-top: 1px solid rgba(20, 184, 166, 0.08);
-  border-bottom: 1px solid rgba(20, 184, 166, 0.12);
-  background: rgba(247, 247, 243, 0.94);
+  border-top: 1px solid rgba(117, 198, 186, 0.08);
+  border-bottom: 1px solid rgba(117, 198, 186, 0.12);
+  background: rgba(20, 35, 48, 0.94);
   backdrop-filter: blur(14px);
 }
 
@@ -65,7 +65,7 @@
   padding: $space-2 $space-3;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(20, 35, 48, 0.88);
   color: $color-text;
   font-size: $text-sm;
   text-decoration: none;
@@ -92,14 +92,14 @@
 
 .suggestionNotice {
   color: $color-text-muted;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(20, 35, 48, 0.7);
 }
 
 .degradedNotice,
 .warning {
-  color: #854d0e;
+  color: $color-warning;
   border: 1px solid rgba(217, 119, 6, 0.2);
-  background: rgba(254, 243, 199, 0.65);
+  background: rgba(242, 200, 121, 0.12);
 }
 
 .empty {

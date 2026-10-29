@@ -37,7 +37,7 @@
   line-height: 1.05;
   letter-spacing: -0.065em;
 
-  em { color: #f7dba4; font-style: normal; }
+  em { color: $color-accent; font-style: normal; }
 }
 
 .welcomeText {
@@ -125,8 +125,8 @@
 }
 
 .startBtn {
-  background: #f4d69b;
-  color: #142c34;
+  background: $color-accent;
+  color: $color-on-accent;
   border: none;
   padding: $space-4 $space-10;
   border-radius: 999px;
@@ -136,8 +136,8 @@
   cursor: pointer;
   transition: background $transition-fast, transform $transition-fast;
 
-  &:hover { background: #ffe6b6; transform: translateY(-2px); }
-  &:focus-visible { outline: 2px solid #f4d69b; outline-offset: 3px; }
+  &:hover { background: $color-accent-hover; transform: translateY(-2px); }
+  &:focus-visible { outline: 2px solid $color-focus; outline-offset: 3px; }
 }
 
 .authNote {
@@ -156,8 +156,8 @@
   overflow-y: auto;
   @include scrollbar-thin;
   background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(247, 247, 243, 1));
+    radial-gradient(circle at top right, rgba(117, 198, 186, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.42), rgba(20, 35, 48, 1));
 }
 
 .cancelBtn {
@@ -173,7 +173,7 @@
 }
 
 .authLink {
-  color: #f4d69b;
+  color: $color-accent;
   font-weight: $weight-semibold;
   text-decoration: none;
 }

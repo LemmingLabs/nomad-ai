@@ -8,7 +8,7 @@
   padding: $space-5;
   border: 1px solid rgba(15, 118, 110, 0.18);
   border-radius: $radius-xl;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(20, 35, 48, 0.88);
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
@@ -53,8 +53,8 @@
   flex: 0 0 auto;
   padding: $space-1 $space-2;
   border-radius: $radius-full;
-  color: #115e59;
-  background: #ccfbf1;
+  color: $color-accent;
+  background: $color-surface-raised;
   font-size: $text-xs;
   font-weight: 600;
 }
@@ -102,7 +102,7 @@
     border: 1px solid $color-border;
     border-radius: $radius-md;
     color: $color-text;
-    background: #fff;
+    background: $color-surface-raised;
     font: inherit;
     font-size: $text-sm;
   }
@@ -113,7 +113,7 @@
   padding: $space-2 $space-4;
   border: 0;
   border-radius: $radius-md;
-  color: #fff;
+  color: $color-on-accent;
   background: $color-accent;
   cursor: pointer;
   font-size: $text-sm;
@@ -127,8 +127,8 @@
   padding: $space-3 $space-4;
   border: 1px solid rgba(217, 119, 6, 0.2);
   border-radius: $radius-lg;
-  color: #854d0e;
-  background: rgba(254, 243, 199, 0.65);
+  color: $color-warning;
+  background: rgba(242, 200, 121, 0.12);
   font-size: $text-sm;
   line-height: 1.5;
 }
@@ -137,8 +137,8 @@
   padding: $space-3 $space-4;
   border: 2px solid #b45309;
   border-radius: $radius-lg;
-  color: #78350f;
-  background: #fffbeb;
+  color: $color-warning;
+  background: $color-surface-raised;
   font-size: $text-sm;
 
   strong { letter-spacing: 0.04em; }
@@ -157,10 +157,10 @@
   padding: $space-4;
   border: 1px dashed #d97706;
   border-radius: $radius-lg;
-  background: #fff;
+  background: $color-surface-raised;
 
   p { margin: $space-2 0; color: $color-text-muted; font-size: $text-sm; line-height: 1.45; }
-  small { color: #92400e; font-size: $text-xs; font-weight: 600; }
+  small { color: $color-warning; font-size: $text-xs; font-weight: 600; }
 }
 
 .demoOfferHeading {
@@ -185,7 +185,7 @@
   padding: $space-4;
   border: 1px solid rgba(15, 118, 110, 0.2);
   border-radius: $radius-lg;
-  background: #fff;
+  background: $color-surface-raised;
 }
 
 .liveOfferHeading {
@@ -222,7 +222,7 @@
   margin-top: $space-3;
   padding: $space-2 $space-3;
   border-radius: $radius-md;
-  color: #fff;
+  color: $color-on-accent;
   background: $color-accent;
   font-size: $text-sm;
   font-weight: 700;

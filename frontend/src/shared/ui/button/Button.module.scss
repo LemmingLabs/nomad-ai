@@ -33,7 +33,7 @@
   // Variants
   &--primary {
     background: $color-accent;
-    color: #fff;
+    color: $color-on-accent;
 
     &:hover:not(:disabled) { background: $color-accent-hover; }
     &:active { transform: scale(0.98); }
@@ -57,9 +57,9 @@
 
   &--danger {
     background: $color-error;
-    color: #fff;
+    color: #421b1b;
 
-    &:hover:not(:disabled) { background: darken(#EF4444, 8%); }
+    &:hover:not(:disabled) { background: #ffd3ce; }
   }
 
   // Loading

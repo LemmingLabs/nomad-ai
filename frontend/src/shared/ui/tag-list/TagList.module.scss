@@ -22,20 +22,20 @@
 }
 
 .list--neutral .item {
-  background: rgba(31, 41, 55, 0.05);
-  border: 1px solid rgba(31, 41, 55, 0.08);
+  background: rgba(178, 197, 201, 0.05);
+  border: 1px solid rgba(178, 197, 201, 0.08);
   color: $color-text;
 }
 
 .list--accent .item {
-  background: rgba(20, 184, 166, 0.1);
-  border: 1px solid rgba(20, 184, 166, 0.14);
+  background: rgba(117, 198, 186, 0.1);
+  border: 1px solid rgba(117, 198, 186, 0.14);
   color: $color-accent;
 }
 
 .list--surface .item {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  background: rgba(20, 35, 48, 0.78);
+  border: 1px solid rgba(20, 35, 48, 0.52);
   color: $color-text;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
 }

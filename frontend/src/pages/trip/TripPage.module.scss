@@ -23,8 +23,8 @@
 
 .chatPane {
   background:
-    radial-gradient(circle at top left, rgba(20, 184, 166, 0.08), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 247, 243, 1));
+    radial-gradient(circle at top left, rgba(117, 198, 186, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(20, 35, 48, 0.92), rgba(20, 35, 48, 1));
   border-right: 1px solid $color-border;
 }
 
@@ -38,7 +38,7 @@
   gap: $space-4;
   padding: $space-5 $space-5 $space-4;
   border-bottom: 1px solid $color-border;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(20, 35, 48, 0.88);
 }
 
 .chatEyebrow {
@@ -62,7 +62,7 @@
   gap: $space-1;
   padding: $space-2 $space-3;
   border-radius: $radius-full;
-  background: rgba(20, 184, 166, 0.08);
+  background: rgba(117, 198, 186, 0.08);
   color: $color-accent;
   font-size: $text-xs;
   font-weight: $weight-bold;
