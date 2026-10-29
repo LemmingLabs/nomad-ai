@@ -39,6 +39,12 @@ export function TripPreview({
   const mockUnavailableForDestination = itinerary.generation_status?.reasons?.includes(
     'mock_unavailable_for_destination',
   ) ?? false;
+  const warnings = itinerary.quality_warnings ?? [];
+  const dayNumbers = new Set(itinerary.days.map((day) => day.day));
+  const generalWarnings = warnings.filter((warning) => warning.day === undefined || !dayNumbers.has(warning.day));
+  const warningDays = itinerary.days
+    .map((day) => ({ day, count: warnings.filter((warning) => warning.day === day.day).length }))
+    .filter(({ count }) => count > 0);
 
   return (
     <div id="trip-print-root" className={styles.preview} data-print-layout="true">
@@ -67,14 +73,26 @@ export function TripPreview({
             Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open. Source-reviewed facts and sponsored placements are labeled separately.
           </p>
         ) : null}
-        {itinerary.quality_warnings?.map((warning, index) => (
-          <p className={styles.warning} key={`${warning.code}-${warning.day ?? index}`}>
+        {generalWarnings.map((warning, index) => (
+          <p className={styles.warning} key={`${warning.code}-${index}`}>
             {warning.message}
           </p>
         ))}
         {itinerary.route_status === 'unavailable' ? (
           <p className={styles.warning}>Route details could not be refreshed for this itinerary.</p>
         ) : null}
+        {warningDays.length > 0 && (
+          <section className={styles.warningSummary} aria-label="Days to review" data-print-hide="true">
+            <p>Some details need your review:</p>
+            <ul>
+              {warningDays.map(({ day, count }) => (
+                <li key={day.day}>
+                  <a href={`#trip-day-${day.day}`}>Day {day.day} · {count} {count === 1 ? 'note' : 'notes'}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
       {itinerary.days.length > 0 ? (
         <div data-print-hide="true">
@@ -109,7 +127,7 @@ export function TripPreview({
             {day.route_from_previous && (
               <RouteTransition route={day.route_from_previous} />
             )}
-            <TripDayCard day={day} tripId={tripId} />
+            <TripDayCard day={day} tripId={tripId} warnings={warnings.filter((warning) => warning.day === day.day)} />
           </Fragment>
         ))}
       </div>
