@@ -1,0 +1,27 @@
+# Traveler workspace and itinerary audit — 2026-10-29
+
+## Scope
+
+Static review of the traveler trip workspace, its API and itinerary enrichment at the `origin/dev` revision used for this audit. No running-app visual review, load test, or concurrent-request reproduction was available. Items below are proposals; risks inferred from code require reproduction during implementation. The separately open globe loading PR is outside this audit. Planning remains limited to destinations enabled by the API, currently Kyrgyzstan. No live booking or supplier contracts are assumed.
+
+Previously completed work includes day navigation and source labels (#107), printing (#118), contextual chat prompts (#119), and trip renaming (#120). Existing open offers issues #70 and #71 concern future providers and are not prerequisites for this development work.
+
+## Findings and planned work
+
+| Priority | ID | Finding and evidence | Proposed outcome |
+|---|---|---|---|
+| High | WORKSPACE-01 | At widths below 768px, [`ResizableLayout.module.scss`](../../frontend/src/widgets/resizable-layout/ResizableLayout.module.scss) hides the right pane; the print and focus controls live inside that pane. This can leave mobile users unable to reach the itinerary. | Provide an accessible mobile itinerary/chat switch with both views usable and no lost state. |
+| High | WORKSPACE-02 | [`TripPage.tsx`](../../frontend/src/pages/trip/TripPage.tsx) keeps `messages` and `itineraryOverride` in component state without resetting them on `tripId` change. If React reuses the page instance, old data or an in-flight response may appear on another trip. This is an inferred risk, not a reproduced incident. | Isolate state and async responses by trip; verify guest and signed-in navigation. |
+| High | WORKSPACE-03 | [`get_trip_detail`](../../backend/app/services/trip_service.py) requests messages with `limit=50, offset=0`, while [`trip_message_repository.py`](../../backend/app/repositories/trip_message_repository.py) orders them oldest first. The workspace reads that first page and has no older/newer pagination control. | Open the most recent messages and provide a reliable way to load earlier history. |
+| High | WORKSPACE-04 | [`TripMessageService.continue_trip`](../../backend/app/services/trip_message_service.py) reads the itinerary, performs provider work, merges, then commits; there is no visible version comparison or per-trip concurrency guard. Concurrent tabs or retries could overwrite a newer edit. | Detect conflicts or serialize updates safely, with a clear retry path and no duplicate usage charge. |
+| Medium | ITINERARY-01 | [`TripPreview.tsx`](../../frontend/src/widgets/trip-preview/TripPreview.tsx) has day navigation and textual transfer cards but no spatial overview. Candidate coordinates exist in [`types.ts`](../../frontend/src/entities/trip/model/types.ts), although they may be absent or unverified. | Add an optional overview connecting available day locations, with a textual equivalent and explicit incomplete/approximate states; do not present straight lines as verified roads. |
+| Medium | ITINERARY-02 | Quality warnings have a `day` field, but `TripPreview` renders them together above the itinerary. The [quality service](../../backend/app/services/itinerary_quality_service.py) already computes overlap, overloaded days and unavailable transfers. | Associate existing warnings with their days and offer a concise summary with links; retain global warnings and print disclosures. |
+| Medium | ITINERARY-03 | [`image_enrichment_service.py`](../../backend/app/services/image_enrichment_service.py) searches broadly and may fall back to a city or theme; [`DayHero.tsx`](../../frontend/src/widgets/trip-day-card/DayHero.tsx) assumes a returned URL loads and uses the image as the day's hero. A search result is not proof of the exact location. | Make image failure graceful and label unverified imagery as inspiration while retaining attribution and accessible alt text. |
+| Medium | ITINERARY-04 | Image enrichment tries several search queries for each day; the cap of three applies to successful images, so a no-result trip can still issue searches across all days. [`PexelsClient`](../../backend/app/integrations/pexels_client.py) makes individual synchronous requests. No latency measurements were collected. | Bound requests and latency, preserve a readable itinerary without photos, and measure provider calls with mocked tests. |
+
+## Delivery order
+
+1. **Traveler Workspace — Reliability:** mobile access, trip isolation, recent message history, and concurrent edit protection. Each can be reviewed separately; prioritize the first two because they affect access to the current trip.
+2. **Itinerary — Clarity and Exploration:** contextual warnings, trustworthy imagery, a route overview, and bounded image enrichment. Start the visual work after mobile access so it can be reviewed there.
+
+The local issue specifications in `planning/backlog/issues/WORKSPACE-*.md` and `ITINERARY-*.md` define acceptance criteria and checks. No implementation or new data import is part of this audit. Before using a map, tile service, route geometry or new photos, verify its terms, attribution, privacy implications and geographic coverage; keep text usable without it. An approximate connector between points is not a verified driving route. Preserve guest generation and account sync, stored trips, chat edits, subscriptions, sponsored disclosures and explicit degraded states.
