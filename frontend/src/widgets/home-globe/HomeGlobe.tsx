@@ -49,6 +49,7 @@ export function HomeGlobe({ children, destinations, onPlan }: HomeGlobeProps) {
   const canPlan = destinations.some((destination) => destination.enabled && destination.id === activeScene.destinationId);
   const supportsWebGL = Boolean(window.WebGLRenderingContext);
   const show3D = supportsWebGL && !globeFailed && !reducedMotion && (isMobile ? mobileExplore : desktopReady);
+  const showPoster = isMobile || reducedMotion || !supportsWebGL || globeFailed;
   const sunlight = getSunView(show3D ? view : activeScene, sun);
   const onFailure = useCallback(() => setGlobeFailed(true), []);
   const onExplore = useCallback(() => setExploring(true), []);
@@ -96,7 +97,7 @@ export function HomeGlobe({ children, destinations, onPlan }: HomeGlobeProps) {
       <div className={styles.globe} aria-hidden="true" data-testid="globe-backdrop" onPointerDown={onExplore}>
         {show3D ? (
           <GlobeErrorBoundary onFailure={onFailure} fallback={<div className={styles.poster} />}>
-            <Suspense fallback={<div className={styles.poster} />}>
+            <Suspense fallback={isMobile ? <div className={styles.poster} /> : null}>
               <GlobeCanvas
                 scene={activeScene}
                 scenes={globeScenes}
@@ -110,9 +111,9 @@ export function HomeGlobe({ children, destinations, onPlan }: HomeGlobeProps) {
               />
             </Suspense>
           </GlobeErrorBoundary>
-        ) : (
+        ) : showPoster ? (
           <div className={styles.poster} />
-        )}
+        ) : null}
       </div>
 
       <div className={styles.topLine}>
