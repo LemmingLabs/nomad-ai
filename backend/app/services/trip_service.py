@@ -1015,13 +1015,17 @@ def rename_user_trip(db: Session, user_id: int, trip_id: int, title: str) -> Tri
     return update_trip(db, trip, title=normalized_title)
 
 
-def get_trip_detail(db: Session, user_id: int, trip_id: int) -> dict:
+def get_trip_detail(db: Session, user_id: int, trip_id: int, recent_messages: bool = False) -> dict:
     """Get trip details including the first page of messages."""
     trip = get_user_trip_by_id(db, user_id, trip_id)
     
     from app.services.trip_message_service import TripMessageService
     message_service = TripMessageService(db)
-    messages, total = message_service.get_trip_messages(trip=trip, limit=50, offset=0)
+    has_more = None
+    if recent_messages:
+        messages, total, has_more = message_service.get_recent_messages(trip, limit=50)
+    else:
+        messages, total = message_service.get_trip_messages(trip=trip, limit=50, offset=0)
     
     return {
         "trip": trip,
@@ -1030,6 +1034,7 @@ def get_trip_detail(db: Session, user_id: int, trip_id: int) -> dict:
             "limit": 50,
             "offset": 0,
             "items": messages,
+            "has_more": has_more,
         }
     }
 

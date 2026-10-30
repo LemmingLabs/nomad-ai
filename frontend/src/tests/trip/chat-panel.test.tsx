@@ -3,9 +3,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatPanel } from '../../widgets/chat-panel/ChatPanel';
 
+const scrollIntoView = vi.fn();
 afterEach(cleanup);
 beforeAll(() => {
-  HTMLElement.prototype.scrollIntoView = vi.fn();
+  HTMLElement.prototype.scrollIntoView = scrollIntoView;
 });
 
 const history = [{
@@ -40,4 +41,19 @@ test('blocks edits when the chat is disabled', async () => {
   expect(screen.getByText('Sign in first')).toBeTruthy();
   await userEvent.setup().keyboard('{Enter}');
   expect(send).not.toHaveBeenCalled();
+});
+
+test('retains the scroll position and does not animate older messages', () => {
+  const { rerender, container } = render(<ChatPanel messages={history} onSend={vi.fn()} hasOlder onLoadOlder={vi.fn()} />);
+  const scroller = container.querySelector('[class*="messages"]') as HTMLDivElement;
+  let height = 200;
+  Object.defineProperty(scroller, 'scrollHeight', { configurable: true, get: () => height });
+  scroller.scrollTop = 40;
+  scrollIntoView.mockClear();
+  const older = { id: 2, trip_id: 42, role: 'assistant' as const, content: 'Older reply', created_at: '2025-12-31' };
+  height = 350;
+  rerender(<ChatPanel messages={[older, ...history]} onSend={vi.fn()} hasOlder onLoadOlder={vi.fn()} />);
+  // jsdom has no layout; the mocked height verifies that a prepend never scrolls to the bottom.
+  expect(scrollIntoView).not.toHaveBeenCalled();
+  expect(screen.getByText('Older reply')).toBeTruthy();
 });

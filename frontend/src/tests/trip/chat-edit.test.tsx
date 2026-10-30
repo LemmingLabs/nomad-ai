@@ -18,7 +18,7 @@ vi.mock('../../entities/trip', () => ({
   tripApi: { getById: vi.fn() },
   useTripStore: () => ({ trips: session.trips, setActiveTrip, updateTrip, updateTripItinerary }),
 }));
-vi.mock('../../entities/message', () => ({ messageApi: { send: vi.fn() } }));
+vi.mock('../../entities/message', () => ({ messageApi: { send: vi.fn(), getByTrip: vi.fn() } }));
 vi.mock('../../entities/user', () => ({ useUserStore: () => ({ isAuthenticated: session.authenticated }) }));
 vi.mock('../../entities/limit', () => ({
   useMyLimitsQuery: () => ({ data: { chat_edits_used: 0, chat_edit_limit_per_day: 5 } }),
@@ -34,13 +34,54 @@ vi.mock('../../widgets/resizable-layout', () => ({
   ResizableLayout: ({ left, right }: { left: React.ReactNode; right: React.ReactNode }) => <>{left}{right}</>,
 }));
 vi.mock('../../widgets/chat-panel', () => ({
-  ChatPanel: ({ messages, onSend, isDisabled }: {
+  ChatPanel: ({ messages, onSend, isDisabled, hasOlder, onLoadOlder, olderError, isLoadingOlder }: {
     messages: { content: string }[]; onSend: (content: string) => void; isDisabled: boolean;
+    hasOlder: boolean; onLoadOlder: () => void; olderError: boolean; isLoadingOlder: boolean;
   }) => <div>
+    {hasOlder && <button onClick={onLoadOlder} disabled={isLoadingOlder}>{olderError ? 'Retry older' : 'Load older'}</button>}
     {messages.map((message, index) => <p key={index}>{message.content}</p>)}
     <button disabled={isDisabled} onClick={() => onSend('Add a lake stop')}>Send edit</button>
   </div>,
 }));
+
+test('keeps a new edit while older messages load and deduplicates the page', async () => {
+  const message = (id: number, content: string) => ({ id, trip_id: 42, role: 'assistant' as const, content, created_at: '' });
+  vi.mocked(tripApi.getById).mockResolvedValue({ trip: { id: 42, itinerary_json: { days: [] } }, messages: { items: [message(51, 'Recent')], has_more: true } } as never);
+  let resolvePage!: (page: Awaited<ReturnType<typeof messageApi.getByTrip>>) => void;
+  vi.mocked(messageApi.getByTrip).mockImplementation(() => new Promise((resolve) => { resolvePage = resolve; }));
+  vi.mocked(messageApi.send).mockResolvedValue({ message: message(52, 'New reply'), updated_itinerary: null });
+  const user = userEvent.setup();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={['/trip/42']}><Routes><Route path="/trip/:id" element={<TripPage />} /></Routes></MemoryRouter>
+  </QueryClientProvider>);
+  expect(await screen.findByText('Recent')).toBeTruthy();
+  await user.click(screen.getByRole('button', { name: 'Load older' }));
+  await user.click(screen.getByRole('button', { name: 'Send edit' }));
+  expect(await screen.findByText('New reply')).toBeTruthy();
+  act(() => { resolvePage({ items: [message(1, 'Older'), message(51, 'Recent')], has_more: false, total: 52, offset: 0, limit: 50 }); });
+  expect(await screen.findByText('Older')).toBeTruthy();
+  expect(screen.getAllByText('Recent')).toHaveLength(1);
+  expect(screen.getByText('Add a lake stop')).toBeTruthy();
+  expect(screen.getByText('New reply')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Load older' })).toBeNull();
+  expect(messageApi.getByTrip).toHaveBeenCalledWith(42, 51);
+});
+
+test('allows retrying a failed older history page', async () => {
+  const recent = { id: 51, trip_id: 42, role: 'user' as const, content: 'Recent message', created_at: '' };
+  vi.mocked(tripApi.getById).mockResolvedValue({ trip: { id: 42, itinerary_json: { days: [] } }, messages: { items: [recent], has_more: true } } as never);
+  vi.mocked(messageApi.getByTrip).mockRejectedValueOnce(new Error('Offline')).mockResolvedValueOnce({
+    items: [{ ...recent, id: 1, content: 'Older message' }], has_more: false, total: 51, offset: 0, limit: 50,
+  });
+  const user = userEvent.setup();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={['/trip/42']}><Routes><Route path="/trip/:id" element={<TripPage />} /></Routes></MemoryRouter>
+  </QueryClientProvider>);
+  await user.click(await screen.findByRole('button', { name: 'Load older' }));
+  await user.click(await screen.findByRole('button', { name: 'Retry older' }));
+  expect(await screen.findByText('Older message')).toBeTruthy();
+  expect(screen.getByText('Recent message')).toBeTruthy();
+});
 vi.mock('../../widgets/trip-preview', () => ({
   TripPreview: ({ itinerary, actions }: { itinerary: { days?: unknown[] } | null; actions: React.ReactNode }) =>
     <div><p>{itinerary?.days?.length ?? 0} route days</p>{actions}</div>,

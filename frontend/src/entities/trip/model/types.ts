@@ -171,6 +171,7 @@ export interface TripDetailResponse {
     total: number;
     limit: number;
     offset: number;
+    has_more?: boolean | null;
     items: import('../../message').Message[];
   };
 }
