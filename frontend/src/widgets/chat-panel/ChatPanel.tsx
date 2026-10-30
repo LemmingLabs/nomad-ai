@@ -1,6 +1,6 @@
 import gsap from 'gsap';
 import { TextPlugin } from 'gsap/TextPlugin';
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Message } from '../../entities/message';
 import type { TripItinerary } from '../../entities/trip';
 import { AnimatedAssistantMessage } from './AnimatedAssistantMessage';
@@ -32,6 +32,10 @@ interface ChatPanelProps {
   notice?: ReactNode;
   itinerary?: TripItinerary | null;
   onSend: (content: string) => void;
+  hasOlder?: boolean;
+  isLoadingOlder?: boolean;
+  olderError?: boolean;
+  onLoadOlder?: () => void;
 }
 
 function getRefinementSuggestions(itinerary?: TripItinerary | null) {
@@ -75,21 +79,44 @@ export function ChatPanel({
   notice,
   itinerary,
   onSend,
+  hasOlder = false,
+  isLoadingOlder = false,
+  olderError = false,
+  onLoadOlder,
 }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const lastIdsRef = useRef<number[]>([]);
+  const scrollSnapshotRef = useRef({ height: 0, top: 0 });
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const emptyRef = useRef<HTMLDivElement>(null);
   const typewriterTextRef = useRef<HTMLSpanElement>(null);
   const hasHydratedAssistantHistoryRef = useRef(false);
   const seenAssistantIdsRef = useRef<Set<number>>(new Set());
+  const seenMessageIdsRef = useRef<Set<number>>(new Set());
   const [animatingAssistantIds, setAnimatingAssistantIds] = useState<number[]>([]);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     bottomRef.current?.scrollIntoView({ behavior });
   };
 
-  useEffect(() => {
-    scrollToBottom(messages.length > 0 ? 'smooth' : 'auto');
+  useLayoutEffect(() => {
+    const previous = lastIdsRef.current;
+    const current = messages.map((message) => message.id);
+    const previousFirstIndex = previous.length ? current.indexOf(previous[0]) : -1;
+    const previousLastIndex = previous.length ? current.indexOf(previous[previous.length - 1]) : -1;
+    const prepended = previousFirstIndex > 0;
+    const appended = previousLastIndex >= 0 && previousLastIndex < current.length - 1;
+    if (prepended && scrollRef.current && !appended) {
+      scrollRef.current.scrollTop = scrollSnapshotRef.current.top + scrollRef.current.scrollHeight - scrollSnapshotRef.current.height;
+    } else if (!previous.length || appended) {
+      scrollToBottom(previous.length ? 'smooth' : 'auto');
+    }
+    lastIdsRef.current = current;
+    const scrollElement = scrollRef.current;
+    return () => {
+      if (scrollElement) scrollSnapshotRef.current = { height: scrollElement.scrollHeight, top: scrollElement.scrollTop };
+    };
   }, [messages]);
 
   useEffect(() => {
@@ -103,13 +130,18 @@ export function ChatPanel({
       assistantMessages.forEach((message) => {
         seenAssistantIdsRef.current.add(message.id);
       });
+      messages.forEach((message) => seenMessageIdsRef.current.add(message.id));
       hasHydratedAssistantHistoryRef.current = true;
       return;
     }
 
+    const lastSeenIndex = messages.reduce((last, message, index) => seenMessageIdsRef.current.has(message.id) ? index : last, -1);
     const newAssistantIds = assistantMessages
-      .filter((message) => !seenAssistantIdsRef.current.has(message.id))
+      .filter((message) => !seenAssistantIdsRef.current.has(message.id) && messages.indexOf(message) > lastSeenIndex)
       .map((message) => message.id);
+
+    assistantMessages.forEach((message) => seenAssistantIdsRef.current.add(message.id));
+    messages.forEach((message) => seenMessageIdsRef.current.add(message.id));
 
     if (newAssistantIds.length === 0) {
       return;
@@ -173,7 +205,11 @@ export function ChatPanel({
   return (
     <div className={styles.panel}>
       {/* Messages */}
-      <div className={styles.messages}>
+      <div className={styles.messages} ref={scrollRef}>
+        {hasOlder && <button type="button" className={styles.refinementButton} onClick={onLoadOlder} disabled={isLoadingOlder}>
+          {isLoadingOlder ? 'Loading older messages…' : olderError ? 'Retry loading older messages' : 'Load older messages'}
+        </button>}
+        {olderError && <p role="alert">Could not load older messages. Please try again.</p>}
         {messages.length === 0 && (
           <div ref={emptyRef} className={styles.empty}>
             <p className={styles.typewriter} aria-live='polite'>

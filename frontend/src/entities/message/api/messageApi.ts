@@ -7,9 +7,9 @@ import type {
 
 export const messageApi = {
   /** GET /trips/:tripId/messages */
-  getByTrip: (tripId: number) =>
+  getByTrip: (tripId: number, beforeId?: number) =>
     apiClient
-      .get<MessageListResponse>(`/trips/${tripId}/messages`)
+      .get<MessageListResponse>(`/trips/${tripId}/messages`, beforeId === undefined ? undefined : { params: { recent: true, before_id: beforeId } })
       .then((response) => response.data),
 
   /** POST /trips/:tripId/messages */

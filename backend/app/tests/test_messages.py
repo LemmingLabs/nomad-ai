@@ -657,3 +657,65 @@ def test_continue_trip_messages_function_returns_assistant_message_and_updated_i
 
     assert response.message.content == "updated plan"
     assert response.updated_itinerary == {"days": [{"day": 4}]}
+
+
+@pytest.mark.parametrize("count", [0, 12, 75, 125])
+def test_recent_history_cursor_is_stable_across_equal_timestamps_and_new_messages(db_session, trip, count):
+    timestamp = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    db_session.add_all([
+        TripMessage(trip_id=trip.id, role="user", content=str(index), created_at=timestamp)
+        for index in range(count)
+    ])
+    db_session.commit()
+    repo = TripMessageRepository(db_session)
+    first, total, more = repo.get_recent_messages(trip.id, limit=50)
+    assert total == count
+    assert [int(message.content) for message in first] == list(range(max(0, count - 50), count))
+    assert more == (count > 50)
+    if more:
+        db_session.add(TripMessage(trip_id=trip.id, role="user", content="new", created_at=timestamp))
+        db_session.commit()
+        older, _, older_more = repo.get_recent_messages(trip.id, limit=50, before_id=first[0].id)
+        assert [int(message.content) for message in older] == list(range(max(0, count - 100), count - 50))
+        assert not set(m.id for m in older) & set(m.id for m in first)
+        assert older_more == (count > 100)
+        if older_more:
+            oldest, _, last_more = repo.get_recent_messages(trip.id, limit=50, before_id=older[0].id)
+            assert [int(message.content) for message in oldest] == list(range(count - 100))
+            assert not last_more
+
+
+def test_recent_history_rejects_cursor_from_other_trip(db_session, trip, user):
+    other = Trip(user_id=user.id, title="Other", budget="300", days=1, interests=[], travel_style="balanced", itinerary_json={})
+    db_session.add(other)
+    db_session.flush()
+    foreign = TripMessage(trip_id=other.id, role="user", content="foreign")
+    db_session.add(foreign)
+    db_session.commit()
+    with pytest.raises(ValueError, match="cursor not found"):
+        TripMessageRepository(db_session).get_recent_messages(trip.id, before_id=foreign.id)
+
+
+def test_recent_history_requires_trip_ownership(db_session, trip, other_user):
+    from app.api.v1.messages import get_trip_messages
+
+    with pytest.raises(HTTPException) as error:
+        get_trip_messages(trip.id, limit=50, offset=0, recent=True, before_id=None,
+                          db=db_session, current_user=other_user)
+    assert error.value.status_code == 404
+
+
+def test_trip_detail_retains_legacy_page_and_can_load_recent_page(db_session, trip, user):
+    from app.services.trip_service import get_trip_detail
+
+    timestamp = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    db_session.add_all([
+        TripMessage(trip_id=trip.id, role="user", content=str(index), created_at=timestamp)
+        for index in range(55)
+    ])
+    db_session.commit()
+    legacy = get_trip_detail(db_session, user.id, trip.id)["messages"]
+    recent = get_trip_detail(db_session, user.id, trip.id, recent_messages=True)["messages"]
+    assert [int(message.content) for message in legacy["items"]] == list(range(50))
+    assert [int(message.content) for message in recent["items"]] == list(range(5, 55))
+    assert recent["has_more"] is True

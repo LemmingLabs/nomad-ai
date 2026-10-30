@@ -497,3 +497,8 @@ class TripMessageService:
         self, trip: Trip, limit: int = 50, offset: int = 0
     ) -> tuple[list[TripMessage], int]:
         return self.repo.get_trip_messages(trip.id, limit=limit, offset=offset)
+
+    def get_recent_messages(
+        self, trip: Trip, limit: int = 50, before_id: int | None = None
+    ) -> tuple[list[TripMessage], int, bool]:
+        return self.repo.get_recent_messages(trip.id, limit, before_id)

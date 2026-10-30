@@ -46,3 +46,4 @@ class TripMessageListResponse(BaseModel):
     limit: int
     offset: int
     items: list[TripMessageResponse]
+    has_more: bool | None = None

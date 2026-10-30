@@ -42,6 +42,7 @@ function TripWorkspace({ tripId }: { tripId: number }) {
     | undefined;
 
   const [messages, setMessages] = useState<Message[] | null>(null);
+  const [hasOlder, setHasOlder] = useState<boolean | null>(null);
   const [itineraryOverride, setItineraryOverride] =
     useState<TripItinerary | null>(null);
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
@@ -87,6 +88,18 @@ function TripWorkspace({ tripId }: { tripId: number }) {
   const itinerary = itineraryOverride ?? currentTrip?.itinerary_json ?? null;
   const tripTitle = currentTrip?.title;
   const visibleMessages = messages ?? tripQuery.data?.messages.items ?? [];
+  const historyMutation = useMutation({
+    mutationFn: (beforeId: number) => messageApi.getByTrip(tripId, beforeId),
+    onSuccess: (page) => {
+      if (!mountedRef.current) return;
+      setMessages((current) => {
+        const existing = current ?? tripQuery.data?.messages.items ?? [];
+        const ids = new Set(existing.map((message) => message.id));
+        return [...page.items.filter((message) => !ids.has(message.id)), ...existing];
+      });
+      setHasOlder(Boolean(page.has_more));
+    },
+  });
 
   const sendMutation = useMutation({
     mutationFn: (content: string) => messageApi.send(tripId, { content }),
@@ -204,6 +217,13 @@ function TripWorkspace({ tripId }: { tripId: number }) {
 
             <ChatPanel
               messages={visibleMessages}
+              hasOlder={isAuthenticated && (hasOlder ?? Boolean(tripQuery.data?.messages.has_more))}
+              isLoadingOlder={historyMutation.isPending}
+              olderError={historyMutation.isError}
+              onLoadOlder={() => {
+                const first = visibleMessages.find((message) => message.id > 0);
+                if (first) historyMutation.mutate(first.id);
+              }}
               isLoading={tripQuery.isLoading || sendMutation.isPending}
               isDisabled={!isAuthenticated || tripQuery.isError || isChatLimitReached}
               disabledPlaceholder={

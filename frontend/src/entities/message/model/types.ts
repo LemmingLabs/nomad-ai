@@ -22,4 +22,5 @@ export interface MessageListResponse {
   limit: number;
   offset: number;
   items: Message[];
+  has_more?: boolean | null;
 }

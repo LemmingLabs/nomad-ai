@@ -53,6 +53,8 @@ def get_trip_messages(
     trip_id: int,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    recent: bool = False,
+    before_id: int | None = Query(None, ge=1),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> TripMessageListResponse:
@@ -65,10 +67,22 @@ def get_trip_messages(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
 
     service = TripMessageService(db)
-    messages, total = service.get_trip_messages(trip=trip, limit=limit, offset=offset)
+    if before_id is not None and not recent:
+        raise HTTPException(status_code=400, detail="before_id requires recent=true")
+    if recent and offset:
+        raise HTTPException(status_code=400, detail="offset cannot be used with recent=true")
+    has_more = None
+    if recent:
+        try:
+            messages, total, has_more = service.get_recent_messages(trip, limit, before_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    else:
+        messages, total = service.get_trip_messages(trip=trip, limit=limit, offset=offset)
     return TripMessageListResponse(
         total=total,
         limit=limit,
         offset=offset,
-        items=messages
+        items=messages,
+        has_more=has_more,
     )

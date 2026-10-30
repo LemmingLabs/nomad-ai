@@ -59,6 +59,7 @@ def list_trips(
 @router.get("/{trip_id}", response_model=TripDetailResponse)
 def get_trip(
     trip_id: int,
+    recent_messages: bool = False,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ) -> TripDetailResponse:
@@ -67,6 +68,7 @@ def get_trip(
             db=db,
             user_id=current_user.id,
             trip_id=trip_id,
+            recent_messages=recent_messages,
         )
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc

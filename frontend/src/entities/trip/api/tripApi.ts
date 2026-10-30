@@ -10,7 +10,7 @@ export const tripApi = {
 
   /** GET /trips/:id — get trip with messages */
   getById: (id: number) =>
-    apiClient.get<TripDetailResponse>(`/trips/${id}`).then((response) => response.data),
+    apiClient.get<TripDetailResponse>(`/trips/${id}`, { params: { recent_messages: true } }).then((response) => response.data),
 
   /** DELETE /trips/:id */
   remove: (id: number) => apiClient.delete<void>(`/trips/${id}`),
