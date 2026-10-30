@@ -34,9 +34,9 @@ def continue_trip_messages(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message) from exc
 
     service = TripMessageService(db)
+    kwargs = {"request_key": str(payload.request_id)} if payload.request_id else {}
     assistant_message, updated_itinerary = service.continue_trip(
-        trip=trip,
-        user_content=payload.content,
+        trip=trip, user_content=payload.content, **kwargs,
     )
 
     return TripContinuationResponse(
