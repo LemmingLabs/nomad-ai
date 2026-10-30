@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -8,6 +9,7 @@ class TripMessageCreateRequest(BaseModel):
     """Payload for a user continuation message."""
 
     content: str = Field(..., min_length=1, max_length=2000, description="User message text")
+    request_id: UUID | None = Field(default=None, description="Stable ID for safely retrying this edit")
 
     @field_validator("content")
     @classmethod

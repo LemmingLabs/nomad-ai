@@ -39,6 +39,7 @@ jobs:
       POSTGRES_HOST: localhost
       POSTGRES_PORT: '5432'
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/nomadai
+      TEST_POSTGRES_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/nomadai
       JWT_SECRET_KEY: ci-only-secret
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: '60'

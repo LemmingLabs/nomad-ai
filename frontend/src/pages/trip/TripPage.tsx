@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { Maximize2, Minimize2, PanelRight, Printer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -48,6 +49,10 @@ function TripWorkspace({ tripId }: { tripId: number }) {
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
   const [collapsedBeforeFocus, setCollapsedBeforeFocus] = useState(false);
   const [forceEditLimitReached, setForceEditLimitReached] = useState(false);
+  const [retryEdit, setRetryEdit] = useState<{ content: string; request_id: string } | null>(null);
+  const [editConflict, setEditConflict] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
+  const [retryAfterConflict, setRetryAfterConflict] = useState(false);
   const mountedRef = useRef(false);
 
   useEffect(() => {
@@ -102,8 +107,10 @@ function TripWorkspace({ tripId }: { tripId: number }) {
   });
 
   const sendMutation = useMutation({
-    mutationFn: (content: string) => messageApi.send(tripId, { content }),
-    onMutate: (content) => {
+    mutationFn: (payload: { content: string; request_id: string }) => messageApi.send(tripId, payload),
+    onMutate: ({ content }) => {
+      setRetryEdit(null);
+      setRetryAfterConflict(false);
       const optimisticId = -Date.now();
       setMessages((prev) => [
         ...(prev ?? tripQuery.data?.messages.items ?? []),
@@ -124,6 +131,7 @@ function TripWorkspace({ tripId }: { tripId: number }) {
           response.message,
         ]);
         setForceEditLimitReached(false);
+        setRetryEdit(null);
       }
       void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
       if (response.updated_itinerary) {
@@ -136,7 +144,7 @@ function TripWorkspace({ tripId }: { tripId: number }) {
       }
       void queryClient.invalidateQueries({ queryKey: ['trip', tripId] });
     },
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
       if (!mountedRef.current) {
         if (isLimitExceededError(error)) void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
         return;
@@ -151,6 +159,12 @@ function TripWorkspace({ tripId }: { tripId: number }) {
         void queryClient.invalidateQueries({ queryKey: limitQueryKeys.me() });
         return;
       }
+      if (error instanceof AxiosError && error.response?.status === 409) {
+        setEditConflict(true);
+        setRetryEdit({ ...variables, request_id: crypto.randomUUID() });
+        return;
+      }
+      setRetryEdit(variables);
       handleApiError(error);
     },
   });
@@ -225,7 +239,7 @@ function TripWorkspace({ tripId }: { tripId: number }) {
                 if (first) historyMutation.mutate(first.id);
               }}
               isLoading={tripQuery.isLoading || sendMutation.isPending}
-              isDisabled={!isAuthenticated || tripQuery.isError || isChatLimitReached}
+              isDisabled={!isAuthenticated || tripQuery.isError || isChatLimitReached || editConflict || Boolean(retryEdit)}
               disabledPlaceholder={
                 !isAuthenticated
                   ? 'Trip chat is disabled'
@@ -233,15 +247,33 @@ function TripWorkspace({ tripId }: { tripId: number }) {
                     ? 'Daily AI edit limit reached — upgrade to continue'
                     : 'Chat is currently unavailable...'
               }
-              notice={
-                isAuthenticated && limits ? (
+              notice={<>
+                {isAuthenticated && limits ? (
                   <ChatEditLimitNotice
                     remaining={remainingEdits ?? 0}
                     limit={limits.chat_edit_limit_per_day}
                     tone={editsTone}
                   />
-                ) : null
-              }
+                ) : null}
+                {retryEdit && <div role="alert" style={{ padding: '0 1.5rem 1rem' }}>
+                  <p>{editConflict ? 'Another edit changed this trip. Reload it before retrying your message.' : retryAfterConflict ? 'The latest trip is loaded. You can retry your message against it.' : 'The edit may not have completed. Retry the same request safely.'}</p>
+                  {refreshError && <p>Could not reload the trip. Please try again.</p>}
+                  <button type="button" disabled={sendMutation.isPending || (editConflict && tripQuery.isFetching)} onClick={() => {
+                    if (!editConflict) { sendMutation.mutate(retryEdit); return; }
+                    setRefreshError(false);
+                    void tripQuery.refetch().then((result) => {
+                      if (!mountedRef.current) return;
+                      if (result.isError) { setRefreshError(true); return; }
+                      setItineraryOverride(null);
+                      setMessages(null);
+                      setHasOlder(null);
+                      setEditConflict(false);
+                      setRetryAfterConflict(true);
+                    });
+                  }}>{editConflict ? 'Reload trip' : 'Retry edit'}</button>
+                  {!editConflict && <button type="button" onClick={() => setRetryEdit(null)}>Dismiss</button>}
+                </div>}
+              </>}
               disabledMessage={
                 !isAuthenticated ? (
                   <p className={styles.guestSignInMessage}>
@@ -262,7 +294,7 @@ function TripWorkspace({ tripId }: { tripId: number }) {
                 ) : undefined
               }
               itinerary={itinerary}
-              onSend={(content) => sendMutation.mutate(content)}
+              onSend={(content) => sendMutation.mutate({ content, request_id: crypto.randomUUID() })}
             />
           </div>
         }

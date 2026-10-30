@@ -1,4 +1,5 @@
 import logging
+import hashlib
 from copy import deepcopy
 
 from app.models.trip import Trip
@@ -236,17 +237,41 @@ class TripMessageService:
     # ------------------------------------------------------------------
 
     def continue_trip(
-        self, trip: Trip, user_content: str
+        self, trip: Trip, user_content: str, request_key: str | None = None
     ) -> tuple[TripMessage, dict | None]:
+        trip_id = trip.id
+        user_id = trip.user_id
+        revision = trip.chat_revision
+        request_hash = hashlib.sha256(user_content.encode("utf-8")).hexdigest()
+
+        def replay() -> tuple[TripMessage, dict | None] | None:
+            if not request_key:
+                return None
+            previous = self.repo.find_request(trip_id, request_key)
+            if previous is None:
+                return None
+            if previous.request_hash != request_hash:
+                raise HTTPException(status_code=409, detail="This request ID was already used for a different edit.")
+            # Another edit may have committed after this response: return current state.
+            current = self.db.query(Trip).filter_by(id=trip_id, user_id=user_id).first()
+            if current is None:
+                raise HTTPException(status_code=404, detail="Trip not found")
+            self.db.refresh(current)
+            return previous, current.itinerary_json
+
         try:
+            existing = replay()
+            if existing is not None:
+                return existing
             if trip.user_id is not None and not LimitService(self.db).can_edit_chat(trip.user_id):
                 raise HTTPException(
                     status_code=403,
                     detail="Daily limit exceeded. Upgrade your plan.",
                 )
-            self.repo.create_message(trip_id=trip.id, role="user", content=user_content)
-
             history, _ = self.repo.get_trip_messages(trip_id=trip.id)
+            # Keep the current prompt in history without writing or locking rows
+            # while the provider and enrichment work is in progress.
+            history.append(TripMessage(trip_id=trip_id, role="user", content=user_content))
             assistant_text, updated_itinerary = self.ai_service.continue_trip(
                 history_messages=history,
                 user_message=user_content,
@@ -266,12 +291,6 @@ class TripMessageService:
                     "I couldn't update the itinerary because the planning service did not return a usable plan. "
                     "Your saved itinerary is unchanged. Please try again later."
                 )
-
-            assistant_message = self.repo.create_message(
-                trip_id=trip.id,
-                role="assistant",
-                content=assistant_text,
-            )
 
             if updated_itinerary is not None:
                 old_itinerary = trip.itinerary_json or {}
@@ -478,9 +497,20 @@ class TripMessageService:
                 ).attach_facts_to_itinerary(enriched_itinerary, trip.country_code)
                 validate_itinerary_quality(enriched_itinerary, trip.country_code)
 
-                trip.itinerary_json = enriched_itinerary
                 updated_itinerary = enriched_itinerary
-                self.db.add(trip)
+
+            if not self.repo.advance_revision(trip_id, user_id, revision, updated_itinerary):
+                self.db.rollback()
+                existing = replay()
+                if existing is not None:
+                    return existing
+                raise HTTPException(status_code=409, detail="The trip changed during this edit. Reload the latest itinerary and try again.")
+
+            self.repo.create_message(trip_id=trip_id, role="user", content=user_content)
+            assistant_message = self.repo.create_message(trip_id=trip_id, role="assistant", content=assistant_text)
+            if request_key:
+                assistant_message.request_key = request_key
+                assistant_message.request_hash = request_hash
 
             if trip.user_id is not None:
                 UsageService(self.db).increment_chat_edit(trip.user_id)

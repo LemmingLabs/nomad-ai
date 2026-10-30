@@ -7,6 +7,7 @@ import { TripPage } from '../../pages/trip/TripPage';
 import { tripApi } from '../../entities/trip';
 import { messageApi } from '../../entities/message';
 import { handleApiError } from '../../shared/lib';
+import { AxiosError } from 'axios';
 
 const setActiveTrip = vi.fn();
 const updateTrip = vi.fn();
@@ -34,10 +35,11 @@ vi.mock('../../widgets/resizable-layout', () => ({
   ResizableLayout: ({ left, right }: { left: React.ReactNode; right: React.ReactNode }) => <>{left}{right}</>,
 }));
 vi.mock('../../widgets/chat-panel', () => ({
-  ChatPanel: ({ messages, onSend, isDisabled, hasOlder, onLoadOlder, olderError, isLoadingOlder }: {
+  ChatPanel: ({ messages, onSend, isDisabled, hasOlder, onLoadOlder, olderError, isLoadingOlder, notice }: {
     messages: { content: string }[]; onSend: (content: string) => void; isDisabled: boolean;
-    hasOlder: boolean; onLoadOlder: () => void; olderError: boolean; isLoadingOlder: boolean;
+    hasOlder: boolean; onLoadOlder: () => void; olderError: boolean; isLoadingOlder: boolean; notice: React.ReactNode;
   }) => <div>
+    {notice}
     {hasOlder && <button onClick={onLoadOlder} disabled={isLoadingOlder}>{olderError ? 'Retry older' : 'Load older'}</button>}
     {messages.map((message, index) => <p key={index}>{message.content}</p>)}
     <button disabled={isDisabled} onClick={() => onSend('Add a lake stop')}>Send edit</button>
@@ -143,7 +145,8 @@ test('loads a saved trip and applies an AI chat edit to the route', async () => 
   await user.click(screen.getByRole('button', { name: 'Send edit' }));
   expect(await screen.findByText('Added a lake stop')).toBeTruthy();
   expect(screen.getByText('2 route days')).toBeTruthy();
-  expect(messageApi.send).toHaveBeenCalledWith(42, { content: 'Add a lake stop' });
+  expect(messageApi.send).toHaveBeenCalledWith(42, expect.objectContaining({ content: 'Add a lake stop' }));
+  expect(typeof vi.mocked(messageApi.send).mock.calls[0][1].request_id).toBe('string');
   expect(updateTripItinerary).toHaveBeenCalledWith(42, updatedItinerary);
   await user.click(screen.getByRole('button', { name: 'Focus route' }));
   await waitFor(() => expect(setCollapsed).toHaveBeenCalledWith(true));
@@ -220,4 +223,37 @@ test('a failed edit after navigation does not alter the new trip', async () => {
   expect(screen.queryByText('History 42')).toBeNull();
   expect(updateTripItinerary).not.toHaveBeenCalled();
   expect(handleApiError).not.toHaveBeenCalled();
+});
+
+test('retries an uncertain edit with the same request ID', async () => {
+  vi.mocked(tripApi.getById).mockResolvedValue({ trip: { id: 42, itinerary_json: { days: [] } }, messages: { items: [] } } as never);
+  vi.mocked(messageApi.send).mockRejectedValueOnce(new Error('Offline')).mockResolvedValueOnce({
+    message: { id: 8, trip_id: 42, role: 'assistant', content: 'Saved', created_at: '' }, updated_itinerary: null,
+  });
+  const user = userEvent.setup();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={['/trip/42']}><Routes><Route path="/trip/:id" element={<TripPage />} /></Routes></MemoryRouter>
+  </QueryClientProvider>);
+  await user.click(await screen.findByRole('button', { name: 'Send edit' }));
+  await user.click(await screen.findByRole('button', { name: 'Retry edit' }));
+  expect(await screen.findByText('Saved')).toBeTruthy();
+  expect(vi.mocked(messageApi.send).mock.calls[1][1]).toEqual(vi.mocked(messageApi.send).mock.calls[0][1]);
+});
+
+test('requires a reload after a conflict and retries with a new request ID', async () => {
+  vi.mocked(tripApi.getById).mockResolvedValue({ trip: { id: 42, itinerary_json: { days: [] } }, messages: { items: [] } } as never);
+  const conflict = new AxiosError('Conflict', undefined, undefined, undefined, { status: 409 } as never);
+  vi.mocked(messageApi.send).mockRejectedValueOnce(conflict).mockResolvedValueOnce({
+    message: { id: 9, trip_id: 42, role: 'assistant', content: 'Retried', created_at: '' }, updated_itinerary: null,
+  });
+  const user = userEvent.setup();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={['/trip/42']}><Routes><Route path="/trip/:id" element={<TripPage />} /></Routes></MemoryRouter>
+  </QueryClientProvider>);
+  await user.click(await screen.findByRole('button', { name: 'Send edit' }));
+  expect((await screen.findByRole('button', { name: 'Send edit' })).hasAttribute('disabled')).toBe(true);
+  await user.click(await screen.findByRole('button', { name: 'Reload trip' }));
+  await user.click(await screen.findByRole('button', { name: 'Retry edit' }));
+  expect(await screen.findByText('Retried')).toBeTruthy();
+  expect(vi.mocked(messageApi.send).mock.calls[1][1].request_id).not.toBe(vi.mocked(messageApi.send).mock.calls[0][1].request_id);
 });

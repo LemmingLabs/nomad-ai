@@ -10,6 +10,7 @@ export interface Message {
 
 export interface SendMessagePayload {
   content: string;
+  request_id?: string;
 }
 
 export interface SendMessageResponse {

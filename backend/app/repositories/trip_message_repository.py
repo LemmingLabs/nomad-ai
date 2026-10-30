@@ -1,7 +1,8 @@
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, update
 from sqlalchemy.orm import Session
 
 from app.models.trip_message import TripMessage
+from app.models.trip import Trip
 
 
 class TripMessageRepository:
@@ -15,6 +16,21 @@ class TripMessageRepository:
         self.db.add(message)
         self.db.flush()
         return message
+
+    def find_request(self, trip_id: int, request_key: str) -> TripMessage | None:
+        return self.db.query(TripMessage).filter_by(trip_id=trip_id, request_key=request_key).first()
+
+    def advance_revision(self, trip_id: int, user_id: int | None, revision: int, itinerary: dict | None) -> bool:
+        values = {"chat_revision": revision + 1}
+        if itinerary is not None:
+            values["itinerary_json"] = itinerary
+        result = self.db.execute(
+            update(Trip)
+            .where(Trip.id == trip_id, Trip.user_id == user_id, Trip.chat_revision == revision)
+            .values(**values)
+            .execution_options(synchronize_session=False)
+        )
+        return result.rowcount == 1
     def get_trip_messages(
         self, trip_id: int, limit: int | None = None, offset: int = 0
     ) -> tuple[list[TripMessage], int]:
