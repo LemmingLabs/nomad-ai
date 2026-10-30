@@ -8,6 +8,7 @@ class PexelsClient:
     def __init__(self):
         self.api_key = settings.PEXELS_API_KEY
         self.base_url = "https://api.pexels.com/v1/search"
+        self.unavailable = not bool(self.api_key)
 
     def search_photo(self, query: str) -> dict | None:
         if not self.api_key:
@@ -21,7 +22,7 @@ class PexelsClient:
         }
 
         try:
-            with httpx.Client() as client:
+            with httpx.Client(timeout=httpx.Timeout(2.0)) as client:
                 response = client.get(self.base_url, headers=headers, params=params)
                 response.raise_for_status()
                 data = response.json()
@@ -41,6 +42,9 @@ class PexelsClient:
                     "alt": best_photo.get("alt", ""),
                     "search_query": query
                 }
-        except Exception as e:
-            logger.warning(f"PexelsClient failed resolving image: {e}")
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            # Stop the current enrichment run after provider failure or quota errors.
+            # Never include the request URL (and therefore the search query) in logs.
+            self.unavailable = True
+            logger.warning("Pexels image search unavailable")
             return None
