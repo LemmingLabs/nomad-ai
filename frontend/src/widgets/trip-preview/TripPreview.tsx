@@ -5,6 +5,7 @@ import { TripDayCard } from '../trip-day-card';
 import { TripHeader } from '../trip-header';
 import { RouteTransition } from '../trip-route-block';
 import { OffersSearchPanel } from '../offers-search/OffersSearchPanel';
+import { TripOverview } from './TripOverview';
 import styles from './TripPreview.module.scss';
 
 interface TripPreviewProps {
@@ -102,6 +103,7 @@ export function TripPreview({
           />
         </div>
       ) : null}
+      {itinerary.days.length > 0 && <TripOverview days={itinerary.days} routeStatus={itinerary.route_status} />}
       {itinerary.days.length > 1 && (
         <nav className={styles.dayNavigation} aria-label="Jump to itinerary day" data-print-hide="true">
           <span className={styles.dayNavigationLabel}>Jump to day</span>

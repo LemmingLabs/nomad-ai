@@ -1,0 +1,5 @@
+# Schematic trip overview
+
+The optional overview uses the place candidate coordinates already returned with each itinerary day. It draws an illustrative, independently scaled coordinate diagram and a matching ordered list; it is not a map, a distance scale, or a verified route. Consecutive valid coordinates are connected schematically, including when route data is missing or stale. Missing, unresolved and invalid coordinates are omitted from the diagram but retained in the list. Coincident points are grouped; the ordered list remains the authoritative way to distinguish all days. The API does not provide a location freshness timestamp, so freshness is explicitly unconfirmed.
+
+The diagram is generated locally from already loaded itinerary data: it adds no map library, tiles, geometry provider, attribution requirement, requests, provider cost, or new privacy exposure. The list works without coordinates or a route provider. It has no separate loading state because it uses the itinerary already loaded by the trip page; the existing page owns itinerary loading and errors. Printing and day details do not depend on the overview.

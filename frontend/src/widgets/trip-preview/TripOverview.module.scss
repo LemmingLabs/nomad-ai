@@ -1,0 +1,45 @@
+@use '../../app/styles/variables' as *;
+
+.overview {
+  margin: $space-4 $space-8;
+  border: 1px solid $color-border;
+  border-radius: $radius-xl;
+  background: $color-surface;
+  color: $color-text;
+
+  summary {
+    cursor: pointer;
+    padding: $space-4 $space-5;
+    font-weight: $weight-bold;
+    span { color: $color-text-muted; font-size: $text-sm; font-weight: normal; margin-left: $space-2; }
+    &:focus-visible { outline: 2px solid $color-focus; outline-offset: 3px; }
+  }
+}
+
+.content {
+  padding: 0 $space-5 $space-5;
+  p { color: $color-text-muted; font-size: $text-sm; line-height: 1.5; }
+}
+
+.diagram {
+  width: 100%;
+  max-height: 240px;
+  border-radius: $radius-lg;
+  background: radial-gradient(ellipse at center, rgba(117, 198, 186, .12), transparent 75%), #0c1b28;
+  line { stroke: $color-accent; stroke-width: 2; stroke-dasharray: 6 6; opacity: .65; }
+  circle { fill: $color-accent; stroke: #0c1b28; stroke-width: 2; }
+  text { fill: #0c1b28; font-size: 12px; font-weight: bold; }
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: $space-3;
+  padding-left: $space-5;
+  li { padding-left: $space-1; }
+  a { color: $color-accent; text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid $color-focus; outline-offset: 3px; }
+  span { display: block; color: $color-text-muted; font-size: $text-xs; margin-top: $space-1; }
+}
+
+@media (max-width: 768px) { .overview { margin: $space-4; } }
