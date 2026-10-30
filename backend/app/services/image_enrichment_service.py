@@ -1,4 +1,5 @@
 import logging
+import time
 from app.integrations.pexels_client import PexelsClient
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,8 @@ PHOTO_QUERY_OVERRIDES = {
 }
 
 MAX_IMAGES_FULL_TRIP = 3   # cap only for full (initial) enrichment runs
+MAX_IMAGE_REQUESTS = 6
+IMAGE_SEARCH_BUDGET_SECONDS = 8.0
 
 
 class ImageEnrichmentService:
@@ -43,6 +46,8 @@ class ImageEnrichmentService:
             return itinerary_json
 
         is_selective = changed_day_indexes is not None
+        requests_left = MAX_IMAGE_REQUESTS
+        deadline = time.monotonic() + IMAGE_SEARCH_BUDGET_SECONDS
 
         # Collect already-used photo ids to avoid duplicates across days
         used_photo_ids: set = set()
@@ -72,8 +77,9 @@ class ImageEnrichmentService:
                 day.pop("images", None)
 
                 # No count cap in selective mode — refresh every changed day
-                image_data = self._fetch_image_for_day(
-                    day, itinerary_json, used_photo_ids, country_name, country_code
+                image_data, requests_left = self._fetch_image_for_day(
+                    day, itinerary_json, used_photo_ids, country_name, country_code,
+                    requests_left, deadline,
                 )
                 if image_data:
                     day["images"] = {"hero": image_data, "gallery": []}
@@ -87,8 +93,9 @@ class ImageEnrichmentService:
                 if full_run_count >= MAX_IMAGES_FULL_TRIP:
                     break
 
-                image_data = self._fetch_image_for_day(
-                    day, itinerary_json, used_photo_ids, country_name, country_code
+                image_data, requests_left = self._fetch_image_for_day(
+                    day, itinerary_json, used_photo_ids, country_name, country_code,
+                    requests_left, deadline,
                 )
                 if image_data:
                     day["images"] = {"hero": image_data, "gallery": []}
@@ -104,13 +111,18 @@ class ImageEnrichmentService:
         used_ids: set,
         country_name: str = "Kyrgyzstan",
         country_code: str = "KG",
-    ) -> dict | None:
+        requests_left: int = MAX_IMAGE_REQUESTS,
+        deadline: float = float("inf"),
+    ) -> tuple[dict | None, int]:
         queries = self._build_search_queries(day, itinerary, country_name, country_code)
         for q in queries:
+            if requests_left <= 0 or time.monotonic() >= deadline or self.client.unavailable:
+                break
+            requests_left -= 1
             result = self.client.search_photo(q)
             if result and result["photo_id"] not in used_ids:
-                return result
-        return None
+                return result, requests_left
+        return None, requests_left
 
     def _build_search_queries(
         self,
