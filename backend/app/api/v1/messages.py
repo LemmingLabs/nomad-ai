@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.integrations.gemini_client import AIProviderError
 from app.schemas.trip_message import (
     TripContinuationResponse,
     TripMessageCreateRequest,
@@ -35,9 +36,12 @@ def continue_trip_messages(
 
     service = TripMessageService(db)
     kwargs = {"request_key": str(payload.request_id)} if payload.request_id else {}
-    assistant_message, updated_itinerary = service.continue_trip(
-        trip=trip, user_content=payload.content, **kwargs,
-    )
+    try:
+        assistant_message, updated_itinerary = service.continue_trip(
+            trip=trip, user_content=payload.content, **kwargs,
+        )
+    except AIProviderError as exc:
+        raise HTTPException(status_code=503, detail="AI service is unavailable. Please try again.") from exc
 
     return TripContinuationResponse(
         message=assistant_message,

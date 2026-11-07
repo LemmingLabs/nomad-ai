@@ -161,6 +161,23 @@ test('clearly explains when no destination-safe development fallback exists', ()
   expect(screen.getByRole('status').textContent).toContain('no itinerary was created');
 });
 
+test('explains when place details could not be refreshed after an edit', () => {
+  render(<TripPreview itinerary={{
+    days: [{ day: 1, title: 'City', city: 'Bishkek', location: 'Center', activities: [] }],
+    generation_status: { state: 'degraded', source: 'ai', reasons: ['place_refresh_unavailable'] },
+  }} />);
+  expect(screen.getByText(/Place details could not be refreshed after the edit/)).toBeTruthy();
+});
+
+test('identifies an alternative activity as optional', () => {
+  render(<TripPreview itinerary={{ days: [{
+    day: 1, title: 'City', city: 'Bishkek', location: 'Center',
+    activities: [{ type: 'alternative', description: 'Visit a museum instead' }],
+  }] }} />);
+  expect(screen.getByText('Optional alternative')).toBeTruthy();
+  expect(screen.getByText('Visit a museum instead')).toBeTruthy();
+});
+
 test('renders source attribution for fact-level reviewed information', () => {
   const itinerary: TripItinerary = {
     days: [{
@@ -203,6 +220,7 @@ test('groups day warnings with their days and keeps unmatched warnings visible',
       { code: 'overlap', day: 1, message: 'Day one times may overlap.' },
       { code: 'route', day: 2, message: 'Day two route is stale.' },
       { code: 'pace', day: 2, message: 'Day two may be too long.' },
+      { code: 'transfer_time_unscheduled', day: 2, message: 'The estimated transfer does not fit between scheduled activities.' },
       { code: 'global', message: 'Review the trip details.' },
       { code: 'missing', day: 7, message: 'An unavailable day needs review.' },
     ],
@@ -211,12 +229,13 @@ test('groups day warnings with their days and keeps unmatched warnings visible',
 
   const overview = screen.getByRole('region', { name: 'Days to review' });
   expect(overview.getAttribute('data-print-hide')).toBe('true');
-  expect(within(overview).getByRole('link', { name: 'Day 2 · 2 notes' }).getAttribute('href')).toBe('#trip-day-2');
+  expect(within(overview).getByRole('link', { name: 'Day 2 · 3 notes' }).getAttribute('href')).toBe('#trip-day-2');
   const dayOne = screen.getByRole('region', { name: 'Review notes for day 1' });
   const dayTwo = screen.getByRole('region', { name: 'Review notes for day 2' });
   expect(within(dayOne).getByText('Day one times may overlap.')).toBeTruthy();
   expect(within(dayTwo).getByText('Day two route is stale.')).toBeTruthy();
   expect(within(dayTwo).getByText('Day two may be too long.')).toBeTruthy();
+  expect(within(dayTwo).getByText('The estimated transfer does not fit between scheduled activities.')).toBeTruthy();
   expect(screen.getByText('Review the trip details.')).toBeTruthy();
   expect(screen.getByText('An unavailable day needs review.')).toBeTruthy();
   expect(screen.getByText('Route details could not be refreshed for this itinerary.')).toBeTruthy();

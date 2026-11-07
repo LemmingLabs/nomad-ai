@@ -307,7 +307,7 @@ class PlaceCandidateService:
         try:
             from app.services.ai_service import AIService
 
-            raw = AIService().groq_client.chat_json(messages, mode="place_candidate_selection")
+            raw = AIService().client.chat_json(messages, mode="place_candidate_selection")
             if isinstance(raw, str):
                 raw = json.loads(raw)
             if not isinstance(raw, dict):

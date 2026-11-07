@@ -21,6 +21,7 @@ from app.schemas.trip_message import (
 from app.services.ai_service import AIService
 from app.services.trip_message_service import TripMessageService
 from app.integrations.groq_client import GroqClient
+from app.integrations.gemini_client import AIProviderError
 from app.utils.prompt_builder import PromptBuilder
 
 
@@ -255,17 +256,16 @@ def test_prompt_builder_build_chat_messages_replaces_duplicate_latest_user():
     assert "Current itinerary JSON" in messages[-1]["content"]
 
 
-def test_groq_client_returns_mock_without_api_key():
-    client = GroqClient(api_key=None)
-
-    payload = client.chat_json([{"role": "user", "content": "hello"}])
-
-    assert "message" in payload
-    assert "updated_itinerary" in payload
+def test_groq_client_reports_missing_api_key(monkeypatch):
+    monkeypatch.setattr(groq_module.settings, "GROQ_API_KEY", "")
+    client = GroqClient(api_key=None, use_mock=False)
+    with pytest.raises(AIProviderError):
+        client.chat_json([{"role": "user", "content": "hello"}])
 
 
-def test_groq_initial_mock_response_is_explicitly_marked():
-    client = GroqClient(api_key=None)
+def test_groq_initial_mock_response_is_explicitly_marked(monkeypatch):
+    monkeypatch.setattr(groq_module.settings, "GROQ_API_KEY", "")
+    client = GroqClient(api_key=None, use_mock=False)
 
     payload = client.chat_json([{"role": "user", "content": "- Days: 1"}], mode="initial")
 
@@ -276,7 +276,7 @@ def test_groq_initial_mock_response_is_explicitly_marked():
     }
 
 
-def test_groq_client_returns_mock_when_upstream_raises(monkeypatch):
+def test_groq_client_reports_when_upstream_raises(monkeypatch):
     class ExplodingGroq:
         def __init__(self, api_key):
             self.chat = SimpleNamespace(
@@ -287,11 +287,9 @@ def test_groq_client_returns_mock_when_upstream_raises(monkeypatch):
             raise RuntimeError("boom")
 
     monkeypatch.setattr(groq_module, "Groq", ExplodingGroq)
-    client = GroqClient(api_key="fake-key")
-
-    payload = client.chat_json([{"role": "user", "content": "hello"}])
-
-    assert payload["updated_itinerary"]["updated"] is True
+    client = GroqClient(api_key="fake-key", use_mock=False)
+    with pytest.raises(AIProviderError):
+        client.chat_json([{"role": "user", "content": "hello"}])
 
 
 def test_groq_client_parses_json_payload(monkeypatch):
@@ -500,15 +498,12 @@ def test_trip_message_service_does_not_apply_provider_mock_update(db_session, tr
             }
 
     service = TripMessageService(db_session, ai_service=FakeAIService())
-    assistant_message, updated_itinerary = service.continue_trip(
-        trip=trip,
-        user_content="change day one",
-    )
+    with pytest.raises(AIProviderError):
+        service.continue_trip(trip=trip, user_content="change day one")
     db_session.refresh(trip)
 
-    assert updated_itinerary is None
     assert trip.itinerary_json == original_itinerary
-    assert "saved itinerary is unchanged" in assistant_message.content
+    assert db_session.query(TripMessage).filter_by(trip_id=trip.id).count() == 0
 
 
 def test_trip_message_service_reinjects_sponsored_after_image_enrichment(
@@ -719,3 +714,26 @@ def test_trip_detail_retains_legacy_page_and_can_load_recent_page(db_session, tr
     assert [int(message.content) for message in legacy["items"]] == list(range(50))
     assert [int(message.content) for message in recent["items"]] == list(range(5, 55))
     assert recent["has_more"] is True
+
+
+def test_gemini_unavailable_returns_503_and_rolls_back_chat(db_session, trip, user, monkeypatch):
+    monkeypatch.setattr("app.services.ai_service.settings.AI_PROVIDER", "gemini")
+    monkeypatch.setattr("app.integrations.gemini_client.settings.GEMINI_API_KEY", "")
+    with pytest.raises(HTTPException) as error:
+        continue_trip_messages(trip.id, TripMessageCreateRequest(content="Change the plan"), db_session, user)
+    assert error.value.status_code == 503
+    assert db_session.query(TripMessage).filter_by(trip_id=trip.id).count() == 0
+    assert db_session.get(Trip, trip.id).chat_revision == 0
+
+
+def test_gemini_chat_response_is_saved(db_session, trip, user, monkeypatch):
+    import httpx
+    monkeypatch.setattr("app.services.ai_service.settings.AI_PROVIDER", "gemini")
+    monkeypatch.setattr("app.integrations.gemini_client.settings.GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(httpx, "post", lambda url, **kwargs: httpx.Response(
+        200, request=httpx.Request("POST", url), json={"candidates": [{
+            "finishReason": "STOP", "content": {"parts": [{"text": '{"message":"Hello from Gemini","updated_itinerary":null}'}]}
+        }]}))
+    response = continue_trip_messages(trip.id, TripMessageCreateRequest(content="Hello"), db_session, user)
+    assert response.message.content == "Hello from Gemini"
+    assert db_session.query(TripMessage).filter_by(trip_id=trip.id).count() == 2

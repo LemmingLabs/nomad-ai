@@ -66,9 +66,12 @@ export function TripPreview({
           </p>
         ) : itinerary.generation_status?.state === 'degraded' ? (
           <p className={styles.degradedNotice} role="status">
-            This is a draft because AI or route data was unavailable. Review the warnings and confirm logistics before relying on it.
+            This is a draft because some planning information was unavailable. Review the itinerary and confirm logistics before relying on it.
           </p>
         ) : null}
+        {itinerary.generation_status?.reasons?.includes('place_refresh_unavailable') && (
+          <p className={styles.warning}>Place details could not be refreshed after the edit. Check the suggested locations before visiting.</p>
+        )}
         {itinerary.days.length > 0 ? (
           <p className={styles.suggestionNotice}>
             Activities, timing, and practical notes are suggestions. Durations are estimates when shown; unknown values are left open. Source-reviewed facts and sponsored placements are labeled separately.

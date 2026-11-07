@@ -3,6 +3,7 @@ import re
 from typing import Any
 
 from app.core.config import settings
+from app.integrations.gemini_client import AIProviderError
 
 try:
     from groq import Groq  # type: ignore
@@ -27,6 +28,8 @@ class GroqClient:
 
         if not self.api_key or Groq is None:
             reason = "provider_unconfigured" if not self.api_key else "provider_unavailable"
+            if mode == "continuation":
+                raise AIProviderError("AI service is unavailable")
             return self._mark_initial_mock(messages, mode, reason)
 
         try:
@@ -42,8 +45,10 @@ class GroqClient:
         except json.JSONDecodeError:
             if mode == "initial":
                 return {}
-            return {"message": "Invalid JSON from AI", "updated_itinerary": None}
+            raise AIProviderError("AI returned an invalid chat response") from None
         except Exception:
+            if mode == "continuation":
+                raise AIProviderError("AI service is unavailable") from None
             return self._mark_initial_mock(messages, mode, "provider_error")
 
     def _mark_initial_mock(

@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -93,4 +93,22 @@ test('opens the existing trip form from a curated globe scene', async () => {
   await user.click(screen.getByRole('button', { name: /plan kyrgyzstan/i }));
   expect(screen.getByRole('heading', { name: /build your next itinerary/i })).toBeTruthy();
   expect(screen.getByRole('combobox', { name: /country or destination/i })).toHaveProperty('value', 'kg');
+});
+
+test('keeps the guest form and request available after generation fails', async () => {
+  vi.mocked(generateTripApi.generate).mockRejectedValueOnce(new Error('Planning unavailable'));
+  const user = userEvent.setup();
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter><HomePage /></MemoryRouter>
+  </QueryClientProvider>);
+
+  await user.click(screen.getByRole('button', { name: 'Create a trip' }));
+  await user.type(screen.getByRole('textbox', { name: /prompt/i }), 'Quiet lakes');
+  await user.click(screen.getByRole('button', { name: /generate itinerary/i }));
+  await waitFor(() => expect(generateTripApi.generate).toHaveBeenCalledTimes(1));
+  expect(await screen.findByRole('textbox', { name: /prompt/i })).toHaveProperty('value', 'Quiet lakes');
+  await waitFor(() => expect(screen.getByRole('button', { name: /generate itinerary/i })).toHaveProperty('disabled', false));
+  expect(addTrip).not.toHaveBeenCalled();
+  expect(setActiveTrip).not.toHaveBeenCalled();
+  expect(localStorage.getItem('guest_trip_id')).toBeNull();
 });

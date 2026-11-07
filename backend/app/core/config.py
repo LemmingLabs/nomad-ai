@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     GROQ_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
+    AI_PROVIDER: Literal["gemini", "groq", "mock"] = "gemini"
+    GEMINI_TIMEOUT_SECONDS: float = Field(default=45.0, gt=0, le=120)
     PEXELS_API_KEY: str | None = None
     GOOGLE_MAPS_API_KEY: str | None
     OFFERS_ENABLED: bool = False
@@ -48,6 +52,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_offers_mode(self):
+        if self.AI_PROVIDER == "mock" and self.APP_ENV == "production":
+            raise ValueError("AI_PROVIDER=mock is not allowed in production")
         if self.OFFERS_DEMO_MODE and self.APP_ENV != "development":
             raise ValueError("OFFERS_DEMO_MODE is allowed only when APP_ENV=development")
         if self.OFFERS_DEMO_MODE and self.OFFERS_ENABLED:

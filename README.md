@@ -8,7 +8,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Groq](https://img.shields.io/badge/Groq-F55036?style=flat&logo=groq&logoColor=white)](https://groq.com/)
+[![Gemini](https://img.shields.io/badge/Google-Gemini-4285F4?style=flat)](https://ai.google.dev/gemini-api/docs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [User App](https://nomad-ai-client.vercel.app) · [Business Panel](https://nomad-ai-pi.vercel.app) · [API Docs](#api-documentation)
@@ -30,7 +30,7 @@ NomadAI is an AI travel assistant built specifically for trips across Kyrgyzstan
 Unlike a one-shot AI response, NomadAI is a persistent travel workspace. Trips are saved to your account, the AI conversation continues across sessions, and the itinerary updates live as you refine it.
 
 ```
-Guest or User → AI Itinerary (Groq) → Google Places & Routes → Pexels Photos → Sponsored Injection → Saved Trip
+Guest or User → AI Itinerary (Gemini) → Google Places & Routes → Pexels Photos → Sponsored Injection → Saved Trip
 ```
 
 ---
@@ -40,7 +40,7 @@ Guest or User → AI Itinerary (Groq) → Google Places & Routes → Pexels Phot
 ### For Travelers
 
 - **Try it instantly as a guest** — No account needed to generate your first trip. Enter preferences and get a full itinerary immediately.
-- **AI Trip Generation** — Powered by Groq. Describe budget, duration, interests, and travel style. Get a structured day-by-day plan tailored to Kyrgyzstan.
+- **AI Trip Generation** — Powered by Gemini by default, with Groq available as an alternative. Describe budget, duration, interests, and travel style. Get a structured day-by-day plan tailored to Kyrgyzstan.
 - **Real Routes via Google** — The right panel shows day-by-day route structure, distances, estimated travel times, and approximate transport costs using the Google Places & Routes APIs.
 - **Photo-Rich Itineraries** — Each day is enriched with contextual photography via the Pexels API.
 - **Conversational Editing** — Chat with AI to refine your trip: *"make it cheaper"*, *"add Issyk-Kul"*, *"less walking on day 3"*. Only changed days are re-enriched — no wasted API calls.
@@ -91,7 +91,7 @@ The product is split across four main screens:
 2. Guest enters budget, days, interests, travel style
         │
         ▼
-3. System generates trip via Groq + enriches with Google Maps + Pexels
+3. System generates trip via Gemini + enriches with Google Maps + Pexels
         │
         ▼
 4. Guest previews result
@@ -106,7 +106,7 @@ The product is split across four main screens:
 6. User returns later → My Trips → resumes conversation
         │
         ▼
-7. Groq receives prior chat context → updates existing itinerary
+7. Gemini receives prior chat context → updates existing itinerary
 ```
 
 ---
@@ -119,7 +119,7 @@ The product is split across four main screens:
 POST /trips/generate
        │
        ▼
-  Groq AI ──► Normalize result
+  Gemini AI ──► Normalize result
        │       (validate days, fix locations, clean activity types)
        ▼
   Google Places & Routes API ──► Route segments, distances, transport cost estimates
@@ -144,7 +144,7 @@ POST /trips/generate
 POST /trips/{id}/messages
        │
        ▼
-  Groq updates itinerary (with full prior context)
+  Gemini updates itinerary (with full prior context)
        │
        ▼
   Detect changed days
@@ -181,7 +181,7 @@ POST /trips/sync-guest
 | Frontend | React + Vite + TypeScript |
 | Backend | FastAPI + SQLAlchemy + Alembic |
 | Database | PostgreSQL |
-| AI Provider | Groq |
+| AI Provider | Gemini by default; Groq optional |
 | Maps & Routing | Google Places & Routes API |
 | Images | Pexels API |
 | Auth | JWT |
@@ -261,7 +261,7 @@ Future commission model with tourism partners: hotels, tours, transport provider
 - Python 3.11+
 - Node.js 24.12+
 - PostgreSQL
-- Groq API key
+- Gemini API key (set `GEMINI_API_KEY` in `backend/.env`; optional Groq via `AI_PROVIDER=groq`)
 - Google Cloud project with Places API and Routes API enabled
 - Pexels API key
 

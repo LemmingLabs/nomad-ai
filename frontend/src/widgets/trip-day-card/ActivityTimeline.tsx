@@ -122,6 +122,9 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
                   ) : (
                     <span className={styles.time}>Duration unknown</span>
                   )}
+                  {activity.type.toLowerCase().trim() === 'alternative' && (
+                    <span className={styles.time}>Optional alternative</span>
+                  )}
                   <span className={`${styles.source}${isDevelopmentMock ? ` ${styles.mockSource}` : ''}`}>
                     {sourceLabel}
                   </span>

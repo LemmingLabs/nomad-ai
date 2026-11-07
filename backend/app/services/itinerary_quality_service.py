@@ -41,17 +41,35 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
         activities = day.get("activities")
         if not isinstance(activities, list):
             activities = []
+        planned_activities = [
+            activity for activity in activities
+            if not isinstance(activity, dict)
+            or str(activity.get("type") or "").strip().lower() != "alternative"
+        ]
+        if not planned_activities:
+            warnings.append({
+                "code": "activities_missing",
+                "day": day_number,
+                "message": f"Day {day_number} has no planned activities; add details or leave it open for rest.",
+            })
 
         total_duration = 0
         has_unknown_duration = False
         overlap_detected = False
         order_conflict = False
         boundary_conflict = False
+        duration_exceeds_window = False
+        all_activities_timed = bool(planned_activities)
+        has_transfer_activity = False
         previous_start: int | None = None
         windows: list[tuple[int, int]] = []
-        for activity in activities:
+        for activity in planned_activities:
             if not isinstance(activity, dict):
+                all_activities_timed = False
+                has_unknown_duration = True
                 continue
+            if str(activity.get("type") or "").strip().lower() == "transfer":
+                has_transfer_activity = True
             duration = activity.get("duration_minutes")
             if isinstance(duration, int) and not isinstance(duration, bool) and duration > 0:
                 total_duration += duration
@@ -59,12 +77,16 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
                 has_unknown_duration = True
 
             match = _TIME_WINDOW_PATTERN.fullmatch(str(activity.get("time_window") or "").strip())
+            valid_window = False
             if match:
                 start_hour, start_minute, end_hour, end_minute = map(int, match.groups())
                 if start_hour < 24 and end_hour < 24 and start_minute < 60 and end_minute < 60:
                     start = start_hour * 60 + start_minute
                     end = end_hour * 60 + end_minute
                     if end > start:
+                        valid_window = True
+                        if isinstance(duration, int) and not isinstance(duration, bool) and duration > end - start:
+                            duration_exceeds_window = True
                         if start < 6 * 60 or end > 23 * 60:
                             boundary_conflict = True
                         if previous_start is not None and start < previous_start:
@@ -73,12 +95,20 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
                         if any(start < prior_end and end > prior_start for prior_start, prior_end in windows):
                             overlap_detected = True
                         windows.append((start, end))
+            if not valid_window:
+                all_activities_timed = False
 
         if overlap_detected:
             warnings.append({
                 "code": "overlapping_activity_times",
                 "day": day_number,
                 "message": f"Some estimated activity times overlap on day {day_number}.",
+            })
+        if duration_exceeds_window:
+            warnings.append({
+                "code": "activity_duration_exceeds_window",
+                "day": day_number,
+                "message": f"An estimated activity duration is longer than its time window on day {day_number}.",
             })
         if order_conflict:
             warnings.append({
@@ -92,7 +122,7 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
                 "day": day_number,
                 "message": f"An estimated activity time falls outside the suggested 6 AM to 11 PM day window for day {day_number}.",
             })
-        if has_unknown_duration and activities:
+        if has_unknown_duration and planned_activities:
             warnings.append({
                 "code": "activity_duration_unknown",
                 "day": day_number,
@@ -119,7 +149,7 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
                     "day": day_number,
                     "message": f"Transfer details for day {day_number} are unavailable or stale.",
                 })
-            elif total_duration and route.get("duration_mins"):
+            elif total_duration and route.get("duration_mins") and not has_transfer_activity:
                 try:
                     route_duration = int(route["duration_mins"])
                 except (TypeError, ValueError):
@@ -130,6 +160,25 @@ def validate_itinerary_quality(itinerary: dict, country_code: str) -> list[dict[
                         "day": day_number,
                         "message": f"Activities plus the transfer may make day {day_number} too long.",
                     })
+
+            # The transfer has no scheduled start time. Only flag it when every
+            # activity has a valid window and no gap in the suggested day is
+            # long enough; the traveler may still choose to travel outside it.
+            if not route_unavailable and all_activities_timed and not boundary_conflict and not has_transfer_activity:
+                route_duration = route.get("duration_mins")
+                if isinstance(route_duration, (int, float)) and not isinstance(route_duration, bool) and route_duration > 0:
+                    cursor = 6 * 60
+                    largest_gap = 0
+                    for start, end in sorted(windows):
+                        largest_gap = max(largest_gap, start - cursor)
+                        cursor = max(cursor, end)
+                    largest_gap = max(largest_gap, 23 * 60 - cursor)
+                    if route_duration > largest_gap:
+                        warnings.append({
+                            "code": "transfer_time_unscheduled",
+                            "day": day_number,
+                            "message": f"The estimated transfer to day {day_number} does not fit between the scheduled activities within 6 AM to 11 PM; review when to travel.",
+                        })
 
             previous_candidate = days[index - 1].get("place_candidate") if isinstance(days[index - 1], dict) else None
             current_candidate = day.get("place_candidate")
