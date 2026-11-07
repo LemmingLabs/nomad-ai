@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,8 @@ from app.schemas.trip import (
     TripTitleUpdateRequest,
 )
 from app.services import trip_service
+from app.schemas.itinerary import TripQualityWarningResponse
+from app.services.itinerary_quality_service import validate_itinerary_quality
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
@@ -72,7 +76,16 @@ def get_trip(
         )
     except ValueError as exc:
         raise _map_value_error_to_http_exception(exc) from exc
-    return detailed_trip
+    # Recompute derived warnings for saved trips without changing their stored
+    # itinerary or revision. Older trips can then use current quality checks.
+    trip = detailed_trip["trip"]
+    itinerary = deepcopy(trip.itinerary_json)
+    warnings = validate_itinerary_quality(itinerary, trip.country_code)
+    response = TripDetailResponse.model_validate(detailed_trip)
+    response.trip.itinerary_json.quality_warnings = [
+        TripQualityWarningResponse.model_validate(warning) for warning in warnings
+    ]
+    return response
 
 
 @router.patch("/{trip_id}", response_model=TripResponse)

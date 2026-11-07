@@ -94,6 +94,7 @@ def test_guest_trip_generation_persists_itinerary_and_initial_chat(
 
 
 def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline_enrichment):
+    monkeypatch.setattr(trip_service.settings, "APP_ENV", "development")
     def provider_error(self, **kwargs):
         raise RuntimeError("AI provider unavailable")
 
@@ -122,6 +123,7 @@ def test_ai_failure_falls_back_to_a_saved_draft(db_session, monkeypatch, offline
 def test_destination_without_mock_catalog_saves_an_explicit_unavailable_state(
     db_session, monkeypatch, offline_enrichment
 ):
+    monkeypatch.setattr(trip_service.settings, "APP_ENV", "development")
     destination = SimpleNamespace(
         id="jp",
         country_code="JP",
@@ -163,6 +165,7 @@ def test_destination_without_mock_catalog_saves_an_explicit_unavailable_state(
 def test_generation_stage_failures_are_logged_without_provider_payloads(
     db_session, monkeypatch, offline_enrichment, caplog
 ):
+    monkeypatch.setattr(trip_service.settings, "APP_ENV", "development")
     def fail_ai(self, **kwargs):
         secret = "private prompt" + " text must not appear in logs"
         raise RuntimeError(secret)
@@ -293,3 +296,25 @@ def test_authenticated_generation_respects_daily_limit(db_session):
 
     assert error.value.status_code == 403
     assert db_session.query(Trip).count() == 0
+
+
+def test_gemini_response_drives_trip_generation(db_session, monkeypatch, offline_enrichment):
+    import httpx
+
+    monkeypatch.setattr("app.services.ai_service.settings.AI_PROVIDER", "gemini")
+    monkeypatch.setattr("app.integrations.gemini_client.settings.GEMINI_API_KEY", "test-key")
+    payload = {"title": "Bishkek trip", "itinerary": {"days": [
+        {"day": 1, "title": "Day one", "city": "Bishkek", "location": "Ala-Too Square", "activities": []}
+    ]}}
+    import json
+    def mock_post(url, **kwargs):
+        assert kwargs["headers"]["x-goog-api-key"] == "test-key"
+        assert kwargs["json"]["generationConfig"]["responseMimeType"] == "application/json"
+        return httpx.Response(200, request=httpx.Request("POST", url), json={"candidates": [{
+            "finishReason": "STOP", "content": {"parts": [{"text": json.dumps(payload)}]}
+        }]})
+    monkeypatch.setattr(httpx, "post", mock_post)
+    trip = trip_service.generate_trip(db_session, None, "medium", 1, [], "relaxed")
+    assert trip.title == "Bishkek trip"
+    assert trip.itinerary_json["days"][0]["location"] == "Ala-Too Square"
+    assert trip.itinerary_json["generation_status"]["source"] == "ai"

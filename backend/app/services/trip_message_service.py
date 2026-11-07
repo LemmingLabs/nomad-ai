@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from app.models.trip import Trip
 from app.models.trip_message import TripMessage
+from app.integrations.gemini_client import AIProviderError
 from app.repositories.trip_message_repository import TripMessageRepository
 from app.services.ai_service import AIService
 from app.services.catalog_service import CatalogService
@@ -286,11 +287,7 @@ class TripMessageService:
                 or not updated_itinerary.get("days")
                 or any(not isinstance(day, dict) for day in updated_itinerary.get("days", []))
             ):
-                updated_itinerary = None
-                assistant_text = (
-                    "I couldn't update the itinerary because the planning service did not return a usable plan. "
-                    "Your saved itinerary is unchanged. Please try again later."
-                )
+                raise AIProviderError("AI returned an unusable itinerary")
 
             if updated_itinerary is not None:
                 old_itinerary = trip.itinerary_json or {}
@@ -320,6 +317,7 @@ class TripMessageService:
                             missing_place_candidate_indexes.add(idx)
 
                 place_candidate_refresh_indexes = location_changed_indexes | missing_place_candidate_indexes
+                enrichment_reasons: list[str] = []
                 logger.info("[DEBUG] changed_days=%s", place_candidate_refresh_indexes)
                 logger.info("[CONTINUE] location_changed_indexes=%s", location_changed_indexes)
                 logger.info(
@@ -354,15 +352,21 @@ class TripMessageService:
                         destination_id=trip.destination_id,
                     )
 
-                    merged_itinerary = enrich_selected_days_with_place_candidates(
-                        merged_itinerary,
-                        changed_day_indexes=place_candidate_refresh_indexes,
-                        interests=list(merged_itinerary.get("interests") or trip.interests or []),
-                        travel_style=str(merged_itinerary.get("travel_style") or trip.travel_style),
-                        prompt=None,
-                        country_code=destination.country_code,
-                        country_name=destination.country_name,
-                    )
+                    try:
+                        # The enrichment function mutates its input; keep partial
+                        # provider results out of the saved itinerary on failure.
+                        merged_itinerary = enrich_selected_days_with_place_candidates(
+                            deepcopy(merged_itinerary),
+                            changed_day_indexes=place_candidate_refresh_indexes,
+                            interests=list(merged_itinerary.get("interests") or trip.interests or []),
+                            travel_style=str(merged_itinerary.get("travel_style") or trip.travel_style),
+                            prompt=None,
+                            country_code=destination.country_code,
+                            country_name=destination.country_name,
+                        )
+                    except Exception as exc:
+                        logger.warning("Place enrichment failed on update (error_type=%s)", type(exc).__name__)
+                        enrichment_reasons.append("place_refresh_unavailable")
 
                 # 5. Catalog enrichment (always, same as before)
                 catalog_service = CatalogService(self.db)
@@ -382,7 +386,6 @@ class TripMessageService:
                 location_changed_indexes = place_candidate_refresh_indexes
 
                 # 6. Routing enrichment – only when locations actually changed
-                enrichment_reasons: list[str] = []
                 if location_changed_indexes:
                     logger.info("[CONTINUE] re-running routing enrichment")
                     from app.utils.async_runner import run_async

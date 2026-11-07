@@ -19,6 +19,7 @@ from app.core.destination_registry import (
     DEFAULT_DESTINATION_ID,
     resolve_destination,
 )
+from app.core.config import settings
 from app.services.limit_service import LimitService
 from app.services.place_candidate_service import get_place_candidate_service
 from app.services.usage_service import UsageService
@@ -784,6 +785,14 @@ def generate_trip(
             "source": "mock",
             "reasons": ["ai_generation_failed"],
         }
+
+    if settings.APP_ENV == "production" and (
+        not itinerary or generation_status["source"] == "mock"
+    ):
+        raise HTTPException(
+            status_code=503,
+            detail="Trip planning is temporarily unavailable. Please try again; no trip was created.",
+        )
 
     if not itinerary:
         itinerary = build_mock_itinerary(

@@ -3,6 +3,8 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.integrations.groq_client import GroqClient
+from app.integrations.gemini_client import AIProviderError, GeminiClient
+from app.core.config import settings
 from app.core.destination_registry import (
     DEFAULT_COUNTRY_CODE,
     DEFAULT_DESTINATION_ID,
@@ -17,7 +19,14 @@ class AIService:
         groq_client: GroqClient | None = None,
         prompt_builder: PromptBuilder | None = None,
     ):
-        self.groq_client = groq_client or GroqClient()
+        if groq_client is not None:
+            self.client = groq_client
+        elif settings.AI_PROVIDER == "gemini":
+            self.client = GeminiClient()
+        elif settings.AI_PROVIDER == "mock":
+            self.client = GroqClient(use_mock=True)
+        else:
+            self.client = GroqClient(use_mock=False)
         self.prompt_builder = prompt_builder or PromptBuilder()
 
     def continue_trip(
@@ -47,9 +56,9 @@ class AIService:
         )
 
         try:
-            raw = self.groq_client.chat_json(messages, mode="continuation")
+            raw = self.client.chat_json(messages, mode="continuation")
         except TypeError:
-            raw = self.groq_client.chat_json(messages)
+            raw = self.client.chat_json(messages)
         message, updated_itinerary = self._normalize_response(raw)
 
         return message, updated_itinerary
@@ -78,7 +87,7 @@ class AIService:
             destination_name=destination.name,
             supported_cities=destination.supported_cities,
         )
-        raw = self.groq_client.chat_json(
+        raw = self.client.chat_json(
             [
                 {
                     "role": "system",
@@ -124,21 +133,19 @@ class AIService:
             try:
                 raw = json.loads(raw)
             except json.JSONDecodeError:
-                stripped_raw = raw.strip()
-                if stripped_raw:
-                    return stripped_raw, None
-                return "I have updated your trip plan based on your request.", None
+                raise AIProviderError("AI returned an invalid chat response") from None
 
         if not isinstance(raw, dict):
-            return "I have updated your trip plan based on your request.", None
+            raise AIProviderError("AI returned an invalid chat response")
 
         message = raw.get("message") or raw.get("assistant_message") or raw.get("content")
-        if not isinstance(message, str) or not message.strip():
-            message = "I have updated your trip plan based on your request."
-
         updated_itinerary = raw.get("updated_itinerary")
         if updated_itinerary is not None and not isinstance(updated_itinerary, dict):
-            updated_itinerary = None
+            raise AIProviderError("AI returned an invalid chat response")
+        if not isinstance(message, str) or not message.strip():
+            if updated_itinerary is None:
+                raise AIProviderError("AI returned an invalid chat response")
+            message = "I have updated your trip plan based on your request."
 
         return message, updated_itinerary
 
